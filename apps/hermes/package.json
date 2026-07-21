@@ -1,0 +1,6 @@
+{
+  "name":"@mstrmnd/hermes",
+  "private":true,
+  "scripts":{"dev":"tsx src/index.ts"},
+  "dependencies":{}
+}
