@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mstrmnd-postgres
+    environment:
+      POSTGRES_USER: mstrmnd
+      POSTGRES_PASSWORD: mstrmnd
+      POSTGRES_DB: mstrmnd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  neo4j:
+    image: neo4j:latest
+    container_name: mstrmnd-graph
+    environment:
+      NEO4J_AUTH: neo4j/password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+
+  minio:
+    image: minio/minio
+    container_name: mstrmnd-storage
+    command: server /data
+    ports:
+      - "9000:9000"
+
+volumes:
+  postgres_data:
