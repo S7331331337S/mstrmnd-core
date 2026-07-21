@@ -1,0 +1,13 @@
+{
+  "name": "mstrmnd-core",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build"
+  },
+  "devDependencies": {
+    "turbo": "latest",
+    "typescript": "latest"
+  },
+  "packageManager": "pnpm@10.0.0"
+}
