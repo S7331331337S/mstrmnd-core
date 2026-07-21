@@ -1,0 +1,5 @@
+{
+  "name":"@mstrmnd/mcp-server",
+  "private":true,
+  "scripts":{"dev":"tsx src/server.ts"}
+}
