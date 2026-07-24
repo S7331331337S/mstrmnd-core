@@ -1,6 +1,14 @@
 {
-  "name":"@mstrmnd/hermes",
-  "private":true,
-  "scripts":{"dev":"tsx src/index.ts"},
-  "dependencies":{}
+  "name": "@mstrmnd/hermes",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "tsx src/index.ts" },
+  "dependencies": {
+    "@mstrmnd/intelligence-core": "workspace:*",
+    "@mstrmnd/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "latest",
+    "@types/node": "latest"
+  }
 }

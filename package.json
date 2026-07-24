@@ -3,11 +3,14 @@
   "private": true,
   "scripts": {
     "dev": "turbo dev",
-    "build": "turbo build"
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "turbo": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "tsx": "latest",
+    "@types/node": "latest"
   },
   "packageManager": "pnpm@10.0.0"
 }
