@@ -45,6 +45,9 @@ importers:
 
   packages/agents:
     dependencies:
+      '@mstrmnd/intelligence-core':
+        specifier: workspace:*
+        version: link:../intelligence-core
       '@mstrmnd/schemas':
         specifier: workspace:*
         version: link:../schemas
