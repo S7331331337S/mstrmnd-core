@@ -2,5 +2,9 @@
   "name":"@mstrmnd/mcp-server",
   "private":true,
   "scripts":{"dev":"tsx src/server.ts"},
+  "dependencies":{
+    "@mstrmnd/intelligence-core":"workspace:*",
+    "@mstrmnd/schemas":"workspace:*"
+  },
   "devDependencies":{"tsx":"latest"}
 }
