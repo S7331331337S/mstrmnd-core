@@ -20,17 +20,21 @@ export class MemoryEngine {
   }
 
   /**
-   * Keyword search over title + relationships. Case-insensitive.
-   * Returns nodes whose title or any relationship contains the query.
+   * Tokenized, scored search over title + relationships (case-insensitive).
+   * Title matches weigh more than relationship matches; partial tokens count.
+   * Empty query returns everything. Results are sorted by descending score.
    */
   search(query: string): { query: string; memories: MemoryNode[] } {
-    const q = query.toLowerCase();
-    const memories = this.nodes.filter(
-      (n) =>
-        n.title.toLowerCase().includes(q) ||
-        n.relationships.some((r) => r.toLowerCase().includes(q))
-    );
-    return { query, memories };
+    const tokens = tokenize(query);
+    if (tokens.length === 0) {
+      return { query, memories: [...this.nodes] };
+    }
+    const scored = this.nodes
+      .map((node) => ({ node, score: scoreNode(node, tokens) }))
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((s) => s.node);
+    return { query, memories: scored };
   }
 
   /**
@@ -50,4 +54,31 @@ export class MemoryEngine {
     }
     return this.nodes;
   }
+}
+
+const TITLE_WEIGHT = 3;
+const RELATIONSHIP_WEIGHT = 1;
+
+function tokenize(input: string): string[] {
+  return input
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean);
+}
+
+/** Score a node against query tokens. Title hits outrank relationship hits;
+ *  a token matching the whole field scores higher than a partial substring. */
+function scoreNode(node: MemoryNode, tokens: string[]): number {
+  const title = node.title.toLowerCase();
+  const rels = node.relationships.map((r) => r.toLowerCase());
+  let score = 0;
+  for (const tok of tokens) {
+    if (title === tok) score += TITLE_WEIGHT * 2;
+    else if (title.includes(tok)) score += TITLE_WEIGHT;
+    for (const rel of rels) {
+      if (rel === tok) score += RELATIONSHIP_WEIGHT * 2;
+      else if (rel.includes(tok)) score += RELATIONSHIP_WEIGHT;
+    }
+  }
+  return score;
 }
