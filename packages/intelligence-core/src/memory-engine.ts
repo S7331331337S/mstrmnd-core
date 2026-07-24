@@ -1,11 +1,20 @@
 import type { MemoryNode } from "@mstrmnd/schemas";
 import { readVault, type VaultNote } from "../../../connectors/obsidian/vault-reader";
+import { GraphEngine } from "./graph-engine";
 
 export class MemoryEngine {
   private nodes: MemoryNode[] = [];
+  private graph = new GraphEngine();
 
-  /** Store a single memory node. */
+  /** Store a single memory node. Links it into the tag graph against
+   *  every existing node that shares a tag. */
   store(node: MemoryNode): MemoryNode {
+    for (const existing of this.nodes) {
+      const shared = node.relationships.filter((t) => existing.relationships.includes(t));
+      for (const tag of shared) {
+        this.graph.link(node.id, existing.id, `tag:${tag}`);
+      }
+    }
     this.nodes.push(node);
     return node;
   }
@@ -13,6 +22,11 @@ export class MemoryEngine {
   /** Return all stored nodes. */
   all(): MemoryNode[] {
     return this.nodes;
+  }
+
+  /** The underlying relationship graph (tag-derived edges built on vault load). */
+  get relationships(): GraphEngine {
+    return this.graph;
   }
 
   get size(): number {
