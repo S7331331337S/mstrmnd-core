@@ -53,7 +53,8 @@ export class MemoryEngine {
 
   /**
    * Load an Obsidian vault into the memory graph. Each note becomes a
-   * `MemoryNode` of type 'memory', with its tags as relationships.
+   * `MemoryNode` of type 'memory', with its tags as relationships. Wikilinks
+   * and shared folders become graph edges.
    */
   async loadVault(vaultPath: string): Promise<MemoryNode[]> {
     const notes: VaultNote[] = await readVault(vaultPath);
@@ -66,7 +67,40 @@ export class MemoryEngine {
         relationships: note.tags,
       });
     }
+    this.buildLinkGraph(notes);
     return this.nodes;
+  }
+
+  /** Resolve `[[wikilinks]]` and shared folders into graph edges. */
+  private buildLinkGraph(notes: VaultNote[]): void {
+    const byKey = new Map<string, string>(); // title or relativePath -> node id
+    for (const n of notes) {
+      byKey.set(n.title.toLowerCase(), n.relativePath);
+      byKey.set(n.relativePath.toLowerCase(), n.relativePath);
+    }
+    for (const n of notes) {
+      for (const link of n.links) {
+        const targetId = byKey.get(link.toLowerCase());
+        if (targetId && targetId !== n.relativePath) {
+          this.graph.link(n.relativePath, targetId, "link");
+        }
+      }
+    }
+    // folder co-location (skip root-level notes)
+    const byFolder = new Map<string, string[]>();
+    for (const n of notes) {
+      if (!n.folder) continue;
+      const list = byFolder.get(n.folder) ?? [];
+      list.push(n.relativePath);
+      byFolder.set(n.folder, list);
+    }
+    for (const ids of byFolder.values()) {
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          this.graph.link(ids[i], ids[j], "folder");
+        }
+      }
+    }
   }
 }
 

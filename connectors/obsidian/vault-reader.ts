@@ -12,14 +12,36 @@ export interface VaultNote {
   body: string;
   /** Tags from `#tag` inline mentions and YAML `tags:` frontmatter */
   tags: string[];
+  /** Wikilink targets found in the body, e.g. "20-Areas/Mstrmnd" */
+  links: string[];
+  /** Vault-root-relative folder the note lives in ("" for root) */
+  folder: string;
 }
 
 const SKIP_DIRS = new Set([".obsidian", ".git", ".trash", "_attachments"]);
+
+function extractLinks(body: string): string[] {
+  const raw = body.match(/\[\[([^\]]+)\]\]/g) ?? [];
+  return Array.from(
+    new Set(
+      raw.map((m) => {
+        const inner = m.slice(2, -2).split("|")[0].trim(); // drop alias after |
+        return inner.toLowerCase();
+      })
+    )
+  );
+}
 
 function extractTags(body: string, frontmatterTags: string[]): string[] {
   const inline = body.match(/#([\p{L}\d/_-]+)/gu) ?? [];
   const inlineTags = inline.map((m) => m.slice(1).toLowerCase());
   return Array.from(new Set([...frontmatterTags, ...inlineTags]));
+}
+
+function folderOf(vaultRoot: string, abs: string): string {
+  const rel = relative(vaultRoot, abs);
+  const dir = rel.split("/").slice(0, -1).join("/");
+  return dir;
 }
 
 function stripFrontmatter(raw: string): {
@@ -73,6 +95,8 @@ async function walk(dir: string, vaultRoot: string, out: VaultNote[]) {
         title,
         body: body.trim(),
         tags: extractTags(body, fmTags),
+        links: extractLinks(body),
+        folder: folderOf(vaultRoot, abs),
       });
     }
   }
