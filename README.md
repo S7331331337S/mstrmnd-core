@@ -19,3 +19,10 @@ MSTRMND is a user-owned intelligence layer for memory, identity, visual understa
 ## Status
 
 Genesis build.
+
+## Generate Architecture PDF
+
+```bash
+python -m pip install reportlab
+python scripts/generate_arch_spec.py --output /tmp/MSTRMND_Core_Technical_Architecture_Specification.pdf
+```
