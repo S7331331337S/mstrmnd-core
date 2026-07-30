@@ -2,3 +2,15 @@ node_modules/
 .turbo/
 .DS_Store
 *.log
+
+# Python (editorial engine)
+.venv/
+__pycache__/
+*.pyc
+
+# Local env
+.env
+
+# Generated editorial output
+kits/
+published/

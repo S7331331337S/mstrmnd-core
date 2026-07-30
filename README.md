@@ -16,9 +16,97 @@ MSTRMND is a user-owned intelligence layer for memory, identity, visual understa
 - Multimodal Intelligence
 - Creative Intelligence
 
+## Local MVP — Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm 10+
+- An Obsidian vault on disk
+
+### 1. Install
+
+```bash
+pnpm install
+```
+
+### 2. Configure vault path
+
+Copy the example env file and set your vault location:
+
+```bash
+cp .env.example .env
+# Edit .env and set OBSIDIAN_VAULT_PATH if not using the default
+```
+
+Default vault path: `~/Documents/Obsidian Vault`
+
+### 3. Add identity profile (optional but recommended)
+
+Copy the starter template into your vault:
+
+```bash
+cp templates/identity.md "$OBSIDIAN_VAULT_PATH/identity.md"
+# Edit values, interests, and preferences to match you
+```
+
+### 4. Smoke test — Hermes vault load
+
+```bash
+OBSIDIAN_VAULT_PATH="/path/to/your/vault" pnpm --filter @mstrmnd/hermes dev
+```
+
+Expected output: note count, identity status, sample titles.
+
+### 5. Connect to Cursor via MCP
+
+Add to your Cursor MCP config (`~/.cursor/mcp.json` or project-level):
+
+```json
+{
+  "mcpServers": {
+    "mstrmnd": {
+      "command": "pnpm",
+      "args": ["--filter", "@mstrmnd/mcp-server", "start"],
+      "cwd": "/Users/steele/mstrmnd-core",
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/path/to/your/vault"
+      }
+    }
+  }
+}
+```
+
+Restart Cursor. The server exposes three tools:
+
+| Tool | Description |
+|------|-------------|
+| `search_memory` | Keyword search over note titles, tags, and body |
+| `get_note` | Retrieve full note content by path or title |
+| `get_identity` | Return your vault-authored identity profile |
+
+### 6. Typecheck
+
+```bash
+pnpm typecheck
+```
+
+## Optional — iCloud vault map
+
+Generate digest notes from iCloud/local folders into your vault:
+
+```bash
+python3 scripts/sync-vault-map.py --dry   # preview
+python3 scripts/sync-vault-map.py         # write notes
+# or via launchd wrapper:
+bash scripts/run-icloud-map.sh
+```
+
 ## Status
 
-Genesis build.
+Local MVP: MCP server + full-text memory search + vault identity profile.
+
+Next up: semantic search (embeddings), Hermes agent loop, multimodal vision.
 
 ## Generate Architecture PDF
 
