@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mstrmnd/schemas": "workspace:*"
+    "@mstrmnd/schemas": "workspace:*",
+    "@mstrmnd/connectors": "workspace:*"
   }
 }

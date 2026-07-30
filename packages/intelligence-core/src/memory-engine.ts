@@ -1,5 +1,5 @@
 import type { MemoryNode } from "@mstrmnd/schemas";
-import { readVault, type VaultNote } from "../../../connectors/obsidian/vault-reader";
+import { readVault, type VaultNote } from "@mstrmnd/connectors";
 import { GraphEngine } from "./graph-engine";
 
 export class MemoryEngine {
@@ -24,6 +24,14 @@ export class MemoryEngine {
     return this.nodes;
   }
 
+  /** Look up a node by relative path or title (case-insensitive). */
+  get(id: string): MemoryNode | undefined {
+    const key = id.toLowerCase();
+    return this.nodes.find(
+      (n) => n.id.toLowerCase() === key || n.title.toLowerCase() === key
+    );
+  }
+
   /** The underlying relationship graph (tag-derived edges built on vault load). */
   get relationships(): GraphEngine {
     return this.graph;
@@ -34,8 +42,8 @@ export class MemoryEngine {
   }
 
   /**
-   * Tokenized, scored search over title + relationships (case-insensitive).
-   * Title matches weigh more than relationship matches; partial tokens count.
+   * Tokenized, scored search over title + content + relationships (case-insensitive).
+   * Title matches weigh more than content; relationship matches weigh least.
    * Empty query returns everything. Results are sorted by descending score.
    */
   search(query: string): { query: string; memories: MemoryNode[] } {
@@ -57,12 +65,15 @@ export class MemoryEngine {
    * and shared folders become graph edges.
    */
   async loadVault(vaultPath: string): Promise<MemoryNode[]> {
+    this.nodes = [];
+    this.graph = new GraphEngine();
     const notes: VaultNote[] = await readVault(vaultPath);
     for (const note of notes) {
       this.store({
         id: note.relativePath,
         type: "memory",
         title: note.title,
+        content: note.body,
         confidence: 1,
         relationships: note.tags,
       });
@@ -73,10 +84,12 @@ export class MemoryEngine {
 
   /** Resolve `[[wikilinks]]` and shared folders into graph edges. */
   private buildLinkGraph(notes: VaultNote[]): void {
-    const byKey = new Map<string, string>(); // title or relativePath -> node id
+    const byKey = new Map<string, string>();
     for (const n of notes) {
       byKey.set(n.title.toLowerCase(), n.relativePath);
       byKey.set(n.relativePath.toLowerCase(), n.relativePath);
+      const withoutExt = n.relativePath.replace(/\.md$/i, "");
+      byKey.set(withoutExt.toLowerCase(), n.relativePath);
     }
     for (const n of notes) {
       for (const link of n.links) {
@@ -86,7 +99,6 @@ export class MemoryEngine {
         }
       }
     }
-    // folder co-location (skip root-level notes)
     const byFolder = new Map<string, string[]>();
     for (const n of notes) {
       if (!n.folder) continue;
@@ -105,6 +117,7 @@ export class MemoryEngine {
 }
 
 const TITLE_WEIGHT = 3;
+const CONTENT_WEIGHT = 1;
 const RELATIONSHIP_WEIGHT = 1;
 
 function tokenize(input: string): string[] {
@@ -114,19 +127,24 @@ function tokenize(input: string): string[] {
     .filter(Boolean);
 }
 
-/** Score a node against query tokens. Title hits outrank relationship hits;
- *  a token matching the whole field scores higher than a partial substring. */
-function scoreNode(node: MemoryNode, tokens: string[]): number {
-  const title = node.title.toLowerCase();
-  const rels = node.relationships.map((r) => r.toLowerCase());
+function scoreField(field: string, tokens: string[], weight: number): number {
   let score = 0;
   for (const tok of tokens) {
-    if (title === tok) score += TITLE_WEIGHT * 2;
-    else if (title.includes(tok)) score += TITLE_WEIGHT;
-    for (const rel of rels) {
-      if (rel === tok) score += RELATIONSHIP_WEIGHT * 2;
-      else if (rel.includes(tok)) score += RELATIONSHIP_WEIGHT;
-    }
+    if (field === tok) score += weight * 2;
+    else if (field.includes(tok)) score += weight;
+  }
+  return score;
+}
+
+/** Score a node against query tokens. Title hits outrank content hits. */
+function scoreNode(node: MemoryNode, tokens: string[]): number {
+  const title = node.title.toLowerCase();
+  const content = (node.content ?? "").toLowerCase();
+  const rels = node.relationships.map((r) => r.toLowerCase());
+  let score = scoreField(title, tokens, TITLE_WEIGHT);
+  score += scoreField(content, tokens, CONTENT_WEIGHT);
+  for (const rel of rels) {
+    score += scoreField(rel, tokens, RELATIONSHIP_WEIGHT);
   }
   return score;
 }

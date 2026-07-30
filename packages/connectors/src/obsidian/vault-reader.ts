@@ -25,7 +25,7 @@ function extractLinks(body: string): string[] {
   return Array.from(
     new Set(
       raw.map((m) => {
-        const inner = m.slice(2, -2).split("|")[0].trim(); // drop alias after |
+        const inner = m.slice(2, -2).split("|")[0].trim();
         return inner.toLowerCase();
       })
     )
@@ -54,10 +54,9 @@ function stripFrontmatter(raw: string): {
   const tags: string[] = [];
   const tagMatch = fmBody.match(/tags:\s*([\s\S]*?)(?:\n\w|$)/);
   if (tagMatch) {
-    const raw = tagMatch[1].trim();
-    if (raw.startsWith("[")) {
-      // YAML array form: [tag1, tag2]
-      raw
+    const rawTags = tagMatch[1].trim();
+    if (rawTags.startsWith("[")) {
+      rawTags
         .slice(1, -1)
         .split(",")
         .forEach((t) => {
@@ -65,8 +64,7 @@ function stripFrontmatter(raw: string): {
           if (v) tags.push(v.toLowerCase());
         });
     } else {
-      // YAML list form: each "- tag" on its own line
-      raw.split("\n").forEach((line) => {
+      rawTags.split("\n").forEach((line) => {
         const t = line.replace(/^-\s*/, "").trim().replace(/['"]/g, "");
         if (t) tags.push(t.toLowerCase());
       });
@@ -86,9 +84,7 @@ async function walk(dir: string, vaultRoot: string, out: VaultNote[]) {
       const raw = await readFile(abs, "utf8");
       const { body, tags: fmTags } = stripFrontmatter(raw);
       const h1 = body.match(/^#\s+(.+)$/m);
-      const title = h1
-        ? h1[1].trim()
-        : entry.name.replace(/\.md$/, "");
+      const title = h1 ? h1[1].trim() : entry.name.replace(/\.md$/, "");
       out.push({
         path: abs,
         relativePath: relative(vaultRoot, abs),

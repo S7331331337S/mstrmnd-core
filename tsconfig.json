@@ -13,5 +13,5 @@
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["apps", "packages", "connectors"]
+  "include": ["apps", "packages"]
 }
