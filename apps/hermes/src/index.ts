@@ -1,13 +1,5 @@
-import { MemoryEngine } from "@mstrmnd/intelligence-core";
-import { readFile } from "node:fs/promises";
+import { MemoryEngine, resolveVaultPath, loadIdentity } from "@mstrmnd/intelligence-core";
 import { existsSync } from "node:fs";
-
-function resolveVaultPath(): string {
-  // Allow override via OBSIDIAN_VAULT_PATH, else default to the user's vault.
-  const fromEnv = process.env.OBSIDIAN_VAULT_PATH;
-  if (fromEnv) return fromEnv;
-  return `${process.env.HOME}/Documents/Obsidian Vault`;
-}
 
 export class Hermes {
   private memory = new MemoryEngine();
@@ -18,17 +10,26 @@ export class Hermes {
 
     const vaultPath = resolveVaultPath();
     if (!existsSync(vaultPath)) {
-      console.log(`Reflection loop: WARNING vault not found at ${vaultPath}`);
+      console.log(`Memory substrate: WARNING vault not found at ${vaultPath}`);
+      console.log("Set OBSIDIAN_VAULT_PATH to your Obsidian vault directory.");
       return;
     }
 
     const nodes = await this.memory.loadVault(vaultPath);
     console.log(`Memory substrate: loaded ${nodes.length} notes from vault`);
 
+    const identity = await loadIdentity(vaultPath);
+    const profileLoaded =
+      identity.values.length > 0 || identity.interests.length > 0;
+    console.log(
+      profileLoaded
+        ? `Identity profile: ${identity.values.length} values, ${identity.interests.length} interests`
+        : "Identity profile: not found (add identity.md to vault)"
+    );
+
     const titles = nodes.slice(0, 5).map((n) => n.title);
     console.log("Indexed sample: " + titles.join(" | "));
-
-    console.log("Reflection loop: active");
+    console.log("Use @mstrmnd/mcp-server for Cursor integration.");
   }
 }
 

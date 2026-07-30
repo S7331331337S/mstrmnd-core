@@ -1,3 +1,5 @@
 export { MemoryEngine } from "./memory-engine";
 export { VectorEngine } from "./vector-engine";
 export { GraphEngine } from "./graph-engine";
+export { resolveVaultPath } from "./vault-path";
+export { loadIdentity, EMPTY_IDENTITY } from "./identity-loader";
