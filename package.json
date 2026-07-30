@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "hermes": "pnpm --filter @mstrmnd/hermes dev",
+    "mcp": "pnpm --filter @mstrmnd/mcp-server start"
   },
   "devDependencies": {
     "turbo": "latest",

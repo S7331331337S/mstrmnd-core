@@ -1,10 +1,18 @@
 {
-  "name":"@mstrmnd/mcp-server",
-  "private":true,
-  "scripts":{"dev":"tsx src/server.ts"},
-  "dependencies":{
-    "@mstrmnd/intelligence-core":"workspace:*",
-    "@mstrmnd/schemas":"workspace:*"
+  "name": "@mstrmnd/mcp-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts"
   },
-  "devDependencies":{"tsx":"latest"}
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@mstrmnd/intelligence-core": "workspace:*",
+    "@mstrmnd/schemas": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "tsx": "latest"
+  }
 }
