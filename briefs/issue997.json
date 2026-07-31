@@ -1,0 +1,23 @@
+{
+  "source": "X",
+  "author": "Y",
+  "credit": "Z",
+  "issue": 997,
+  "url": "MSTRMND.AI",
+  "headline": "TEST",
+  "subheadline": "t",
+  "cta": "READ",
+  "quote": "q",
+  "footer_tags": "T",
+  "copyright": "C",
+  "quotes": [
+    "q"
+  ],
+  "carousel": [
+    [
+      "COVER",
+      "c",
+      "b"
+    ]
+  ]
+}

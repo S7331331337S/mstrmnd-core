@@ -1,0 +1,61 @@
+{
+  "source": "MSTRMND HQ",
+  "author": "STEELE M. BURNSIDE",
+  "credit": "MSTRMND MEDIA LAB",
+  "issue": 4,
+  "url": "MSTRMND.AI",
+  "headline": "THE FUTURE OF ENERGY WITH AI",
+  "subheadline": "How intelligent grids and autonomous generation reshape the power economy.",
+  "cta": "READ THE REPORT",
+  "quote": "The grid of 2030 thinks for itself.",
+  "footer_tags": "INDEPENDENT RESEARCH \u2022 ENERGY \u2022 AI \u2022 FUTURE",
+  "copyright": "\u00a9 2026 MSTRMND. ALL RIGHTS RESERVED.",
+  "intake_url": "mstrmnd.ai/intake",
+  "quotes": [
+    "The grid of 2030 thinks for itself.",
+    "Storage turns intermittent renewables into a firm asset.",
+    "Orchestration is the constraint now."
+  ],
+  "carousel": [
+    [
+      "COVER",
+      "The Future of Energy With AI",
+      "Intelligent grids reshape the power economy."
+    ],
+    [
+      "THE PROBLEM",
+      "The grid is blind",
+      "Centralized control reacts slowly."
+    ],
+    [
+      "THE SHIFT",
+      "Self-balancing load",
+      "Storage smooths supply in real time."
+    ],
+    [
+      "THE NEW MODEL",
+      "Orchestrate the grid",
+      "Operators set guardrails; AI balances load."
+    ],
+    [
+      "KEY INSIGHT",
+      "Storage is the unlock",
+      "Intermittency stops mattering once storable."
+    ],
+    [
+      "EXAMPLE",
+      "One operator, regional scale",
+      "A single controller supervises a region."
+    ],
+    [
+      "PREDICTION",
+      "Autonomous grid by 2030",
+      "Agent-orchestrated grids win on reliability."
+    ],
+    [
+      "WHAT'S NEXT",
+      "Build the guardrails",
+      "Map the network. Define intent. Optimize."
+    ]
+  ]
+}

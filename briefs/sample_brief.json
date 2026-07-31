@@ -1,0 +1,29 @@
+{
+  "source": "MSTRMND HQ",
+  "author": "STEELE M. BURNSIDE",
+  "credit": "MSTRMND MEDIA LAB",
+  "issue": 3,
+  "url": "MSTRMND.AI",
+  "headline": "THE FUTURE OF LOGISTICS WITH AI",
+  "subheadline": "How autonomous fleets and intelligent routing reshape the supply chain.",
+  "cta": "READ THE REPORT",
+  "quote": "The warehouse of 2030 runs itself; humans design the system, machines move the freight.",
+  "footer_tags": "INDEPENDENT RESEARCH  •  LOGISTICS  •  AI  •  FUTURE",
+  "copyright": "© 2026 MSTRMND. ALL RIGHTS RESERVED.",
+  "intake_url": "mstrmnd.ai/intake",
+  "quotes": [
+    "The warehouse of 2030 runs itself; humans design the system, machines move the freight.",
+    "Routing intelligence turns idle trucks into a self-optimizing network.",
+    "Last-mile autonomy is the unlock — the most expensive, most human part of the chain."
+  ],
+  "carousel": [
+    ["COVER", "The Future of Logistics With AI", "Autonomous fleets and intelligent routing reshape the supply chain."],
+    ["THE PROBLEM", "Freight is blind", "Most routing is reactive, manual, and blind to real-time conditions."],
+    ["THE SHIFT", "Self-optimizing fleets", "Vehicles re-route, consolidate, and idle intelligently."],
+    ["THE NEW MODEL", "Orchestrate the network", "Operators set constraints; AI balances cost, speed, carbon."],
+    ["KEY INSIGHT", "Margin is in the math", "Small routing gains compound across thousands of daily trips."],
+    ["EXAMPLE", "One dispatcher, city-scale", "A single operator supervises what once needed a floor of planners."],
+    ["PREDICTION", "Autonomous last-mile by 2030", "The costly final mile becomes the most automated."],
+    ["WHAT'S NEXT", "Build the system", "Map the network. Define intent. Let it optimize."]
+  ]
+}
