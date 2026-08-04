@@ -64,23 +64,22 @@ Details: [`runtime-boundaries.md`](./runtime-boundaries.md), [`doctrine-integrat
 
 What actually works today:
 
-- Obsidian vault → `MemoryEngine` (ranked keyword search) + in-memory graph (tags / wikilinks / folders)
-- Vault-authored `identity.md` loading
-- MCP server tools: `search_memory`, `get_note`, `get_identity` (early plugin surface)
-- Hermes CLI vault smoke-load (**not** an orchestrator yet)
-- Scope + provenance on memory / identity / artifacts; Obsidian → `MemorySourceRecord` adapter
-- Audit + policy **schemas only** (not enforced in a live agent loop)
-- Doctrine pin **active** at `S7331331337S/mstrmnd.md@7db4af9a67baed2d20be9b4ded2bc7fe6ce9ecfc` + CI verify gate
+- Obsidian vault → `MemoryEngine` + graph; scoped memory/identity/artifacts
+- `assembleContext()` → `ContextPack` (doctrine pin + company/operator + identity + memory hits)
+- `WorkspaceService` mounts with list/read/stat and path-escape denial
+- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (`EchoProvider`)
+- Shared `createRuntime()` factory used by Hermes and MCP
+- MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`
+- Operator pack template + `pnpm operator:init`
+- Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
 
-What is missing for the current focus:
+What is still thin / next:
 
-- Company / business / operator **context assembly** (doctrine + identity + workspace)
-- Agent **orchestrator** (parent agent, sub-agents, run state)
-- First-class **folder/file workspace** contracts beyond Obsidian notes-as-memory
-- Agent / sub-agent specs wired into Hermes
-- Transportable **plugin** packaging beyond today’s MCP server
-- **Template** for onboarding a new operator/harness
+- Real model providers (only `EchoProvider` offline stub today)
+- Workspace write tools + stronger policy enforcement
+- Additional host transports beyond MCP stdio
+- Multi-operator managed deploy
 
 ---
 
@@ -105,9 +104,11 @@ Full longer roadmap: [`modernization-roadmap.md`](./modernization-roadmap.md). P
 
 ## Active phase
 
-**Intelligence layer core — context, workspace, orchestrator, agents.**
+**Intelligence layer core — landed (context, workspace, orchestrator, plugin factory, operator pack).**
 
-Phase 0 (doctrine) and Phase 1 (scope schemas) are done. PRESS reference workflow is deferred.
+Next hardening: real model providers, workspace writes behind policy, broader harness adapters.
+
+PRESS reference workflow remains deferred.
 
 ---
 
@@ -121,32 +122,14 @@ Update checkboxes here when work lands.
 - [x] Scope / provenance on memory, identity, artifacts
 - [x] Obsidian adapter boundary (`MemorySourceRecord`)
 - [x] Audit + policy schema contracts
-
-### Now — operator context + workspace
-
-- [ ] Define **operator / company / business context** schema (org profile, goals, systems map pointers, brand refs, doctrine slice)
-- [ ] Context assembler: doctrine (pinned) + identity + memory retrieval → scoped context pack for a run
-- [ ] **Workspace** model: folders, files, mounts with scope + provenance (Obsidian/fs as adapters)
-- [ ] MCP tools for workspace read/list (files/folders) without breaking existing memory tools
-
-### Next — orchestrator + agents
-
-- [ ] Run state model (run id, parent agent, sub-agents, status, scope)
-- [ ] Hermes evolves from smoke CLI → **orchestrator shell** (dispatch one parent agent)
-- [ ] Sub-agent handoff contract (input/output schema, permissions subset of parent)
-- [ ] Wire at least one real agent path (not Vision stub-only) against context + workspace
-- [ ] Record doctrine ref + scope on every run
-
-### Then — transportable plugin
-
-- [ ] Package MCP (and later other hosts) as the **plugin boundary**: stable tool/resource API over core
-- [ ] Document how a host loads MSTRMND (env, doctrine pin, workspace root, identity)
-- [ ] Keep providers replaceable behind the plugin
-
-### Later — onboarding template
-
-- [ ] Operator template: folder layout + context stubs + agent graph defaults + harness adapter config
-- [ ] “New operator” bootstrap that does not fork `mstrmnd-core`
+- [x] Define **operator / company / business context** schema
+- [x] Context assembler: doctrine + identity + memory → `ContextPack`
+- [x] **Workspace** model: mounts, list/read/stat with path guards
+- [x] MCP tools for workspace + context (`get_context`, `list_workspace`, `read_file`)
+- [x] Run state / agent specs + orchestrator + EchoProvider
+- [x] Hermes orchestrator shell (parent + workspace-scout sub-agent)
+- [x] Shared `createRuntime` factory (MCP + Hermes plugin boundary)
+- [x] Operator pack template + `pnpm operator:init`
 
 ### Deferred (do not start unless asked)
 
@@ -154,6 +137,8 @@ Update checkboxes here when work lands.
 - Brand verify / Signal-on-publish wiring
 - Full multi-tenant managed deploy
 - Empty package scaffolding for optics
+- Real model providers beyond EchoProvider
+- Workspace write tools
 
 ---
 
@@ -206,6 +191,6 @@ Update checkboxes here when work lands.
 ## Status stamp
 
 - **Last aligned:** 2026-08-04
-- **Priority shift:** Away from PRESS; toward agent intelligence, operator/company context, orchestrator, agents/sub-agents, files/folders, then plugin → template
-- **Code maturity:** Scoped memory MVP + doctrine pin; orchestrator/context/workspace not built yet
-- **Next merge target:** operator/company context schema + context assembler skeleton
+- **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template
+- **Next:** Real model provider wiring; workspace writes behind policy

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Example host config for loading MSTRMND as a transportable plugin",
+  "workspace": {
+    "vaultPathEnv": "OBSIDIAN_VAULT_PATH",
+    "mounts": [
+      { "id": "vault", "adapter": "obsidian", "fromEnv": "OBSIDIAN_VAULT_PATH" }
+    ]
+  },
+  "doctrine": {
+    "pinFile": "doctrine.pin.json",
+    "syncCommand": "pnpm doctrine:sync"
+  },
+  "model": {
+    "providerEnv": "MSTRMND_MODEL_PROVIDER",
+    "default": "echo"
+  },
+  "mcp": {
+    "command": "pnpm",
+    "args": ["--filter", "@mstrmnd/mcp-server", "start"],
+    "cwd": "<path-to-mstrmnd-core>",
+    "env": {
+      "OBSIDIAN_VAULT_PATH": "<path-to-this-operator-pack-or-vault>"
+    }
+  },
+  "hermes": {
+    "command": "pnpm hermes",
+    "args": ["--goal", "Summarize operator context", "--dry-run"]
+  }
+}

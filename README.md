@@ -143,23 +143,28 @@ Default vault path:
 ~/Documents/Obsidian Vault
 ```
 
-### 3. Add an identity profile
+### 3. Add identity + company + operator profiles
 
 ```bash
-cp templates/identity.md "$OBSIDIAN_VAULT_PATH/identity.md"
+cp templates/identity.md templates/company.md templates/operator.md "$OBSIDIAN_VAULT_PATH/"
 ```
 
-Edit the profile to reflect the operator's values, interests, preferences, and working context.
-
-### 4. Smoke test Hermes
+Or bootstrap a standalone operator pack:
 
 ```bash
-OBSIDIAN_VAULT_PATH="/path/to/your/vault" pnpm --filter @mstrmnd/hermes dev
+pnpm operator:init --dir ../my-operator
+export OBSIDIAN_VAULT_PATH="/absolute/path/to/my-operator"
 ```
 
-Expected output includes note count, identity status, and sample titles.
+### 4. Smoke test Hermes (orchestrator)
 
-### 5. Connect through MCP
+```bash
+OBSIDIAN_VAULT_PATH="/path/to/your/vault" pnpm hermes -- --goal "Summarize operator context" --dry-run
+```
+
+Expected: context summary, doctrine ref, workspace mounts, run status `succeeded` (EchoProvider).
+
+### 5. Connect through MCP (plugin)
 
 Add the server to Cursor or another MCP-compatible client:
 
@@ -178,21 +183,35 @@ Add the server to Cursor or another MCP-compatible client:
 }
 ```
 
-The current server exposes:
+Tools:
 
 | Tool | Description |
 |---|---|
 | `search_memory` | Ranked search over note titles, tags, and content |
 | `get_note` | Retrieve note content by path or title |
 | `get_identity` | Return the parsed identity profile |
+| `get_context` | Assembled ContextPack (company, operator, doctrine, memory) |
+| `list_workspace` | List files/folders under a mount |
+| `read_file` | Read a mount-relative file (size-capped) |
+| `list_agents` | Registered agent specs |
+| `run_agent` | Dispatch an orchestrator run |
 
 ### 6. Verify
 
 ```bash
 pnpm verify
+pnpm hermes -- --dry-run
 ```
 
-Runs `pnpm typecheck` plus the doctrine pin/fixture gate (`pnpm doctrine:ci`).
+### Host integration
+
+Hermes CLI and MCP both boot via `createRuntime()` in `@mstrmnd/intelligence-core`. Configure:
+
+- `OBSIDIAN_VAULT_PATH` — vault or operator-pack root
+- `MSTRMND_MODEL_PROVIDER` — default `echo` (offline)
+- Doctrine: `pnpm doctrine:sync` then pinned `doctrine.pin.json`
+
+See `templates/operator-pack/mstrmnd.host.json` for a full host example.
 
 ## Optional iCloud Vault Map
 
@@ -217,13 +236,11 @@ bash scripts/run-icloud-map.sh
 
 ## Status
 
-Current state: local MVP with scoped memory, identity, graph, MCP plugin surface, doctrine pin, and connector foundations.
+Current state: Operator Zero intelligence layer — context packs, workspace mounts, Hermes orchestrator (parent + sub-agent), shared runtime factory, MCP plugin tools, operator-pack template, doctrine pin.
 
-**Active focus:** agent intelligence layer — company/business/operator context, workspace files/folders, orchestrator, agents/sub-agents — then transportable plugin, then harness onboarding template.
+**Deferred:** PRESS / editorial governance; real model providers beyond Echo.
 
-**Deferred:** PRESS / editorial governance (worker remains; not the current dogfood loop).
-
-**Agents (Claude / GPT / Grok / Copilot / etc.):** read [`docs/MASTER.md`](docs/MASTER.md) before planning or coding.
+**Agents:** read [`docs/MASTER.md`](docs/MASTER.md) before planning or coding.
 
 ## Architecture Specification
 

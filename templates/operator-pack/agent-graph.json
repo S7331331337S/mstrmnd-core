@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "agents": [
+    {
+      "id": "operator-agent",
+      "role": "parent",
+      "subAgents": ["workspace-scout"]
+    },
+    {
+      "id": "workspace-scout",
+      "role": "subagent"
+    }
+  ]
+}
