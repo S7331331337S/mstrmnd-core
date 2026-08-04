@@ -15,10 +15,13 @@ Canonical doctrine lives in [`mstrmnd.md`](https://github.com/S7331331337S/mstrm
 
 ### Operator Zero strategy
 
-1. **Build for ourselves first** — dogfood the runtime as Operator Zero on MSTRMND’s own memory, brand, editorial PRESS loop, and approvals.
-2. **Then productize for other operators** — same framework; their org/workspace context, policies, and connectors are configuration and adapters, not a fork.
+1. **Build for ourselves first** — company/operator context, workspace files, Hermes orchestrator, agents/sub-agents, doctrine-backed intelligence.
+2. **Ship as a transportable plugin** — same layer loads into hosts (MCP first, then other harnesses).
+3. **Then template** — onboard other operators onto any supported harness without forking core.
 
-Do not invent empty platform packages or multi-tenant client productization before Operator Zero can run a governed loop.
+**Deferred:** PRESS / editorial publish-gate work — do not expand unless explicitly requested.
+
+Do not invent empty platform packages before Operator Zero context + orchestrator are real.
 
 ## Stack & tooling
 
