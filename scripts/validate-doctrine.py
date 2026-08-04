@@ -214,11 +214,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.fixture:
         run_fixture_selftest()
-        # Still validate committed pin policy afterward (non-strict unless requested).
+        # Fixture sync writes into .generated for the self-test only. Validate the
+        # committed pin policy here, but do not compare it to the fixture manifest.
+        # Live manifest checks run after a real sync (`--strict` / CI active path).
         pin = load_pin(args.pin)
-        errors = validate_pin(pin, strict=args.strict)
-        if pin.get("status") == "active":
-            errors.extend(validate_manifest(pin))
+        errors = validate_pin(pin, strict=False)
         if errors:
             print("doctrine pin validation failed:", file=sys.stderr)
             for err in errors:
@@ -229,6 +229,11 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 "note: doctrine pin is awaiting repository access; "
                 "sync real mstrmnd.md when available"
+            )
+        elif pin.get("status") == "active":
+            print(
+                f"note: committed pin is active at {pin.get('repository')}@"
+                f"{pin.get('ref')}; run sync + --strict to verify live manifest"
             )
         return 0
 

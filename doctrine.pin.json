@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1.0.0",
   "repository": "S7331331337S/mstrmnd.md",
-  "ref": null,
-  "status": "awaiting_repository_access",
-  "notes": "Set ref to a full 40-char commit SHA and status to active once mstrmnd.md is accessible. Do not pin floating branches (main/master).",
+  "ref": "7db4af9a67baed2d20be9b4ded2bc7fe6ce9ecfc",
+  "status": "active",
+  "notes": "Pinned to a reviewed mstrmnd.md commit. Bump ref via sync after doctrine merges; never use floating main/master.",
   "requiredFiles": [
     "README.md",
     "company/philosophy.md",
