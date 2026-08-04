@@ -166,7 +166,9 @@ Exit criteria:
 
 ## First Reference Workflow
 
-Use the closed-loop editorial system as the first governed reference workflow:
+> **Priority update (2026-08-04):** PRESS/editorial is deferred. The active Operator Zero loop is **context → workspace → orchestrator → agents/sub-agents → plugin**. See [`MASTER.md`](./MASTER.md).
+
+Historical note — closed-loop editorial remains a valid *future* governed workflow once the intelligence layer is solid:
 
 ```text
 Campaign brief
@@ -181,7 +183,16 @@ Campaign brief
 → next-brief recommendation
 ```
 
-This workflow exercises context, memory, models, skills, tools, approvals, evaluation, observability, and learning while building on code already present in the repository.
+Near-term reference loop instead:
+
+```text
+Operator / company context (doctrine + identity + business profile)
+→ workspace files/folders
+→ orchestrator run (parent agent)
+→ sub-agent handoffs
+→ tool/memory actions under scope + policy
+→ host plugin (MCP / harness)
+```
 
 ## Non-Goals
 

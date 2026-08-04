@@ -217,11 +217,11 @@ bash scripts/run-icloud-map.sh
 
 ## Status
 
-Current state: local MVP with live memory, identity, graph, MCP, connector, and editorial foundations.
+Current state: local MVP with scoped memory, identity, graph, MCP plugin surface, doctrine pin, and connector foundations.
 
-Strategy: **Operator Zero first** — dogfood this runtime on MSTRMND’s own work, then productize the same model-agnostic framework for other operators (their context/policies/connectors as configuration, not a fork).
+**Active focus:** agent intelligence layer — company/business/operator context, workspace files/folders, orchestrator, agents/sub-agents — then transportable plugin, then harness onboarding template.
 
-Next state: close Phase 0 (doctrine pin + sync + CI), then generalize schemas/scope and the governed editorial loop while preserving the working local-first path.
+**Deferred:** PRESS / editorial governance (worker remains; not the current dogfood loop).
 
 **Agents (Claude / GPT / Grok / Copilot / etc.):** read [`docs/MASTER.md`](docs/MASTER.md) before planning or coding.
 
