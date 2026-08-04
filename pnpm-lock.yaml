@@ -45,6 +45,9 @@ importers:
       '@mstrmnd/intelligence-core':
         specifier: workspace:*
         version: link:../../packages/intelligence-core
+      '@mstrmnd/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
       '@mstrmnd/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas

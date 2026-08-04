@@ -5,6 +5,7 @@
   "scripts": { "dev": "tsx src/index.ts" },
   "dependencies": {
     "@mstrmnd/intelligence-core": "workspace:*",
+    "@mstrmnd/plugin-sdk": "workspace:*",
     "@mstrmnd/schemas": "workspace:*"
   },
   "devDependencies": {
