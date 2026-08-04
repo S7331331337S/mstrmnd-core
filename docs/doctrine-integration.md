@@ -10,12 +10,38 @@ The integration must be explicit, versioned, reviewable, and reproducible. Runti
 
 ## Required Configuration
 
-```env
-MSTRMND_DOCTRINE_REPOSITORY=S7331331337S/mstrmnd.md
-MSTRMND_DOCTRINE_REF=<reviewed-commit-sha-or-release-tag>
+Committed pin (source of truth):
+
+```text
+doctrine.pin.json
 ```
 
-A future sync command should resolve those values and generate a local manifest.
+Optional local/CI env overrides (see `.env.doctrine.example`):
+
+```env
+MSTRMND_DOCTRINE_REPOSITORY=S7331331337S/mstrmnd.md
+MSTRMND_DOCTRINE_REF=<reviewed-40-char-commit-sha>
+MSTRMND_DOCTRINE_TOKEN=<optional private-repo token>
+```
+
+### Sync commands
+
+```bash
+# From a local checkout of mstrmnd.md (Operator Zero / offline)
+pnpm doctrine:sync -- --from-dir /path/to/mstrmnd.md --update-pin
+
+# From GitHub using the pinned SHA in doctrine.pin.json
+pnpm doctrine:sync
+
+# Validate pin policy (+ manifest when status=active)
+pnpm doctrine:validate
+
+# CI self-test against fixtures/doctrine-min
+pnpm doctrine:ci
+```
+
+Sync writes allowlisted Markdown into `.generated/mstrmnd-md/` and `manifest.json`.
+Floating refs (`main` / `master`) are rejected.
 
 ## Manifest Shape
 

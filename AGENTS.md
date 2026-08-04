@@ -63,7 +63,8 @@ Local Obsidian is a **first-party adapter**, not the boundary of the platform.
 - **Model-agnostic:** providers are replaceable; do not couple domain logic to one vendor.
 - **Adapters at the edge:** Obsidian and other vendors translate into stable schemas.
 - **Doctrine pinned:** never depend on an unpinned floating doctrine branch at runtime.
-  See `.env.doctrine.example` and `docs/doctrine-integration.md`.
+  Pin lives in `doctrine.pin.json`. Sync with `pnpm doctrine:sync`; validate with
+  `pnpm doctrine:validate` / `pnpm doctrine:ci`. See `docs/doctrine-integration.md`.
 - Visual identity cross-check: `~/Downloads/mstrmnd-marketing-dashboard/BRAND.md`
   (Platinum-only, no rockets, real-world monochrome industrial photo, Stripe/Linear
   schematics) when that file is available locally.

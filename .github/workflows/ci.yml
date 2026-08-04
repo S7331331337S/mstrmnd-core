@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        # version comes from package.json "packageManager" (pnpm@10.0.0)
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Doctrine pin + fixture self-test
+        run: pnpm doctrine:ci
+
+      - name: Sync live doctrine when actively pinned
+        if: ${{ hashFiles('doctrine.pin.json') != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MSTRMND_DOCTRINE_TOKEN: ${{ secrets.MSTRMND_DOCTRINE_TOKEN }}
+        run: |
+          status=$(python3 -c 'import json; print(json.load(open("doctrine.pin.json"))["status"])')
+          if [ "$status" = "active" ]; then
+            python3 scripts/sync-doctrine.py
+            python3 scripts/validate-doctrine.py --strict
+          else
+            echo "Pin status is $status — skipping live doctrine sync (awaiting mstrmnd.md access)."
+          fi

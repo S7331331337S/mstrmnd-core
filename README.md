@@ -186,11 +186,13 @@ The current server exposes:
 | `get_note` | Retrieve note content by path or title |
 | `get_identity` | Return the parsed identity profile |
 
-### 6. Typecheck
+### 6. Verify
 
 ```bash
-pnpm typecheck
+pnpm verify
 ```
+
+Runs `pnpm typecheck` plus the doctrine pin/fixture gate (`pnpm doctrine:ci`).
 
 ## Optional iCloud Vault Map
 
