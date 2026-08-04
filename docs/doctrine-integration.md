@@ -1,5 +1,7 @@
 # Doctrine Integration Contract
 
+> Shared agent brief and backlog: [`MASTER.md`](./MASTER.md).
+
 ## Purpose
 
 Define how `mstrmnd-core` references and consumes the canonical doctrine in [`mstrmnd.md`](https://github.com/S7331331337S/mstrmnd.md).
