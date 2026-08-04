@@ -17,6 +17,12 @@ export class Hermes {
 
     const nodes = await this.memory.loadVault(vaultPath);
     console.log(`Memory substrate: loaded ${nodes.length} notes from vault`);
+    if (nodes[0]) {
+      const s = nodes[0].scope;
+      console.log(
+        `Scope: org=${s.organizationId} workspace=${s.workspaceId} user=${s.userId}`
+      );
+    }
 
     const identity = await loadIdentity(vaultPath);
     const profileLoaded =

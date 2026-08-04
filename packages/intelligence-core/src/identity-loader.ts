@@ -2,6 +2,11 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { IdentityModel } from "@mstrmnd/schemas";
+import {
+  localProvenance,
+  OPERATOR_ZERO_SCOPE,
+  resolveScope,
+} from "./operator-scope";
 
 const IDENTITY_CANDIDATES = [
   "identity.md",
@@ -9,12 +14,21 @@ const IDENTITY_CANDIDATES = [
   "10-Identity/identity.md",
 ];
 
-export const EMPTY_IDENTITY: IdentityModel = {
-  values: [],
-  interests: [],
-  creativePatterns: [],
-  preferences: [],
-};
+function emptyIdentityShell(): IdentityModel {
+  return {
+    values: [],
+    interests: [],
+    creativePatterns: [],
+    preferences: [],
+    scope: { ...OPERATOR_ZERO_SCOPE },
+    provenance: localProvenance("identity", {
+      adapter: "identity-loader",
+      producedBy: "empty",
+    }),
+  };
+}
+
+export const EMPTY_IDENTITY: IdentityModel = emptyIdentityShell();
 
 function parseStringList(block: string): string[] {
   const trimmed = block.trim();
@@ -46,9 +60,19 @@ function parsePreferences(block: string): IdentityModel["preferences"] {
   return items;
 }
 
-function parseIdentityFrontmatter(raw: string): IdentityModel {
+function parseIdentityFrontmatter(raw: string): Omit<
+  IdentityModel,
+  "scope" | "provenance"
+> {
   const fm = raw.match(/^---\n([\s\S]*?)\n---/);
-  if (!fm) return { ...EMPTY_IDENTITY };
+  if (!fm) {
+    return {
+      values: [],
+      interests: [],
+      creativePatterns: [],
+      preferences: [],
+    };
+  }
 
   const body = fm[1];
   const pick = (key: string) => {
@@ -67,19 +91,42 @@ function parseIdentityFrontmatter(raw: string): IdentityModel {
 /**
  * Load identity from a vault-authored profile note.
  * Looks for identity.md at the vault root or under 00-Identity/.
+ * Applies Operator Zero local scope by default.
  */
-export async function loadIdentity(vaultPath: string): Promise<IdentityModel> {
+export async function loadIdentity(
+  vaultPath: string,
+  scopeOverrides?: Parameters<typeof resolveScope>[0]
+): Promise<IdentityModel> {
+  const scope = resolveScope(scopeOverrides);
   for (const rel of IDENTITY_CANDIDATES) {
     const abs = join(vaultPath, rel);
     if (!existsSync(abs)) continue;
     const raw = await readFile(abs, "utf8");
-    const identity = parseIdentityFrontmatter(raw);
+    const parsed = parseIdentityFrontmatter(raw);
     const hasContent =
-      identity.values.length > 0 ||
-      identity.interests.length > 0 ||
-      identity.creativePatterns.length > 0 ||
-      identity.preferences.length > 0;
-    if (hasContent) return identity;
+      parsed.values.length > 0 ||
+      parsed.interests.length > 0 ||
+      parsed.creativePatterns.length > 0 ||
+      parsed.preferences.length > 0;
+    if (hasContent) {
+      return {
+        ...parsed,
+        scope,
+        provenance: localProvenance("obsidian", {
+          adapter: "identity-loader",
+          sourcePath: rel,
+          producedBy: "vault-identity",
+        }),
+      };
+    }
   }
-  return { ...EMPTY_IDENTITY };
+  return {
+    ...emptyIdentityShell(),
+    scope,
+    provenance: localProvenance("identity", {
+      adapter: "identity-loader",
+      producedBy: "empty",
+      sourcePath: vaultPath,
+    }),
+  };
 }
