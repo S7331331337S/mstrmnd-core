@@ -1,0 +1,19 @@
+{
+  "name": "@mstrmnd/example-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@mstrmnd/plugin-sdk": "workspace:*",
+    "@mstrmnd/onboarding-agent": "workspace:*",
+    "@mstrmnd/context-generator": "workspace:*",
+    "@mstrmnd/setup-cli": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "latest"
+  }
+}
