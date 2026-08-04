@@ -28,7 +28,7 @@ function toolError(err: unknown) {
 async function boot(): Promise<void> {
   runtime = await createRuntime({ allowMissingVault: true });
   console.error(
-    `MSTRMND MCP: runtime ready — memory=${runtime.memory.size} doctrine=${runtime.context.doctrineRef ?? "none"} company=${runtime.context.company.name}`
+    `MSTRMND MCP: runtime ready — memory=${runtime.memory.size} doctrine=${runtime.context.doctrineRef ?? "none"} company=${runtime.context.company.name} model=${runtime.provider.id}`
   );
 }
 

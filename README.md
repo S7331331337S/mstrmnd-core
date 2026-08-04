@@ -208,8 +208,19 @@ pnpm hermes -- --dry-run
 Hermes CLI and MCP both boot via `createRuntime()` in `@mstrmnd/intelligence-core`. Configure:
 
 - `OBSIDIAN_VAULT_PATH` — vault or operator-pack root
-- `MSTRMND_MODEL_PROVIDER` — default `echo` (offline)
+- `MSTRMND_MODEL_PROVIDER` — `echo` (default, offline) or `openai` / `openai-compatible`
+- `MSTRMND_MODEL_API_KEY` or `OPENAI_API_KEY` — required when provider is openai*
+- `MSTRMND_MODEL_BASE_URL` — Chat Completions base (default `https://api.openai.com/v1`)
+- `MSTRMND_MODEL_NAME` — model id (default `gpt-4o-mini`)
 - Doctrine: `pnpm doctrine:sync` then pinned `doctrine.pin.json`
+
+Example (real model):
+
+```bash
+export MSTRMND_MODEL_PROVIDER=openai
+export MSTRMND_MODEL_API_KEY=sk-...
+pnpm hermes -- --goal "Summarize operator context"
+```
 
 See `templates/operator-pack/mstrmnd.host.json` for a full host example.
 

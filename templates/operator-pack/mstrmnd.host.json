@@ -13,7 +13,13 @@
   },
   "model": {
     "providerEnv": "MSTRMND_MODEL_PROVIDER",
-    "default": "echo"
+    "default": "echo",
+    "openai": {
+      "provider": "openai",
+      "apiKeyEnv": "MSTRMND_MODEL_API_KEY",
+      "baseUrlEnv": "MSTRMND_MODEL_BASE_URL",
+      "modelEnv": "MSTRMND_MODEL_NAME"
+    }
   },
   "mcp": {
     "command": "pnpm",

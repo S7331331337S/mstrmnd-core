@@ -76,10 +76,11 @@ What actually works today:
 
 What is still thin / next:
 
-- Real model providers (only `EchoProvider` offline stub today)
+- ~~Real model providers (only `EchoProvider` offline stub today)~~ → `openai` / `openai-compatible` Chat Completions provider landed; default remains `echo` for CI
 - Workspace write tools + stronger policy enforcement
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
+- Richer multi-step agent planning beyond the fixed orchestrator loop
 
 ---
 
@@ -193,4 +194,4 @@ Update checkboxes here when work lands.
 - **Last aligned:** 2026-08-04
 - **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
 - **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template
-- **Next:** Real model provider wiring; workspace writes behind policy
+- **Next:** Policy-gated workspace writes; richer agent planning; dogfood on a real vault with `MSTRMND_MODEL_PROVIDER=openai`
