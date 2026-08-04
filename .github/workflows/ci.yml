@@ -42,5 +42,8 @@ jobs:
             python3 scripts/sync-doctrine.py
             python3 scripts/validate-doctrine.py --strict
           else
-            echo "Pin status is $status — skipping live doctrine sync (awaiting mstrmnd.md access)."
+            echo "Pin status is $status — skipping live doctrine sync."
           fi
+
+      - name: Hermes orchestrator dry-run
+        run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI dry-run"

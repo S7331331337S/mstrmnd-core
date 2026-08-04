@@ -33,8 +33,10 @@ Do not invent empty platform packages before Operator Zero context + orchestrato
 - `pnpm install` — install workspace deps
 - `pnpm dev` — `turbo dev` (all packages)
 - `pnpm typecheck` / `pnpm build` — `tsc --noEmit` (verify gate; run before declaring done)
-- `pnpm --filter @mstrmnd/hermes dev` — Hermes vault smoke / runtime shell
-- `pnpm --filter @mstrmnd/mcp-server start` — MCP server (`search_memory`, `get_note`, `get_identity`)
+- `pnpm --filter @mstrmnd/hermes dev` — Hermes orchestrator shell (`--goal`, `--dry-run`)
+- `pnpm --filter @mstrmnd/mcp-server start` — MCP plugin (`search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`)
+- `pnpm operator:init --dir ../my-operator` — bootstrap operator pack from template
+- `pnpm verify` — typecheck + doctrine fixture gate
 
 ## Layout
 

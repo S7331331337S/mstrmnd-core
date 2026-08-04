@@ -14,3 +14,38 @@ export {
   readObsidianSourceRecords,
   vaultNotesToSourceRecords,
 } from "./obsidian-adapter";
+export { assembleContext } from "./context-assembler";
+export type { AssembleContextOptions } from "./context-assembler";
+export {
+  loadDoctrinePin,
+  readDoctrineFile,
+  resolveRepoRoot,
+  doctrinePinPath,
+  doctrineGeneratedRoot,
+  summarizeMarkdown,
+} from "./doctrine-loader";
+export type { DoctrinePin } from "./doctrine-loader";
+export { loadOperatorProfile, loadCompanyProfile } from "./profile-loader";
+export {
+  WorkspaceService,
+  WorkspacePathError,
+} from "./workspace-service";
+export {
+  EchoProvider,
+  resolveModelProvider,
+} from "./model-provider";
+export type {
+  ModelProvider,
+  ModelMessage,
+  ModelCompleteOptions,
+} from "./model-provider";
+export {
+  Orchestrator,
+  OPERATOR_AGENT,
+  WORKSPACE_SCOUT,
+  getAgentSpec,
+  listAgentSpecs,
+} from "./orchestrator";
+export type { OrchestratorDeps } from "./orchestrator";
+export { createRuntime } from "./runtime";
+export type { RuntimeConfig, MstrmndRuntime } from "./runtime";
