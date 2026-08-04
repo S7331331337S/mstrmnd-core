@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import * as z from "zod";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 import {
   MemoryEngine,
   resolveVaultPath,
@@ -8,6 +10,7 @@ import {
   EMPTY_IDENTITY,
 } from "@mstrmnd/intelligence-core";
 import type { IdentityModel, MemoryNode } from "@mstrmnd/schemas";
+import { verifySeal } from "@mstrmnd/context-generator";
 
 const engine = new MemoryEngine();
 let identity: IdentityModel = { ...EMPTY_IDENTITY };
@@ -132,6 +135,93 @@ server.registerTool(
     };
   }
 );
+
+// ── Locked context tools ─────────────────────────────────────────────────────
+
+const CONTEXT_TRACKED_FILES = [
+  "identity.md",
+  "config.json",
+  "agents/roles.json",
+  "connectors/filesystem.config.json",
+];
+
+server.registerTool(
+  "get_locked_config",
+  {
+    description:
+      "Read the locked MSTRMND configuration (config.json) from the context directory.",
+    inputSchema: {
+      contextPath: z
+        .string()
+        .optional()
+        .describe(
+          "Path to the mstrmnd-context directory (default: MSTRMND_CONTEXT_PATH env var or ./mstrmnd-context)"
+        ),
+    },
+  },
+  async ({ contextPath }) => {
+    const ctxPath =
+      contextPath ?? process.env["MSTRMND_CONTEXT_PATH"] ?? "./mstrmnd-context";
+    const configFile = join(ctxPath, "config.json");
+    if (!existsSync(configFile)) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ error: "config.json not found", contextPath: ctxPath }),
+          },
+        ],
+        isError: true,
+      };
+    }
+    try {
+      const config = JSON.parse(readFileSync(configFile, "utf-8"));
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(config, null, 2) }],
+      };
+    } catch (err) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ error: "failed to parse config.json", detail: String(err) }),
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.registerTool(
+  "verify_context_integrity",
+  {
+    description:
+      "Verify the integrity of the MSTRMND locked context directory by checking the .mstrmnd-seal checksum.",
+    inputSchema: {
+      contextPath: z
+        .string()
+        .optional()
+        .describe(
+          "Path to the mstrmnd-context directory (default: MSTRMND_CONTEXT_PATH env var or ./mstrmnd-context)"
+        ),
+    },
+  },
+  async ({ contextPath }) => {
+    const ctxPath =
+      contextPath ?? process.env["MSTRMND_CONTEXT_PATH"] ?? "./mstrmnd-context";
+    const valid = verifySeal(ctxPath, CONTEXT_TRACKED_FILES);
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify({ contextPath: ctxPath, integrityValid: valid }),
+        },
+      ],
+    };
+  }
+);
+
 
 async function main() {
   await boot();

@@ -10,6 +10,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@mstrmnd/intelligence-core": "workspace:*",
     "@mstrmnd/schemas": "workspace:*",
+    "@mstrmnd/context-generator": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {
