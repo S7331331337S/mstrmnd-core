@@ -32,12 +32,14 @@ export {
 } from "./workspace-service";
 export {
   EchoProvider,
+  OpenAICompatibleProvider,
   resolveModelProvider,
 } from "./model-provider";
 export type {
   ModelProvider,
   ModelMessage,
   ModelCompleteOptions,
+  OpenAICompatibleConfig,
 } from "./model-provider";
 export {
   Orchestrator,

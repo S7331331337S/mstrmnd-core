@@ -67,6 +67,7 @@ the parent agent. Default model provider is echo (offline).
       `Scope: org=${context.scope.organizationId} workspace=${context.scope.workspaceId} user=${context.scope.userId}`
     );
     console.log(`Doctrine: ${context.doctrineRef ?? "unpinned"}`);
+    console.log(`Model provider: ${runtime.provider.id}`);
     console.log(
       `Workspace mounts: ${workspace
         .listMounts()
