@@ -1,6 +1,9 @@
+import type { RuntimeScope } from "./scope";
+import type { Provenance } from "./provenance";
+
 export interface Artifact {
   id: string;
-  type: 'image' | 'video' | 'document' | 'audio';
+  type: "image" | "video" | "document" | "audio";
   source: string;
   path: string;
   metadata?: Record<string, unknown>;
@@ -10,4 +13,6 @@ export interface Artifact {
     emotions: string[];
   };
   embedding?: number[];
+  scope: RuntimeScope;
+  provenance: Provenance;
 }

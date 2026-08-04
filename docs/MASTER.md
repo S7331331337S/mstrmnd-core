@@ -65,7 +65,9 @@ What is scaffold / external / not wired:
 - Semantic / vector search (`VectorEngine` stub)
 - Graph exposed via MCP
 - `@mstrmnd/agents` VisionAgent unused by apps
-- Doctrine sync tooling + CI fixture gate landed; live pin **active** at `S7331331337S/mstrmnd.md@7db4af9a67baed2d20be9b4ded2bc7fe6ce9ecfc`
+- Memory / identity / artifacts carry **scope + provenance**; Obsidian maps through an adapter into `MemorySourceRecord`
+- Audit-event + policy decision contracts exist in `@mstrmnd/schemas` (not yet wired to editorial `/stage`)
+- Doctrine sync tooling + CI; live pin **active** at `S7331331337S/mstrmnd.md@7db4af9a67baed2d20be9b4ded2bc7fe6ce9ecfc`
 - Brand `verify_issue_kit.py` and Signal-on-publish (documented invariants; not enforced in this repo yet)
 - Tests, lint, CI
 - Target packages (`@mstrmnd/context`, `orchestrator`, `policy`, etc.) — **direction only**, create when they own real behavior
@@ -97,7 +99,9 @@ Full phased plan: [`modernization-roadmap.md`](./modernization-roadmap.md).
 
 ## Active phase
 
-**Phase 0 — Alignment** (docs largely done) → **execute remaining Phase 0 backlog, then Phase 1 schemas/scope.**
+**Phase 1 — Stable schemas and scope** (in progress / landing).
+
+Phase 0 (doctrine pin + sync + CI) is complete.
 
 Guiding rule from the roadmap: extract stable domains from current behavior, preserve the local vault path, add governance before autonomy.
 
@@ -116,11 +120,11 @@ Update checkboxes in this file when work lands. Do not maintain a parallel shado
 
 ### Next — Phase 1 foundations (Operator Zero)
 
-- [ ] Add organization / workspace / user / run scope (+ provenance) to schemas
-- [ ] Keep personal Obsidian vault path working under a default local scope
-- [ ] Extract Obsidian interfaces from memory domain logic (adapter boundary)
-- [ ] Add audit-event schema
-- [ ] Add policy decision contract (`allow` / `deny` / `modify` / `require-approval`)
+- [x] Add organization / workspace / user / run scope (+ provenance) to schemas
+- [x] Keep personal Obsidian vault path working under a default local scope
+- [x] Extract Obsidian interfaces from memory domain logic (adapter boundary)
+- [x] Add audit-event schema
+- [x] Add policy decision contract (`allow` / `deny` / `modify` / `require-approval`)
 
 ### Then — first governed reference workflow
 
@@ -212,6 +216,6 @@ We develop this repo with multiple models in parallel. Stay aligned:
 ## Status stamp
 
 - **Last aligned:** 2026-08-04
-- **Branch intent:** doctrine sync + CI gate; live pin active
-- **Code maturity:** Local MVP + doctrine sync/validate pipeline; Phase 0 pin complete
-- **Next merge target after this:** Phase 1 scope schemas / adapter boundary
+- **Branch intent:** Phase 1 scope/provenance schemas + Obsidian adapter boundary
+- **Code maturity:** Local MVP + doctrine pin + scoped memory/identity/artifact contracts
+- **Next merge target after this:** governed editorial reference workflow (audit + approval on PRESS)

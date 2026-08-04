@@ -60,11 +60,21 @@ server.registerTool(
   },
   async ({ query, limit = 10 }) => {
     const { memories } = engine.search(query);
-    const results = memories.slice(0, limit).map((m) => ({
+      const results = memories.slice(0, limit).map((m) => ({
       id: m.id,
       title: m.title,
       tags: m.relationships,
       snippet: snippet(m),
+      scope: {
+        organizationId: m.scope.organizationId,
+        workspaceId: m.scope.workspaceId,
+        userId: m.scope.userId,
+      },
+      provenance: {
+        source: m.provenance.source,
+        adapter: m.provenance.adapter,
+        sourcePath: m.provenance.sourcePath,
+      },
     }));
     return {
       content: [

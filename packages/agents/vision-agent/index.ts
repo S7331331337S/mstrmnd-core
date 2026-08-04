@@ -1,11 +1,12 @@
-import { VectorEngine } from "@mstrmnd/intelligence-core";
-import type { Artifact } from "@mstrmnd/schemas";
+import { VectorEngine, localProvenance, resolveScope } from "@mstrmnd/intelligence-core";
+import type { Artifact, RuntimeScope } from "@mstrmnd/schemas";
 
 export interface VisionInput {
   source: string;
   path: string;
   type?: Artifact["type"];
   id?: string;
+  scope?: Partial<RuntimeScope>;
 }
 
 export class VisionAgent {
@@ -23,6 +24,12 @@ export class VisionAgent {
       path: input.path,
       analysis: { concepts: [], style: [], emotions: [] },
       embedding: vector,
+      scope: resolveScope(input.scope),
+      provenance: localProvenance(input.source, {
+        adapter: "vision-agent",
+        sourcePath: input.path,
+        producedBy: "vision-agent",
+      }),
     };
   }
 }

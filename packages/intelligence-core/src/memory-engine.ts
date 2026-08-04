@@ -1,6 +1,21 @@
-import type { MemoryNode } from "@mstrmnd/schemas";
-import { readVault, type VaultNote } from "@mstrmnd/connectors";
+import type {
+  MemoryNode,
+  MemorySourceRecord,
+  Provenance,
+  RuntimeScope,
+} from "@mstrmnd/schemas";
 import { GraphEngine } from "./graph-engine";
+import { readObsidianSourceRecords } from "./obsidian-adapter";
+import {
+  localProvenance,
+  resolveScope,
+} from "./operator-scope";
+
+export interface LoadSourceOptions {
+  scope?: Partial<RuntimeScope>;
+  /** Base provenance fields merged onto each record */
+  provenance?: Partial<Provenance>;
+}
 
 export class MemoryEngine {
   private nodes: MemoryNode[] = [];
@@ -9,8 +24,13 @@ export class MemoryEngine {
   /** Store a single memory node. Links it into the tag graph against
    *  every existing node that shares a tag. */
   store(node: MemoryNode): MemoryNode {
+    if (!node.scope || !node.provenance) {
+      throw new Error("MemoryNode requires scope and provenance");
+    }
     for (const existing of this.nodes) {
-      const shared = node.relationships.filter((t) => existing.relationships.includes(t));
+      const shared = node.relationships.filter((t) =>
+        existing.relationships.includes(t)
+      );
       for (const tag of shared) {
         this.graph.link(node.id, existing.id, `tag:${tag}`);
       }
@@ -60,50 +80,86 @@ export class MemoryEngine {
   }
 
   /**
-   * Load an Obsidian vault into the memory graph. Each note becomes a
-   * `MemoryNode` of type 'memory', with its tags as relationships. Wikilinks
-   * and shared folders become graph edges.
+   * Load vendor-neutral source records into the memory graph.
+   * Adapters must map into MemorySourceRecord before calling this.
    */
-  async loadVault(vaultPath: string): Promise<MemoryNode[]> {
+  loadSourceRecords(
+    records: MemorySourceRecord[],
+    options: LoadSourceOptions = {}
+  ): MemoryNode[] {
     this.nodes = [];
     this.graph = new GraphEngine();
-    const notes: VaultNote[] = await readVault(vaultPath);
-    for (const note of notes) {
+    const scope = resolveScope(options.scope);
+    const baseProv = options.provenance ?? {};
+
+    for (const record of records) {
       this.store({
-        id: note.relativePath,
+        id: record.id,
         type: "memory",
-        title: note.title,
-        content: note.body,
+        title: record.title,
+        content: record.content,
         confidence: 1,
-        relationships: note.tags,
+        relationships: record.tags,
+        scope,
+        provenance: {
+          ...localProvenance(baseProv.source ?? "memory-source", {
+            adapter: baseProv.adapter,
+            doctrineRef: baseProv.doctrineRef,
+            producedBy: baseProv.producedBy,
+            confidence: baseProv.confidence,
+          }),
+          ...baseProv,
+          source: baseProv.source ?? "memory-source",
+          sourcePath: record.sourcePath ?? record.id,
+          ingestedAt: baseProv.ingestedAt ?? new Date().toISOString(),
+        },
       });
     }
-    this.buildLinkGraph(notes);
+    this.buildLinkGraph(records);
     return this.nodes;
   }
 
-  /** Resolve `[[wikilinks]]` and shared folders into graph edges. */
-  private buildLinkGraph(notes: VaultNote[]): void {
+  /**
+   * Convenience: load an Obsidian vault via the Obsidian adapter, then ingest
+   * as scoped Operator Zero memory. Preserves the local MVP vault path.
+   */
+  async loadVault(
+    vaultPath: string,
+    options: LoadSourceOptions = {}
+  ): Promise<MemoryNode[]> {
+    const records = await readObsidianSourceRecords(vaultPath);
+    return this.loadSourceRecords(records, {
+      scope: options.scope,
+      provenance: {
+        source: "obsidian",
+        adapter: "obsidian-vault-reader",
+        ...options.provenance,
+      },
+    });
+  }
+
+  /** Resolve outbound links and shared folders into graph edges. */
+  private buildLinkGraph(records: MemorySourceRecord[]): void {
     const byKey = new Map<string, string>();
-    for (const n of notes) {
-      byKey.set(n.title.toLowerCase(), n.relativePath);
-      byKey.set(n.relativePath.toLowerCase(), n.relativePath);
-      const withoutExt = n.relativePath.replace(/\.md$/i, "");
-      byKey.set(withoutExt.toLowerCase(), n.relativePath);
+    for (const n of records) {
+      byKey.set(n.title.toLowerCase(), n.id);
+      byKey.set(n.id.toLowerCase(), n.id);
+      const withoutExt = n.id.replace(/\.md$/i, "");
+      byKey.set(withoutExt.toLowerCase(), n.id);
     }
-    for (const n of notes) {
+    for (const n of records) {
       for (const link of n.links) {
         const targetId = byKey.get(link.toLowerCase());
-        if (targetId && targetId !== n.relativePath) {
-          this.graph.link(n.relativePath, targetId, "link");
+        if (targetId && targetId !== n.id) {
+          this.graph.link(n.id, targetId, "link");
         }
       }
     }
     const byFolder = new Map<string, string[]>();
-    for (const n of notes) {
+    for (const n of records) {
       if (!n.folder) continue;
       const list = byFolder.get(n.folder) ?? [];
-      list.push(n.relativePath);
+      list.push(n.id);
       byFolder.set(n.folder, list);
     }
     for (const ids of byFolder.values()) {
