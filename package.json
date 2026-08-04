@@ -6,7 +6,9 @@
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "hermes": "pnpm --filter @mstrmnd/hermes dev",
-    "mcp": "pnpm --filter @mstrmnd/mcp-server start"
+    "mcp": "pnpm --filter @mstrmnd/mcp-server start",
+    "doctrine:sync": "node scripts/sync-doctrine.mjs",
+    "doctrine:validate": "node scripts/validate-doctrine.mjs"
   },
   "devDependencies": {
     "turbo": "latest",
