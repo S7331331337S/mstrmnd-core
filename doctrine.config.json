@@ -1,0 +1,22 @@
+{
+  "repository": "S7331331337S/mstrmnd.md",
+  "ref": "ff35e4c3c0d1b3d1217bf0e87b92a978ef3bb32a",
+  "outputDirectory": ".generated/mstrmnd-md",
+  "requiredFiles": [
+    "README.md",
+    "company/philosophy.md",
+    "company/canon.md",
+    "strategy/positioning.md",
+    "commercial/offers-and-pricing.md",
+    "commercial/sales-playbook.md",
+    "platform/intelligence-architecture.md",
+    "platform/security-governance.md",
+    "platform/evaluation-observability.md",
+    "agents/agent-specification.md",
+    "skills/skill-standard.md",
+    "connectors/connector-standard.md",
+    "design/brand-system.md",
+    "research/research-standard.md",
+    "roadmap/company-operating-system.md"
+  ]
+}
