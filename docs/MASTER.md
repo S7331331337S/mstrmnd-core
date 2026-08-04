@@ -65,7 +65,7 @@ What is scaffold / external / not wired:
 - Semantic / vector search (`VectorEngine` stub)
 - Graph exposed via MCP
 - `@mstrmnd/agents` VisionAgent unused by apps
-- Doctrine sync / pin (docs only; `MSTRMND_DOCTRINE_REF` example still `main`)
+- Doctrine sync tooling + CI fixture gate landed; live `mstrmnd.md` pin still `awaiting_repository_access` (repo not reachable from CI yet)
 - Brand `verify_issue_kit.py` and Signal-on-publish (documented invariants; not enforced in this repo yet)
 - Tests, lint, CI
 - Target packages (`@mstrmnd/context`, `orchestrator`, `policy`, etc.) — **direction only**, create when they own real behavior
@@ -109,10 +109,10 @@ Update checkboxes in this file when work lands. Do not maintain a parallel shado
 
 ### Now — Phase 0 closeout
 
-- [ ] Pin `MSTRMND_DOCTRINE_REF` to a reviewed commit SHA or release tag (not floating `main`)
-- [ ] Implement doctrine sync → `.generated/mstrmnd-md/` + `manifest.json`
-- [ ] CI: typecheck + doctrine pin/manifest validation
-- [ ] Document known gaps / tech debt in sync with this file (keep MASTER truthful)
+- [ ] Pin `doctrine.pin.json` `ref` to a reviewed 40-char commit SHA and set `status` to `active` (blocked until `mstrmnd.md` is accessible; use `pnpm doctrine:sync -- --from-dir ... --update-pin`)
+- [x] Implement doctrine sync → `.generated/mstrmnd-md/` + `manifest.json` (`scripts/sync-doctrine.py`)
+- [x] CI: typecheck + doctrine pin/fixture validation (`.github/workflows/ci.yml`, `pnpm doctrine:ci`)
+- [x] Document known gaps / tech debt in sync with this file (keep MASTER truthful)
 
 ### Next — Phase 1 foundations (Operator Zero)
 
@@ -191,7 +191,7 @@ We develop this repo with multiple models in parallel. Stay aligned:
 4. **Preserve the working MVP path** (vault load, MCP tools, typecheck) unless the PR deliberately migrates it.
 5. **Name reality accurately** — if Hermes is still a smoke CLI, don’t document it as a full agent loop in the same PR without implementing it.
 6. **Stack:** pnpm 10+ / Node 20+ / turbo from repo root. Never npm.
-7. **Verify:** `pnpm typecheck` before declaring done. Add tests when touching schemas, policy, or retrieval.
+7. **Verify:** `pnpm verify` (typecheck + doctrine fixture gate) before declaring done. Add tests when touching schemas, policy, or retrieval.
 8. **Doctrine changes** belong in `mstrmnd.md`, then a pin bump here — not silent README rewrites that contradict canon.
 
 ---
@@ -212,6 +212,6 @@ We develop this repo with multiple models in parallel. Stay aligned:
 ## Status stamp
 
 - **Last aligned:** 2026-08-04
-- **Branch intent for this alignment:** Operator Zero + model-agnostic framing; shared agent master plan
-- **Code maturity:** Local MVP (memory / identity / MCP / editorial worker foundations)
-- **Next merge target after alignment docs:** doctrine pin + sync script + CI gate
+- **Branch intent:** doctrine sync + CI gate (Phase 0 tooling); live pin awaiting `mstrmnd.md` access
+- **Code maturity:** Local MVP + doctrine sync/validate pipeline (fixture-proven)
+- **Next merge target after this:** set active doctrine SHA when repo is available, then Phase 1 scope schemas
