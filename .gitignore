@@ -10,6 +10,10 @@ __pycache__/
 
 # Local env
 .env
+.env.doctrine
+
+# Synced doctrine (generated; do not hand-edit)
+.generated/
 
 # Generated editorial output
 kits/

@@ -217,7 +217,11 @@ bash scripts/run-icloud-map.sh
 
 Current state: local MVP with live memory, identity, graph, MCP, connector, and editorial foundations.
 
-Next state: generalize the current foundation into a governed, tenant-aware operational intelligence runtime while preserving the working local-first path.
+Strategy: **Operator Zero first** — dogfood this runtime on MSTRMND’s own work, then productize the same model-agnostic framework for other operators (their context/policies/connectors as configuration, not a fork).
+
+Next state: close Phase 0 (doctrine pin + sync + CI), then generalize schemas/scope and the governed editorial loop while preserving the working local-first path.
+
+**Agents (Claude / GPT / Grok / Copilot / etc.):** read [`docs/MASTER.md`](docs/MASTER.md) before planning or coding.
 
 ## Architecture Specification
 

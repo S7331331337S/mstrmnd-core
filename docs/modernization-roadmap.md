@@ -1,8 +1,17 @@
 # MSTRMND Core Modernization Roadmap
 
+> Shared agent brief and live backlog: [`MASTER.md`](./MASTER.md). Prefer MASTER for day-to-day alignment; this file remains the phased architecture plan.
+
 ## Objective
 
-Evolve the working local-first MVP into the executable operational intelligence runtime described by `mstrmnd.md` without discarding the parts that already work.
+Evolve the working local-first MVP into the executable, **model-agnostic** operational intelligence runtime described by `mstrmnd.md` without discarding the parts that already work.
+
+## Operator Zero first
+
+1. Run MSTRMND on this runtime (memory, doctrine context, editorial PRESS, approvals).
+2. Only then package operator context / client deploy for other companies on the same contracts.
+
+Other-operator productization is Stage 2. Do not invert that order.
 
 ## Guiding Rule
 

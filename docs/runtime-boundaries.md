@@ -2,6 +2,8 @@
 
 This document defines the boundary between the canonical MSTRMND knowledge system and the executable runtime.
 
+> Day-to-day agent alignment and backlog: [`MASTER.md`](./MASTER.md).
+
 ## Source of Truth
 
 The [`mstrmnd.md`](https://github.com/S7331331337S/mstrmnd.md) repository is authoritative for:
