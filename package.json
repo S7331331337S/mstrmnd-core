@@ -3,10 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "turbo dev",
-    "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && pnpm --filter @mstrmnd/mobile run typecheck",
+    "typecheck": "tsc --noEmit && pnpm --filter @mstrmnd/mobile run typecheck",
     "hermes": "pnpm --filter @mstrmnd/hermes dev",
-    "mcp": "pnpm --filter @mstrmnd/mcp-server start"
+    "mcp": "pnpm --filter @mstrmnd/mcp-server start",
+    "mobile": "pnpm --filter @mstrmnd/mobile dev"
   },
   "devDependencies": {
     "turbo": "latest",
