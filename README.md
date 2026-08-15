@@ -15,6 +15,7 @@ MSTRMND is a user-owned intelligence layer for memory, identity, visual understa
 - Personal Memory Graph
 - Multimodal Intelligence
 - Creative Intelligence
+- Mobile Agent Alliance client (`apps/mobile`) — see below
 
 ## Local MVP — Quick Start
 
@@ -90,6 +91,22 @@ Restart Cursor. The server exposes three tools:
 ```bash
 pnpm typecheck
 ```
+
+## Mobile — the Agent Alliance client
+
+`apps/mobile` is a React Native + Expo app (iOS + web from one codebase)
+for conversing with the alliance: chat with Hermes and the other agents,
+browse the memory graph, manage identity, and switch between an
+Obsidian (dark) and Paper (light) theme.
+
+```bash
+pnpm --filter @mstrmnd/mobile dev   # or: pnpm mobile
+```
+
+It runs fully interactive with no setup — the chat API falls back to a
+scripted demo model until you set `AI_GATEWAY_API_KEY`. See
+`apps/mobile/README.md` for the design system, the alliance roster, and
+how to connect a live model.
 
 ## Optional — iCloud vault map
 
