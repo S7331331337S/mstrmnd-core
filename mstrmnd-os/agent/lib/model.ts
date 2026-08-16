@@ -1,6 +1,15 @@
 import { createXai } from "@ai-sdk/xai";
 import { createPerplexity } from "@ai-sdk/perplexity";
-import type { LanguageModel } from "ai";
+import { createGateway, type LanguageModel } from "ai";
+
+/** Vercel AI Gateway key, accepting either env var name. */
+function gatewayKey(): string | undefined {
+  return process.env.AI_GATEWAY_API_KEY ?? process.env.AI_GATEWAY;
+}
+
+function gatewayModel(id: string): LanguageModel {
+  return createGateway({ apiKey: gatewayKey() })(id);
+}
 
 /**
  * Model resolution is model-agnostic and decided at the edge from the
@@ -19,7 +28,7 @@ export function resolveModel(): LanguageModel | string {
   const provider = process.env.MSTRMND_PROVIDER?.toLowerCase();
 
   if (provider === "gateway") {
-    return process.env.MSTRMND_MODEL ?? "xai/grok-4";
+    return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
   }
   if (provider === "perplexity") {
     return createPerplexity({ apiKey: process.env.PERPLEXITY_API_TOKEN })(
@@ -32,8 +41,8 @@ export function resolveModel(): LanguageModel | string {
     );
   }
 
-  if (process.env.AI_GATEWAY_API_KEY) {
-    return process.env.MSTRMND_MODEL ?? "xai/grok-4";
+  if (gatewayKey()) {
+    return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
   }
   if (process.env.XAI_TOKEN) {
     return createXai({ apiKey: process.env.XAI_TOKEN })(
@@ -46,16 +55,16 @@ export function resolveModel(): LanguageModel | string {
     );
   }
 
-  // Nothing configured: fall back to a Gateway string so the failure is a
-  // clear "missing credential" at request time rather than a silent default.
-  return process.env.MSTRMND_MODEL ?? "xai/grok-4";
+  // Nothing configured: build a Gateway model so the failure is a clear
+  // "missing credential" at request time rather than a silent default.
+  return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
 }
 
 /** Human-readable label for the active provider (for UI / status surfaces). */
 export function activeProviderLabel(): string {
   const p = process.env.MSTRMND_PROVIDER?.toLowerCase();
   if (p) return p;
-  if (process.env.AI_GATEWAY_API_KEY) return "gateway";
+  if (gatewayKey()) return "gateway";
   if (process.env.XAI_TOKEN) return "xai";
   if (process.env.PERPLEXITY_API_TOKEN) return "perplexity";
   return "gateway";
