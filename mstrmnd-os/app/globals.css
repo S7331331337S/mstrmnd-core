@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/*
+ * MSTRMND — Swiss / dark visual system.
+ * ONE accent only: Platinum #e8e2d0 over obsidian #0a0a0b. No second hue.
+ */
+:root {
+  --background: #0a0a0b;
+  --surface: #101012;
+  --surface-2: #16161a;
+  --foreground: #e8e2d0;
+  --muted: #8a877d;
+  --faint: #55534c;
+  --line: #1e1e22;
+  --line-strong: #2a2a30;
+  --accent: #e8e2d0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Inter, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Swiss micro-typography helpers */
+.label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.hairline {
+  border-color: var(--line);
+}
+
+::selection {
+  background: rgba(232, 226, 208, 0.22);
+}
+
+/* Thin, restrained scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pulse {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
