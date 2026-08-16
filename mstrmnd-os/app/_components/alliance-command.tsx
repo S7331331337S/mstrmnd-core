@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useEveAgent } from "eve/react";
 
-function textOf(message: { parts: Array<{ type: string; text?: string }> }): string {
+function textOf(message: {
+  parts: readonly { type: string; text?: string }[];
+}): string {
   return message.parts
     .filter((p) => p.type === "text" && typeof p.text === "string")
     .map((p) => p.text)
