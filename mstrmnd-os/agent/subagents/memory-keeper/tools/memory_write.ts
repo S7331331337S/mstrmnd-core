@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { thirdMind } from "../../../lib/third-mind";
+import { scopeFromCtx } from "../../../lib/scope";
 
 export default defineTool({
   description:
@@ -10,8 +11,9 @@ export default defineTool({
     content: z.string().min(1).describe("The observation, self-contained"),
     tags: z.array(z.string()).optional().describe("Optional topical tags"),
   }),
-  async execute({ key, content, tags }) {
+  async execute({ key, content, tags }, ctx) {
     const observation = await thirdMind().write({
+      scope: scopeFromCtx(ctx),
       key,
       content,
       tags,

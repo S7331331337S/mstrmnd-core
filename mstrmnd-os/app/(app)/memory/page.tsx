@@ -1,4 +1,5 @@
 import { thirdMind } from "@/agent/lib/third-mind";
+import { getSession } from "@/lib/auth";
 import { AddObservation } from "./add-observation";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,10 @@ function timeAgo(iso: string): string {
 }
 
 export default async function MemoryPage() {
-  const observations = await thirdMind().list(50);
+  const session = await getSession();
+  const observations = session
+    ? await thirdMind().list(session.workspaceId, 50)
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -25,8 +29,9 @@ export default async function MemoryPage() {
           Third-Mind
         </h1>
         <p className="text-muted max-w-2xl leading-relaxed">
-          The collective memory of the alliance. Every mind reads and writes
-          here through tools; observations survive across sessions and agents.
+          Your workspace&rsquo;s collective memory. Every mind reads and writes
+          here through tools; observations survive across sessions and agents and
+          never cross workspace boundaries.
         </p>
       </section>
 

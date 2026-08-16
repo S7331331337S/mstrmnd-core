@@ -1,6 +1,7 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import { thirdMind } from "../lib/third-mind";
+import { scopeFromCtx, agentFromCtx } from "../lib/scope";
 
 export default defineTool({
   description:
@@ -11,14 +12,12 @@ export default defineTool({
     tags: z.array(z.string()).optional().describe("Optional topical tags"),
   }),
   async execute({ key, content, tags }, ctx) {
-    const agentName =
-      (ctx as { session?: { agent?: { name?: string } } }).session?.agent?.name ??
-      "maestro";
     const observation = await thirdMind().write({
+      scope: scopeFromCtx(ctx),
       key,
       content,
       tags,
-      agent: agentName,
+      agent: agentFromCtx(ctx, "maestro"),
     });
     return { ok: true, id: observation.id, key: observation.key };
   },

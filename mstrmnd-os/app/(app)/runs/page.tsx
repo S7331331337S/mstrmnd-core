@@ -8,7 +8,7 @@ const CAPABILITIES = [
   { label: "Model access", value: "AI Gateway / AI SDK (provider-agnostic)" },
   { label: "Durability", value: "Vercel Workflows (checkpointed steps)" },
   { label: "Execution", value: "Vercel Sandbox (approval-gated execute_code)" },
-  { label: "Channels", value: "web (same-origin /eve/v1/*)" },
+  { label: "Auth", value: "Session-gated app + agent (per-workspace scope)" },
   { label: "Memory", value: "Third-Mind shared observation layer" },
 ];
 

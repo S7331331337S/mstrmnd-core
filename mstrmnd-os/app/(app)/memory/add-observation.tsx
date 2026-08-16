@@ -70,7 +70,7 @@ export function AddObservation() {
         {error ? (
           <span className="label text-foreground">{error}</span>
         ) : (
-          <span className="label">Shared across every mind in the alliance</span>
+          <span className="label">Shared across every mind in your workspace</span>
         )}
         <button
           type="submit"

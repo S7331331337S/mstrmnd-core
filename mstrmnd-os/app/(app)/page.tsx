@@ -1,11 +1,14 @@
-import { AllianceCommand } from "./_components/alliance-command";
-import { ROSTER } from "./_components/roster";
+import { AllianceCommand } from "@/app/_components/alliance-command";
+import { ROSTER } from "@/app/_components/roster";
 import { activeProviderLabel } from "@/agent/lib/model";
+import { getSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default function Page() {
+export default async function Page() {
   const provider = activeProviderLabel();
+  const session = await getSession();
+  const firstName = (session?.name || "operator").split(" ")[0];
 
   return (
     <div className="flex flex-col gap-8">
@@ -16,13 +19,14 @@ export default function Page() {
           built to execute.
         </h1>
         <p className="text-muted max-w-2xl leading-relaxed">
-          MSTRMND installs the intelligence layer between your vision and daily
-          execution. Maestro coordinates specialists over a shared Third-Mind
-          memory. Models are interchangeable; the alliance persists.
+          Welcome back, {firstName}. Maestro coordinates specialists over your
+          workspace&rsquo;s shared Third-Mind. Models are interchangeable; the
+          alliance persists.
         </p>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1 pt-1">
           <span className="label">
-            Runtime · eve · model provider: <span className="text-foreground">{provider}</span>
+            Runtime · eve · model provider:{" "}
+            <span className="text-foreground">{provider}</span>
           </span>
           <span className="label">Durability · Vercel Workflows</span>
           <span className="label">Execution · Vercel Sandbox</span>

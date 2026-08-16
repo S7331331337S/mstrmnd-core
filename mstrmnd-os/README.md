@@ -17,7 +17,8 @@ Next.js 16.3 as the host application and UI surface.
 | Models | AI Gateway + AI SDK (`ai`) | Provider-agnostic model access via string IDs or direct providers |
 | Durability | Workflow SDK (`workflow`) | Checkpointed, resumable multi-agent patterns |
 | Execution | Vercel Sandbox | Isolated microVMs for untrusted code (`execute_code`) |
-| Memory | Third-Mind | Shared observation layer read/written by agents via tools |
+| Auth | Session (JWT via `jose`) | Sign in / sign up; gates the app **and** the agent; per-workspace scope |
+| Memory | Third-Mind | Multi-tenant shared observation layer, read/written by agents via tools |
 
 ## Architecture
 
@@ -60,8 +61,18 @@ its key (`XAI_TOKEN`, `PERPLEXITY_API_TOKEN`, …) and select it with
 `MSTRMND_PROVIDER`.
 
 ```bash
-MSTRMND_PROVIDER=perplexity pnpm dev
+MSTRMND_PROVIDER=perplexity AUTH_SECRET=$(openssl rand -hex 32) pnpm dev
 ```
+
+### Auth
+
+Email/password auth issues a signed-JWT session cookie (`jose`, HS256). The
+same cookie gates the app (via `middleware.ts`) **and** the agent (via
+`agent/channels/eve.ts`, which maps the session to a user principal). The
+Third-Mind is scoped to the caller's `workspaceId`, so workspaces never see each
+other's memory. Set `AUTH_SECRET` in every environment (a stable random string;
+the app and agent must share it). Users are file-backed for dev; the production
+adapter (Neon/Postgres) is the memory-layer slice.
 
 ## Commands
 
@@ -75,12 +86,15 @@ MSTRMND_PROVIDER=perplexity pnpm dev
 
 ## Slice status
 
-This is **Slice 1 — scaffold + Maestro core + Third-Mind + Alliance UI**:
+Landed so far:
 
 - Maestro root orchestrator with Researcher / Critic / Memory-Keeper subagents.
-- Third-Mind shared memory with `memory_{read,write,search,list}` tools, a
-  durable file-backed store, and an interactive dashboard.
+- Multi-tenant Third-Mind memory with `memory_{read,write,search,list}` tools, a
+  durable file-backed store, and an interactive dashboard — scoped per workspace.
 - Swiss/dark Alliance command UI streaming live Maestro turns via `useEveAgent`.
+- **Auth**: sign in / sign up pages, JWT session cookie, `middleware.ts` app
+  gating, and a session-verifying `agent/channels/eve.ts` so the agent is
+  protected by the same identity and memory is workspace-scoped.
 - `withEve(withWorkflow(...))` composed; a `parallel-council` workflow pattern.
 - Approval-gated `execute_code` (Vercel Sandbox) scaffolded.
 
