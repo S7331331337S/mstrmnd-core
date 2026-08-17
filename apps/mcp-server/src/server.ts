@@ -3,21 +3,28 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import * as z from "zod";
 import {
   MemoryEngine,
+  VectorEngine,
   resolveVaultPath,
+  resolveEmbeddingProvider,
   loadIdentity,
   EMPTY_IDENTITY,
 } from "@mstrmnd/intelligence-core";
 import type { IdentityModel, MemoryNode } from "@mstrmnd/schemas";
 
-const engine = new MemoryEngine();
+let engine = new MemoryEngine();
 let identity: IdentityModel = { ...EMPTY_IDENTITY };
 
 async function boot(): Promise<void> {
   const vaultPath = resolveVaultPath();
+  const provider = await resolveEmbeddingProvider();
+  engine = new MemoryEngine(new VectorEngine(provider));
   try {
     const nodes = await engine.loadVault(vaultPath);
     identity = await loadIdentity(vaultPath);
     console.error(`MSTRMND MCP: loaded ${nodes.length} notes from ${vaultPath}`);
+    console.error(
+      `MSTRMND MCP: embeddings via ${provider.name} (${provider.dimensions}d)`
+    );
     if (identity.values.length || identity.interests.length) {
       console.error("MSTRMND MCP: identity profile loaded");
     } else {
@@ -46,9 +53,19 @@ server.registerTool(
   "search_memory",
   {
     description:
-      "Search personal memory from your Obsidian vault by keyword. Returns matching notes with title, id, tags, and a content snippet.",
+      "Search personal memory from your Obsidian vault. Returns matching notes " +
+      "with title, id, tags, relevance score, and a content snippet. Use " +
+      "'hybrid' when the user's wording may not match their notes' wording, " +
+      "'keyword' when they name an exact term, tag, or filename.",
     inputSchema: {
       query: z.string().describe("Search query — matches titles, tags, and note body"),
+      mode: z
+        .enum(["keyword", "semantic", "hybrid"])
+        .optional()
+        .describe(
+          "keyword = exact token matching; semantic = embedding similarity; " +
+            "hybrid = both, blended (default)"
+        ),
       limit: z
         .number()
         .int()
@@ -58,19 +75,24 @@ server.registerTool(
         .describe("Max results to return (default 10)"),
     },
   },
-  async ({ query, limit = 10 }) => {
-    const { memories } = engine.search(query);
-    const results = memories.slice(0, limit).map((m) => ({
-      id: m.id,
-      title: m.title,
-      tags: m.relationships,
-      snippet: snippet(m),
+  async ({ query, mode = "hybrid", limit = 10 }) => {
+    const scored = await engine.searchBy(query, mode, limit);
+    const results = scored.map(({ node, score }) => ({
+      id: node.id,
+      title: node.title,
+      tags: node.relationships,
+      score: Number(score.toFixed(4)),
+      snippet: snippet(node),
     }));
     return {
       content: [
         {
           type: "text" as const,
-          text: JSON.stringify({ query, count: results.length, results }, null, 2),
+          text: JSON.stringify(
+            { query, mode, count: results.length, results },
+            null,
+            2
+          ),
         },
       ],
     };
