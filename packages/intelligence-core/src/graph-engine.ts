@@ -22,15 +22,18 @@ export class GraphEngine {
     );
   }
 
-  /** Neighbor ids (the other end of every edge touching `id`). */
+  /** Distinct neighbor ids (the other end of every edge touching `id`).
+   *  Two notes are commonly joined by several edges at once — a shared tag, a
+   *  wikilink, and folder co-location — so results are deduped; use `related`
+   *  when the edge types themselves matter. */
   neighbors(id: string): string[] {
     const key = id.toLowerCase();
-    const out: string[] = [];
+    const out = new Set<string>();
     for (const e of this.edges) {
-      if (e.source.toLowerCase() === key) out.push(e.target);
-      else if (e.target.toLowerCase() === key) out.push(e.source);
+      if (e.source.toLowerCase() === key) out.add(e.target);
+      else if (e.target.toLowerCase() === key) out.add(e.source);
     }
-    return out;
+    return [...out];
   }
 
   get size(): number {
