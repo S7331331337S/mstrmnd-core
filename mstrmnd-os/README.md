@@ -15,8 +15,8 @@ Next.js 16.3 as the host application and UI surface.
 | Framework | Next.js 16.3 (App Router) | Host app + UI, `withEve` + `withWorkflow` |
 | Agent runtime | [`eve`](https://eve.dev) | Filesystem agents, durable sessions, subagents, skills, tools, channels |
 | Models | AI Gateway + AI SDK (`ai`) | Provider-agnostic model access via string IDs or direct providers |
-| Durability | Workflow SDK (`workflow`) | Checkpointed, resumable multi-agent patterns |
-| Execution | Vercel Sandbox | Isolated microVMs for untrusted code (`execute_code`) |
+| Durability | Workflow SDK (`workflow`) | Checkpointed, resumable multi-agent patterns; world selectable |
+| Execution | Sandbox adapter (`agent/sandbox.ts`) | Vercel Sandbox, Docker, microsandbox, or just-bash — same `/workspace` |
 | Auth | Session (JWT via `jose`) | Sign in / sign up; gates the app **and** the agent; per-workspace scope |
 | Data | Postgres / Neon (`pg`) | Users + Third-Mind persist in Postgres when `DATABASE_URL` is set (file fallback otherwise) |
 | Memory | Third-Mind | Multi-tenant shared observation layer, read/written by agents via tools |
@@ -51,15 +51,19 @@ pnpm dev            # Next.js + eve dev server (http://localhost:3000)
 
 Model access is resolved model-agnostically in `agent/lib/model.ts`:
 
-- `MSTRMND_PROVIDER` = `gateway` | `xai` | `perplexity` (explicit), else the
-  default precedence is Gateway → xAI → Perplexity based on which credential is
-  present.
+- `MSTRMND_PROVIDER` = `compatible` | `gateway` | `anthropic` | `openai` | `xai` |
+  `perplexity` (explicit), else the default precedence is self-hosted gateway →
+  AI Gateway → Anthropic → OpenAI → xAI → Perplexity, based on which credential
+  is present.
 - `MSTRMND_MODEL` overrides the concrete model id.
 
-Production default is the Vercel AI Gateway — set `AI_GATEWAY_API_KEY` or link a
-Vercel project (`eve link`) for OIDC. To run a specific provider directly, set
-its key (`XAI_TOKEN`, `PERPLEXITY_API_TOKEN`, …) and select it with
-`MSTRMND_PROVIDER`.
+Set `MSTRMND_MODEL_BASE_URL` (plus `MSTRMND_MODEL_API_KEY`) to route through an
+OpenAI-compatible gateway you operate — LiteLLM, Portkey, vLLM, Ollama — and no
+model traffic touches a vendor gateway. It deliberately outranks the Vercel AI
+Gateway, which stays the convenient default when nothing self-hosted is
+configured (`AI_GATEWAY_API_KEY`, or link a Vercel project with `eve link` for
+OIDC). To call a provider directly, set its key (`ANTHROPIC_API_KEY`,
+`XAI_TOKEN`, `PERPLEXITY_API_TOKEN`, …) and select it with `MSTRMND_PROVIDER`.
 
 ```bash
 MSTRMND_PROVIDER=perplexity AUTH_SECRET=$(openssl rand -hex 32) pnpm dev
@@ -96,7 +100,34 @@ AUTH_SECRET=... MSTRMND_PROVIDER=perplexity pnpm dev
 | `pnpm eve:info` | Inspect the discovered agent surface |
 | `pnpm test:memory` | Offline Third-Mind round-trip test |
 | `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm build` | Production build |
+| `pnpm build` | Production build (standalone Node server off Vercel) |
+| `docker build -t mstrmnd-os .` | Self-hosted container image |
+
+## Portability
+
+Vercel is a deployment target, not a dependency. The same source builds a plain
+Node container, and every platform surface is one adapter selected by
+environment variable:
+
+| Surface | Adapter | Switch |
+| --- | --- | --- |
+| Host runtime | Next.js `output: "standalone"` | `MSTRMND_STANDALONE` (auto off Vercel) |
+| Sandbox | `agent/sandbox.ts` | `MSTRMND_SANDBOX` = `auto`/`vercel`/`docker`/`microsandbox`/`justbash` |
+| Durability | `agent/agent.ts` | `MSTRMND_WORKFLOW_WORLD` (build time; unset → local file world) |
+| Models | `agent/lib/model.ts` | `MSTRMND_MODEL_BASE_URL` / `MSTRMND_PROVIDER` |
+| Data | `lib/db.ts` | `DATABASE_URL` (any Postgres) |
+
+Run the whole stack off-platform:
+
+```bash
+AUTH_SECRET=$(openssl rand -hex 32) \
+  docker compose -f ../infrastructure/docker-compose.self-host.yml up --build
+curl http://localhost:3000/eve/v1/health
+```
+
+Sandbox egress defaults to `deny-all` (`MSTRMND_SANDBOX_NETWORK`) because
+`execute_code` runs model-authored commands. Full ledger and exit plan:
+[`../docs/portability.md`](../docs/portability.md).
 
 ## Slice status
 
@@ -110,7 +141,10 @@ Landed so far:
   gating, and a session-verifying `agent/channels/eve.ts` so the agent is
   protected by the same identity and memory is workspace-scoped.
 - `withEve(withWorkflow(...))` composed; a `parallel-council` workflow pattern.
-- Approval-gated `execute_code` (Vercel Sandbox) scaffolded.
+- Approval-gated `execute_code` running against a **backend-agnostic sandbox**
+  (`ctx.getSandbox()`), with the backend chosen in `agent/sandbox.ts`.
+- **Portability slice**: standalone build, self-host Dockerfile + compose stack,
+  swappable sandbox / durability / model-gateway adapters.
 
 Production data layer: **Postgres/Neon adapter implemented** for users +
 Third-Mind (gated on `DATABASE_URL`). Next slices: pgvector semantic recall;

@@ -27,16 +27,34 @@ mounts the **eve** agent runtime same-origin at `/eve/v1/*`.
     (Vercel Sandbox), and `disableTool()` stubs for the sandbox-backed builtins.
   - `subagents/{researcher,critic,memory-keeper}/` — specialists.
   - `skills/` — Markdown playbooks loaded on demand.
+  - `sandbox.ts` — sandbox backend adapter (`MSTRMND_SANDBOX`).
 - `workflows/` — durable Workflow SDK patterns (`"use workflow"`).
 - `app/` — Next.js App Router UI (Alliance command, Third-Mind, Agents).
-- `next.config.ts` — `withEve(withWorkflow(...))`.
+- `next.config.ts` — `withEve(withWorkflow(...))`; standalone output off Vercel.
+- `Dockerfile` — self-hosted image (see `../docs/portability.md`).
 
 ## Model access (model-agnostic)
 
-Resolved in `agent/lib/model.ts`. Set `MSTRMND_PROVIDER` = `gateway` | `xai` |
-`perplexity`, or rely on the default precedence (Gateway → xAI → Perplexity).
-`MSTRMND_MODEL` overrides the concrete model id. Production default is the AI
-Gateway (`AI_GATEWAY_API_KEY` or a linked Vercel project's OIDC).
+Resolved in `agent/lib/model.ts`. Set `MSTRMND_PROVIDER` = `compatible` |
+`gateway` | `anthropic` | `openai` | `xai` | `perplexity`, or rely on the default
+precedence: a self-hosted OpenAI-compatible gateway (`MSTRMND_MODEL_BASE_URL` —
+LiteLLM, Portkey, vLLM, Ollama) → AI Gateway → Anthropic → OpenAI → xAI →
+Perplexity. `MSTRMND_MODEL` overrides the concrete model id.
+
+## Host portability
+
+Hosting is an adapter, not a dependency. Vercel is one target; the same source
+builds a plain Node container.
+
+- `agent/sandbox.ts` — `MSTRMND_SANDBOX` = `auto` | `vercel` | `docker` |
+  `microsandbox` | `justbash`; egress is `deny-all` by default
+  (`MSTRMND_SANDBOX_NETWORK`).
+- `agent/agent.ts` — `MSTRMND_WORKFLOW_WORLD` binds durability to a Workflow
+  world package; unset uses eve's file-backed world under `.eve/`. Read at
+  **build** time.
+- `next.config.ts` — `output: "standalone"` off Vercel (`MSTRMND_STANDALONE`).
+- **Tools must call `ctx.getSandbox()`**, never a vendor sandbox SDK. Full ledger
+  and exit plan: [`../docs/portability.md`](../docs/portability.md).
 
 ## Commands
 
@@ -44,6 +62,9 @@ Gateway (`AI_GATEWAY_API_KEY` or a linked Vercel project's OIDC).
 - `pnpm eve:info` — inspect discovered agent surface (run when discovery is off).
 - `pnpm test:memory` — offline Third-Mind round-trip test.
 - `pnpm build` / `pnpm eve:build` — production builds.
+- `docker build -t mstrmnd-os .` — self-hosted image; or
+  `docker compose -f ../infrastructure/docker-compose.self-host.yml up --build`
+  for the whole stack (app + durable state + Postgres) off-platform.
 
 ## Notes
 

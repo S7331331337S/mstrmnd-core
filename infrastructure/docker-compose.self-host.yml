@@ -1,0 +1,68 @@
+# MSTRMND OS — the whole stack, off-platform.
+#
+# Proves the exit path is real rather than theoretical: the host app, the eve
+# agent runtime, durable workflow state, and Postgres all run on hardware we
+# choose. Nothing here calls a Vercel API.
+#
+#   docker compose -f infrastructure/docker-compose.self-host.yml up --build
+#
+# Sandbox note: MSTRMND_SANDBOX=docker needs a reachable Docker daemon, and the
+# socket mount below is how the container gets one. Mounting the socket grants
+# the container control of the host's Docker — a real privilege escalation, and
+# the image otherwise runs unprivileged as uid 1001, which will also need to be
+# in the socket's group. Prefer a rootless or remote daemon, or drop the mount
+# and set MSTRMND_SANDBOX=justbash, if that trade is not acceptable here.
+
+services:
+  os:
+    build:
+      context: ../mstrmnd-os
+      dockerfile: Dockerfile
+    container_name: mstrmnd-os
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      # Data — any Postgres, not a platform-managed one.
+      DATABASE_URL: postgres://mstrmnd:mstrmnd@postgres:5432/mstrmnd
+      # Auth — shared by the app and the agent.
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET to a stable random string}
+      # Models — point at a gateway you operate, or set a direct provider key.
+      MSTRMND_PROVIDER: ${MSTRMND_PROVIDER:-}
+      MSTRMND_MODEL: ${MSTRMND_MODEL:-}
+      MSTRMND_MODEL_BASE_URL: ${MSTRMND_MODEL_BASE_URL:-}
+      MSTRMND_MODEL_API_KEY: ${MSTRMND_MODEL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Sandbox — local container isolation, default-closed egress.
+      MSTRMND_SANDBOX: ${MSTRMND_SANDBOX:-docker}
+      MSTRMND_SANDBOX_NETWORK: ${MSTRMND_SANDBOX_NETWORK:-deny-all}
+    volumes:
+      # Durable session + workflow state (eve's local Workflow world).
+      - eve_data:/app/.eve
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mstrmnd-os-postgres
+    environment:
+      POSTGRES_USER: mstrmnd
+      POSTGRES_PASSWORD: mstrmnd
+      POSTGRES_DB: mstrmnd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mstrmnd -d mstrmnd"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  eve_data:
+  postgres_data:

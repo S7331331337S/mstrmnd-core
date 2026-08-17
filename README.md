@@ -116,6 +116,10 @@ Every memory, credential, policy, tool call, and artifact must carry an explicit
 
 See [`docs/runtime-boundaries.md`](docs/runtime-boundaries.md) and [`docs/modernization-roadmap.md`](docs/modernization-roadmap.md).
 
+Hosting is an adapter on the same terms as any other vendor: what couples the
+runtime to a platform, what replaces it, and how to verify the replacement is
+tracked in [`docs/portability.md`](docs/portability.md).
+
 ## Local MVP — Quick Start
 
 ### Prerequisites

@@ -1,0 +1,16 @@
+node_modules
+.next
+.output
+.eve
+.vercel
+.mstrmnd
+.git
+.gitignore
+.env
+.env.*
+npm-debug.log*
+pnpm-debug.log*
+*.tsbuildinfo
+coverage
+Dockerfile
+.dockerignore

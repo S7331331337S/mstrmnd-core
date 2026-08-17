@@ -21,7 +21,6 @@
     "@ai-sdk/openai-compatible": "^3.0.30",
     "@ai-sdk/perplexity": "^4.0.29",
     "@ai-sdk/xai": "^4.0.40",
-    "@vercel/sandbox": "^3.0.0",
     "ai": "^7.0.66",
     "eve": "^0.38.3",
     "geist": "^1.7.2",

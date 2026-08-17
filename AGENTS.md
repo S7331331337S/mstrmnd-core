@@ -44,7 +44,10 @@ Do not invent empty platform packages before Operator Zero context + orchestrato
 - `briefs/` — editorial input briefs · `kits/` — generated editorial kits (gitignored) · `templates/` — vault templates (e.g. `identity.md`)
 - `editorial_worker.py` — PRESS editorial HTTP worker
 - `docs/MASTER.md` — **shared agent master plan + backlog**
-- `scripts/` — vault/sync utilities · `infrastructure/` — deploy sketches
+- `docs/portability.md` — **hosting lock-in ledger + exit plan**
+- `mstrmnd-os/` — Next.js host + eve agent runtime (its own pnpm workspace)
+- `scripts/` — vault/sync utilities · `infrastructure/` — deploy sketches,
+  `docker-compose.self-host.yml` runs the whole stack off-platform
 
 ## Obsidian vault dependency
 
@@ -67,6 +70,10 @@ Local Obsidian is a **first-party adapter**, not the boundary of the platform.
   assert platinum present and cyan/teal/blue pixel windows ≈ 0 on every kit.
 - **Model-agnostic:** providers are replaceable; do not couple domain logic to one vendor.
 - **Adapters at the edge:** Obsidian and other vendors translate into stable schemas.
+- **Host-agnostic:** hosting is an adapter too. Domain code (agents, tools,
+  subagents, skills, schemas) never imports a hosting SDK; every platform seam is
+  one module selected by env var, and every new vendor dependency ships with its
+  non-Vercel path plus a row in `docs/portability.md`. Rules: [`.cursorrules`](.cursorrules).
 - **Doctrine pinned:** never depend on an unpinned floating doctrine branch at runtime.
   Pin lives in `doctrine.pin.json`. Sync with `pnpm doctrine:sync`; validate with
   `pnpm doctrine:validate` / `pnpm doctrine:ci`. See `docs/doctrine-integration.md`.
