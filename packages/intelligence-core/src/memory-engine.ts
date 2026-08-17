@@ -225,18 +225,33 @@ const TITLE_WEIGHT = 3;
 const CONTENT_WEIGHT = 1;
 const RELATIONSHIP_WEIGHT = 1;
 
+/** Dropped from queries: they match almost every note and carry no intent.
+ *  Kept deliberately short — an aggressive list would break searches for real
+ *  note titles like "How To" or "The Plan". */
+const STOPWORDS = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "but", "by", "do", "for", "from",
+  "how", "i", "in", "is", "it", "of", "on", "or", "that", "the", "to", "was",
+  "what", "when", "where", "which", "who", "why", "with",
+]);
+
+/** Substring matching below this length produces more noise than signal —
+ *  "is" matches inside "display". Shorter tokens must match a field exactly. */
+const MIN_SUBSTRING_LENGTH = 4;
+
 function tokenize(input: string): string[] {
   return input
     .toLowerCase()
     .split(/[^a-z0-9]+/i)
-    .filter(Boolean);
+    .filter((t) => t.length > 0 && !STOPWORDS.has(t));
 }
 
 function scoreField(field: string, tokens: string[], weight: number): number {
   let score = 0;
   for (const tok of tokens) {
     if (field === tok) score += weight * 2;
-    else if (field.includes(tok)) score += weight;
+    else if (tok.length >= MIN_SUBSTRING_LENGTH && field.includes(tok)) {
+      score += weight;
+    }
   }
   return score;
 }
