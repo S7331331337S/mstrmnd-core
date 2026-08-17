@@ -18,6 +18,7 @@ Next.js 16.3 as the host application and UI surface.
 | Durability | Workflow SDK (`workflow`) | Checkpointed, resumable multi-agent patterns |
 | Execution | Vercel Sandbox | Isolated microVMs for untrusted code (`execute_code`) |
 | Auth | Session (JWT via `jose`) | Sign in / sign up; gates the app **and** the agent; per-workspace scope |
+| Data | Postgres / Neon (`pg`) | Users + Third-Mind persist in Postgres when `DATABASE_URL` is set (file fallback otherwise) |
 | Memory | Third-Mind | Multi-tenant shared observation layer, read/written by agents via tools |
 
 ## Architecture
@@ -71,8 +72,21 @@ same cookie gates the app (via `middleware.ts`) **and** the agent (via
 `agent/channels/eve.ts`, which maps the session to a user principal). The
 Third-Mind is scoped to the caller's `workspaceId`, so workspaces never see each
 other's memory. Set `AUTH_SECRET` in every environment (a stable random string;
-the app and agent must share it). Users are file-backed for dev; the production
-adapter (Neon/Postgres) is the memory-layer slice.
+the app and agent must share it).
+
+### Database (Postgres / Neon)
+
+Set `DATABASE_URL` to a Postgres connection string and both the user store and
+the Third-Mind persist in Postgres; the schema (`users`, `observations`) is
+created idempotently on first use, and Third-Mind search uses Postgres
+full-text ranking. On Neon, use the pooled connection string with
+`?sslmode=require`. Without `DATABASE_URL`, both fall back to file-backed dev
+stores. Add `DATABASE_URL` as a secret — never commit it.
+
+```bash
+DATABASE_URL="postgres://user:pass@host/db?sslmode=require" \
+AUTH_SECRET=... MSTRMND_PROVIDER=perplexity pnpm dev
+```
 
 ## Commands
 
@@ -98,9 +112,10 @@ Landed so far:
 - `withEve(withWorkflow(...))` composed; a `parallel-council` workflow pattern.
 - Approval-gated `execute_code` (Vercel Sandbox) scaffolded.
 
-Next slices: production memory adapter (Neon + vectors); binding workflow steps
-to real subagents (Orchestrator-Worker, Evaluator-Loop); sandbox execution;
-Slack/cron channels; evals.
+Production data layer: **Postgres/Neon adapter implemented** for users +
+Third-Mind (gated on `DATABASE_URL`). Next slices: pgvector semantic recall;
+binding workflow steps to real subagents (Orchestrator-Worker, Evaluator-Loop);
+sandbox execution; Slack/cron channels; OAuth (GitHub/Google) sign-in; evals.
 
 ### Notes & limits
 

@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, isAbsolute } from "node:path";
 import { randomUUID } from "node:crypto";
+import { hasDatabase, getPool, ensureSchema } from "../../lib/db";
 
 /**
  * Third-Mind — the shared observation / memory layer.
@@ -136,11 +137,108 @@ export class FileThirdMindStore implements ThirdMindStore {
   }
 }
 
+interface PgObservationRow {
+  id: string;
+  scope: string;
+  key: string;
+  content: string;
+  tags: string[];
+  agent: string;
+  created_at: string | Date;
+}
+
+function rowToObservation(r: PgObservationRow): Observation {
+  return {
+    id: r.id,
+    scope: r.scope,
+    key: r.key,
+    content: r.content,
+    tags: r.tags ?? [],
+    agent: r.agent,
+    createdAt: new Date(r.created_at).toISOString(),
+  };
+}
+
+/** Postgres (Neon) scope-aware Third-Mind store. */
+export class PostgresThirdMindStore implements ThirdMindStore {
+  async write(input: WriteInput): Promise<Observation> {
+    await ensureSchema();
+    const { rows } = await getPool().query<PgObservationRow>(
+      `insert into observations (id, scope, key, content, tags, agent)
+       values ($1, $2, $3, $4, $5, $6)
+       on conflict (scope, key) do update
+         set content = excluded.content,
+             tags = excluded.tags,
+             agent = excluded.agent,
+             created_at = now()
+       returning id, scope, key, content, tags, agent, created_at`,
+      [
+        randomUUID(),
+        input.scope,
+        input.key,
+        input.content,
+        input.tags ?? [],
+        input.agent ?? "unknown",
+      ],
+    );
+    return rowToObservation(rows[0]);
+  }
+
+  async read(scope: string, idOrKey: string): Promise<Observation | null> {
+    await ensureSchema();
+    const { rows } = await getPool().query<PgObservationRow>(
+      `select id, scope, key, content, tags, agent, created_at
+         from observations
+        where scope = $1 and (key = $2 or id::text = $2)
+        limit 1`,
+      [scope, idOrKey],
+    );
+    return rows[0] ? rowToObservation(rows[0]) : null;
+  }
+
+  async search(scope: string, query: string, limit = 10): Promise<SearchHit[]> {
+    await ensureSchema();
+    const doc = "key || ' ' || content || ' ' || array_to_string(tags, ' ')";
+    // Full-text ranked search, with an ILIKE fallback for queries that produce
+    // no lexemes. Semantic (pgvector) recall is a later slice.
+    const { rows } = await getPool().query<PgObservationRow & { score: number }>(
+      `select id, scope, key, content, tags, agent, created_at,
+              ts_rank(to_tsvector('english', ${doc}),
+                      websearch_to_tsquery('english', $2)) as score
+         from observations
+        where scope = $1
+          and (to_tsvector('english', ${doc}) @@ websearch_to_tsquery('english', $2)
+               or ${doc} ilike '%' || $2 || '%')
+        order by score desc, created_at desc
+        limit $3`,
+      [scope, query, limit],
+    );
+    return rows.map((r) => ({ ...rowToObservation(r), score: Number(r.score) || 0 }));
+  }
+
+  async list(scope: string, limit = 50): Promise<Observation[]> {
+    await ensureSchema();
+    const { rows } = await getPool().query<PgObservationRow>(
+      `select id, scope, key, content, tags, agent, created_at
+         from observations
+        where scope = $1
+        order by created_at desc
+        limit $2`,
+      [scope, limit],
+    );
+    return rows.map(rowToObservation);
+  }
+}
+
 let singleton: ThirdMindStore | null = null;
 
 /** Shared Third-Mind store instance for tools and the app. */
 export function thirdMind(): ThirdMindStore {
-  if (!singleton) singleton = new FileThirdMindStore();
+  if (!singleton) {
+    singleton = hasDatabase()
+      ? new PostgresThirdMindStore()
+      : new FileThirdMindStore();
+  }
   return singleton;
 }
 
