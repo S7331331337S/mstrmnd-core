@@ -1,0 +1,17 @@
+import { defineTool } from "eve/tools";
+import { z } from "zod";
+import { thirdMind } from "../../../lib/third-mind";
+import { scopeFromCtx } from "../../../lib/scope";
+
+export default defineTool({
+  description:
+    "Search the shared Third-Mind memory layer for relevant observations by keyword.",
+  inputSchema: z.object({
+    query: z.string().min(1).describe("Keywords to search for"),
+    limit: z.number().int().min(1).max(50).optional(),
+  }),
+  async execute({ query, limit }, ctx) {
+    const hits = await thirdMind().search(scopeFromCtx(ctx), query, limit ?? 10);
+    return { query, count: hits.length, hits };
+  },
+});
