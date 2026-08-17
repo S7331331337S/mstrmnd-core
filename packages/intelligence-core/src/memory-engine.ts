@@ -1,10 +1,25 @@
 import type { MemoryNode } from "@mstrmnd/schemas";
 import { readVault, type VaultNote } from "@mstrmnd/connectors";
 import { GraphEngine } from "./graph-engine";
+import { VectorEngine } from "./vector-engine";
+
+/** How a search query is matched against memory. */
+export type SearchMode = "keyword" | "semantic" | "hybrid";
+
+export interface ScoredMemory {
+  node: MemoryNode;
+  score: number;
+}
 
 export class MemoryEngine {
   private nodes: MemoryNode[] = [];
   private graph = new GraphEngine();
+  private vectors: VectorEngine;
+  private indexed = false;
+
+  constructor(vectors: VectorEngine = new VectorEngine()) {
+    this.vectors = vectors;
+  }
 
   /** Store a single memory node. Links it into the tag graph against
    *  every existing node that shares a tag. */
@@ -41,6 +56,11 @@ export class MemoryEngine {
     return this.nodes.length;
   }
 
+  /** The vector index backing semantic search. */
+  get embeddings(): VectorEngine {
+    return this.vectors;
+  }
+
   /**
    * Tokenized, scored search over title + content + relationships (case-insensitive).
    * Title matches weigh more than content; relationship matches weigh least.
@@ -51,12 +71,95 @@ export class MemoryEngine {
     if (tokens.length === 0) {
       return { query, memories: [...this.nodes] };
     }
-    const scored = this.nodes
+    return { query, memories: this.scoreKeyword(tokens).map((s) => s.node) };
+  }
+
+  /** Keyword hits with their raw scores, highest first. */
+  private scoreKeyword(tokens: string[]): ScoredMemory[] {
+    return this.nodes
       .map((node) => ({ node, score: scoreNode(node, tokens) }))
       .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Embed every loaded note so semantic search has something to match against.
+   * Idempotent — repeated calls are cheap, and the VectorEngine's content-hash
+   * cache means an unchanged vault skips the model entirely.
+   */
+  async buildVectorIndex(): Promise<number> {
+    const entries = this.nodes.map((node) => ({
+      id: node.id,
+      // Title carries disproportionate signal in a vault, so lead with it.
+      text: `${node.title}\n\n${node.content ?? ""}`.trim(),
+    }));
+    const count = await this.vectors.index(entries);
+    this.indexed = true;
+    return count;
+  }
+
+  /** Nearest notes by embedding similarity. Builds the index on first use. */
+  async semanticSearch(query: string, limit = 10): Promise<ScoredMemory[]> {
+    if (!this.indexed) await this.buildVectorIndex();
+    const matches = await this.vectors.search(query, limit);
+    const scored: ScoredMemory[] = [];
+    for (const match of matches) {
+      const node = this.get(match.id);
+      if (node) scored.push({ node, score: match.score });
+    }
+    return scored;
+  }
+
+  /**
+   * Blend keyword and semantic ranking. Each side is normalized against its own
+   * top score before weighting, because raw keyword scores are unbounded counts
+   * while cosine similarity is capped at 1 — comparing them directly would let
+   * a single keyword-heavy note dominate every query.
+   */
+  async hybridSearch(
+    query: string,
+    limit = 10,
+    keywordWeight = 0.5
+  ): Promise<ScoredMemory[]> {
+    const tokens = tokenize(query);
+    const keyword = tokens.length > 0 ? this.scoreKeyword(tokens) : [];
+    const semantic = await this.semanticSearch(query, Math.max(limit * 4, 40));
+
+    const combined = new Map<string, { node: MemoryNode; score: number }>();
+    const topKeyword = keyword[0]?.score ?? 0;
+    const topSemantic = semantic[0]?.score ?? 0;
+    const semanticWeight = 1 - keywordWeight;
+
+    for (const { node, score } of keyword) {
+      const weighted = topKeyword > 0 ? (score / topKeyword) * keywordWeight : 0;
+      combined.set(node.id, { node, score: weighted });
+    }
+    for (const { node, score } of semantic) {
+      const weighted = topSemantic > 0 ? (score / topSemantic) * semanticWeight : 0;
+      const existing = combined.get(node.id);
+      if (existing) existing.score += weighted;
+      else combined.set(node.id, { node, score: weighted });
+    }
+
+    return [...combined.values()]
+      .filter((s) => s.score > 0)
       .sort((a, b) => b.score - a.score)
-      .map((s) => s.node);
-    return { query, memories: scored };
+      .slice(0, limit);
+  }
+
+  /** Dispatch to the requested strategy. */
+  async searchBy(
+    query: string,
+    mode: SearchMode = "keyword",
+    limit = 10
+  ): Promise<ScoredMemory[]> {
+    if (mode === "semantic") return this.semanticSearch(query, limit);
+    if (mode === "hybrid") return this.hybridSearch(query, limit);
+    const tokens = tokenize(query);
+    if (tokens.length === 0) {
+      return this.nodes.slice(0, limit).map((node) => ({ node, score: 0 }));
+    }
+    return this.scoreKeyword(tokens).slice(0, limit);
   }
 
   /**
@@ -67,6 +170,8 @@ export class MemoryEngine {
   async loadVault(vaultPath: string): Promise<MemoryNode[]> {
     this.nodes = [];
     this.graph = new GraphEngine();
+    this.vectors.clear();
+    this.indexed = false;
     const notes: VaultNote[] = await readVault(vaultPath);
     for (const note of notes) {
       this.store({

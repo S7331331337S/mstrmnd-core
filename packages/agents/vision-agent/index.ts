@@ -15,7 +15,7 @@ export class VisionAgent {
    *  from the shared VectorEngine; `analysis` is populated when a real vision
    *  model is attached (stays empty until then). */
   async analyze(input: VisionInput): Promise<Artifact> {
-    const { vector } = await this.embedder.embed(input.path);
+    const vector = await this.embedder.embed(input.path);
     return {
       id: input.id ?? input.path,
       type: input.type ?? "image",
