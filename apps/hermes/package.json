@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": { "dev": "tsx src/index.ts" },
   "dependencies": {
+    "@mstrmnd/agents": "workspace:*",
     "@mstrmnd/intelligence-core": "workspace:*",
     "@mstrmnd/schemas": "workspace:*"
   },
