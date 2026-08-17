@@ -131,6 +131,9 @@ Update checkboxes here when work lands.
 - [x] Hermes orchestrator shell (parent + workspace-scout sub-agent)
 - [x] Shared `createRuntime` factory (MCP + Hermes plugin boundary)
 - [x] Operator pack template + `pnpm operator:init`
+- [x] **Host portability**: sandbox/durability/model-gateway adapters in
+      `mstrmnd-os`, standalone build + self-host Dockerfile & compose stack,
+      mobile client on a configured base URL, ledger in `portability.md`
 
 ### Deferred (do not start unless asked)
 
@@ -158,7 +161,9 @@ Update checkboxes here when work lands.
 1. **Human approval** remains a hard stop for consequential actions when those paths exist.
 2. **Editorial brand** (Platinum-only) still applies when PRESS runs — but PRESS is deferred.
 3. **Providers stay replaceable.**
-4. **Adapters ≠ domain.** Files/folders/Obsidian translate at the edge.
+4. **Adapters ≠ domain.** Files/folders/Obsidian translate at the edge — and so
+   does hosting. Domain code never imports a hosting SDK; new vendor couplings
+   ship with a non-Vercel path and a row in [`portability.md`](./portability.md).
 5. **Explicit scope** on memory, credentials, tool calls, artifacts, runs.
 6. **Doctrine is pinned.** Never fetch mutable doctrine mid-run.
 
@@ -184,6 +189,7 @@ Update checkboxes here when work lands.
 | Agent tooling + brand invariants | [`../AGENTS.md`](../AGENTS.md) |
 | Longer phased roadmap | [`modernization-roadmap.md`](./modernization-roadmap.md) |
 | Doctrine vs runtime | [`runtime-boundaries.md`](./runtime-boundaries.md) |
+| Hosting lock-in + exit plan | [`portability.md`](./portability.md) |
 | Doctrine sync | [`doctrine-integration.md`](./doctrine-integration.md) |
 | Overview | [`../README.md`](../README.md) |
 
@@ -191,7 +197,7 @@ Update checkboxes here when work lands.
 
 ## Status stamp
 
-- **Last aligned:** 2026-08-04
+- **Last aligned:** 2026-08-17
 - **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
 - **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template
 - **Next:** Policy-gated workspace writes; richer agent planning; dogfood on a real vault with `MSTRMND_MODEL_PROVIDER=openai`

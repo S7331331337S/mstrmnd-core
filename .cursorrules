@@ -1,0 +1,51 @@
+# MSTRMND Core — agent rules
+
+Read `AGENTS.md` and `docs/MASTER.md` before planning or coding. Hard invariants
+there win over anything here.
+
+## Modular abstraction (anti-lock-in)
+
+The intelligence layer must outlive any host, model provider, or vendor SDK.
+Hosting is an adapter, exactly like Obsidian or a model provider.
+
+- **Domain code never imports a hosting SDK.** Agents, tools, subagents, skills,
+  workflows, and schemas stay platform-agnostic. `@vercel/sandbox`,
+  platform-storage clients, and platform-identity clients belong in an adapter
+  module and nowhere else.
+- **Adapters live at the edge, one file per seam**, and are selected by
+  environment variable — not by import site:
+  - `mstrmnd-os/agent/sandbox.ts` — sandbox backend (`MSTRMND_SANDBOX`)
+  - `mstrmnd-os/agent/lib/model.ts` — model provider (`MSTRMND_PROVIDER`,
+    `MSTRMND_MODEL_BASE_URL`)
+  - `mstrmnd-os/lib/db.ts` — Postgres (`DATABASE_URL`)
+  - `mstrmnd-os/agent/agent.ts` — durability world (`MSTRMND_WORKFLOW_WORLD`)
+- **Tools ask the runtime, not the vendor.** Use `ctx.getSandbox()`; do not
+  construct a vendor sandbox inside a tool.
+- **Every new vendor dependency ships with its non-Vercel path** and a new row
+  in `docs/portability.md`. A coupling that cannot be swapped must be named
+  there, not left for someone to discover during a migration.
+- **The web app must keep building standalone.** Do not remove
+  `output: "standalone"` from `mstrmnd-os/next.config.ts`, and do not add build
+  steps that only exist on one platform.
+- **Clients address a configured base URL.** No deployment domain is hardcoded
+  in web or mobile code; the mobile app reads `EXPO_PUBLIC_MSTRMND_API_URL`.
+- **Data stays on portable engines.** Standard Postgres over platform-exclusive
+  storage; adapters translate vendor shapes into `packages/schemas` types.
+
+## Stack
+
+- pnpm 10+ / Node 20+ (Node 24+ for `mstrmnd-os`) / turbo. Never npm.
+- Drive from the repo root with turbo + pnpm filters; do not `cd` into packages
+  ad-hoc.
+- `mstrmnd-os` is its own pnpm workspace — run its scripts from that directory.
+
+## Verify before declaring done
+
+- `pnpm verify` at the repo root (typecheck + doctrine fixture gate).
+- `pnpm typecheck` inside `mstrmnd-os` when that app changed.
+
+## Naming reality
+
+Say scaffold when it is a scaffold and shipped when it is shipped, in docs, PR
+descriptions, and `docs/MASTER.md`. Update the MASTER backlog when work lands or
+is deliberately deferred.

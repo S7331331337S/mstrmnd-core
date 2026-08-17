@@ -122,6 +122,8 @@ Obsidian, local files, Supabase, Google Drive, GitHub, Gmail, Slack, CRMs, and o
 
 Adapters should translate vendor data into stable MSTRMND schemas and translate approved runtime actions back into vendor calls.
 
+Hosting platforms are adapters on the same terms. Deployment target, sandbox backend, durable-execution engine, and model gateway are execution resources selected at the edge, never dependencies of agents, tools, or schemas. The current couplings and their replacements are tracked in [`portability.md`](./portability.md).
+
 ## Identity and Scope
 
 Every consequential runtime object must carry explicit identity and scope fields.
