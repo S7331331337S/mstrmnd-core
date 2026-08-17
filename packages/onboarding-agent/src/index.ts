@@ -62,8 +62,15 @@ export class OnboardingAgent {
     console.log("\n🧠 MSTRMND Onboarding Interview\n");
     console.log("Answer each question. Press Enter to use the default.\n");
 
-    const companyName = await ask("Organization / company name: ");
-    const domain = await ask("Primary domain or industry: ");
+    let companyName = (await ask("Organization / company name: ")).trim();
+    while (!companyName) {
+      companyName = (await ask("Organization / company name: ")).trim();
+    }
+
+    let domain = (await ask("Primary domain or industry: ")).trim();
+    while (!domain) {
+      domain = (await ask("Primary domain or industry: ")).trim();
+    }
     const vaultPath =
       (await ask("Vault / storage path [./mstrmnd-context]: ")) || "./mstrmnd-context";
     const modelPreferenceRaw =
