@@ -1,5 +1,7 @@
 import { createXai } from "@ai-sdk/xai";
 import { createPerplexity } from "@ai-sdk/perplexity";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGateway, type LanguageModel } from "ai";
 
 /** Vercel AI Gateway key, accepting either env var name. */
@@ -30,6 +32,16 @@ export function resolveModel(): LanguageModel | string {
   if (provider === "gateway") {
     return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
   }
+  if (provider === "openai") {
+    return createOpenAI({ apiKey: process.env.OPENAI_API_KEY })(
+      process.env.MSTRMND_MODEL ?? "gpt-4o",
+    );
+  }
+  if (provider === "anthropic") {
+    return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(
+      process.env.MSTRMND_MODEL ?? "claude-3-5-sonnet-latest",
+    );
+  }
   if (provider === "perplexity") {
     return createPerplexity({ apiKey: process.env.PERPLEXITY_API_TOKEN })(
       process.env.MSTRMND_MODEL ?? "sonar",
@@ -41,8 +53,19 @@ export function resolveModel(): LanguageModel | string {
     );
   }
 
+  // Default precedence — prefer tool-capable providers for the agent loop.
   if (gatewayKey()) {
     return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(
+      process.env.MSTRMND_MODEL ?? "claude-3-5-sonnet-latest",
+    );
+  }
+  if (process.env.OPENAI_API_KEY) {
+    return createOpenAI({ apiKey: process.env.OPENAI_API_KEY })(
+      process.env.MSTRMND_MODEL ?? "gpt-4o",
+    );
   }
   if (process.env.XAI_TOKEN) {
     return createXai({ apiKey: process.env.XAI_TOKEN })(
@@ -65,6 +88,8 @@ export function activeProviderLabel(): string {
   const p = process.env.MSTRMND_PROVIDER?.toLowerCase();
   if (p) return p;
   if (gatewayKey()) return "gateway";
+  if (process.env.ANTHROPIC_API_KEY) return "anthropic";
+  if (process.env.OPENAI_API_KEY) return "openai";
   if (process.env.XAI_TOKEN) return "xai";
   if (process.env.PERPLEXITY_API_TOKEN) return "perplexity";
   return "gateway";
