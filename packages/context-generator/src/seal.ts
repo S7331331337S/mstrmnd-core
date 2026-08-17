@@ -8,7 +8,7 @@ import { join } from "path";
  */
 export function computeSeal(contextPath: string, trackedFiles: string[]): string {
   const hash = createHash("sha256");
-  for (const rel of trackedFiles.sort()) {
+  for (const rel of [...trackedFiles].sort()) {
     const abs = join(contextPath, rel);
     try {
       const content = readFileSync(abs, "utf-8");
