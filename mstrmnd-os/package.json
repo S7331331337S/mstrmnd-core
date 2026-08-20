@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "eve:info": "eve info",
     "eve:build": "eve build",
-    "test:memory": "tsx scripts/third-mind-test.ts"
+    "test:memory": "tsx scripts/third-mind-test.ts",
+    "test:genesis": "tsx scripts/genesis-smoke.ts"
   },
   "engines": {
     "node": ">=24"
@@ -27,6 +28,7 @@
     "jose": "^6.2.9",
     "next": "16.3.1",
     "pg": "^8.23.0",
+    "@mstrmnd/genesis": "file:../packages/genesis",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "workflow": "^4.8.3",

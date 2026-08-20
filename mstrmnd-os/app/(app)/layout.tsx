@@ -6,6 +6,9 @@ import { UserMenu } from "@/app/_components/user-menu";
 const NAV = [
   { href: "/", label: "Alliance" },
   { href: "/memory", label: "Third-Mind" },
+  { href: "/foundry", label: "Foundry" },
+  { href: "/genesis", label: "Genesis" },
+  { href: "/chronicle", label: "Chronicle" },
   { href: "/runs", label: "Agents" },
 ];
 

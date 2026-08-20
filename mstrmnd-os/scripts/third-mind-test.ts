@@ -74,9 +74,19 @@ async function main() {
     key: "alliance.positioning",
     content: "Updated: models are interchangeable; the alliance persists.",
     agent: "maestro",
+    reason: "contradicted_by_user",
   });
-  assert(updated.id === a.id, "writing an existing key updates in place (stable id)");
-  assert((await store.list(A)).length === 2, "no duplicate keys after update");
+  assert(updated.id !== a.id, "writing an existing key creates a new record");
+  assert(updated.supersedes === a.id, "new record supersedes the previous id");
+  assert((await store.list(A)).length === 2, "current view has no duplicate keys");
+  assert(
+    (await store.read(A, "alliance.positioning"))?.content.includes("Updated") ?? false,
+    "read by key returns the current record",
+  );
+  assert(
+    (await store.read(A, a.id))?.content.includes("intelligence layer") ?? false,
+    "historical record remains readable by id",
+  );
 
   console.log(failures === 0 ? "\nALL PASSED" : `\n${failures} FAILURE(S)`);
   process.exit(failures === 0 ? 0 : 1);

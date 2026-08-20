@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
         },
       }
     : {}),
+  transpilePackages: ["@mstrmnd/genesis"],
 };
 
 // Compose both wrappers: the eve agent runtime (mounted same-origin at

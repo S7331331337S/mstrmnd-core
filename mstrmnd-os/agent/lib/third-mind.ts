@@ -24,6 +24,11 @@ export interface Observation {
   tags: string[];
   agent: string;
   createdAt: string;
+  /** Previous observation id this record replaces. Null on first write. */
+  supersedes?: string | null;
+  reason?: string;
+  sourceEventId?: string;
+  revoked?: boolean;
 }
 
 export interface SearchHit extends Observation {
@@ -36,6 +41,8 @@ export interface WriteInput {
   content: string;
   tags?: string[];
   agent?: string;
+  reason?: string;
+  sourceEventId?: string;
 }
 
 export interface ThirdMindStore {
@@ -85,6 +92,17 @@ function scoreRow(row: Observation, terms: string[]): number {
   return score;
 }
 
+function currentView(rows: Observation[], scope: string): Observation[] {
+  const byKey = new Map<string, Observation>();
+  const scoped = rows
+    .filter((r) => r.scope === scope && !r.revoked)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  for (const rec of scoped) byKey.set(rec.key, rec);
+  return [...byKey.values()].sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt),
+  );
+}
+
 /** File-backed, scope-aware Third-Mind store. Portable, durable, no services. */
 export class FileThirdMindStore implements ThirdMindStore {
   constructor(private readonly path = storePath()) {}
@@ -92,37 +110,34 @@ export class FileThirdMindStore implements ThirdMindStore {
   async write(input: WriteInput): Promise<Observation> {
     const rows = loadAll(this.path);
     const now = new Date().toISOString();
-    const existingIdx = rows.findIndex(
-      (r) => r.scope === input.scope && r.key === input.key,
-    );
+    const current = currentView(rows, input.scope).find((r) => r.key === input.key);
     const observation: Observation = {
-      id: existingIdx >= 0 ? rows[existingIdx].id : randomUUID(),
+      id: randomUUID(),
       scope: input.scope,
       key: input.key,
       content: input.content,
       tags: input.tags ?? [],
       agent: input.agent ?? "unknown",
       createdAt: now,
+      supersedes: current?.id ?? null,
+      reason: input.reason ?? (current ? "superseded" : undefined),
+      sourceEventId: input.sourceEventId,
     };
-    if (existingIdx >= 0) rows[existingIdx] = observation;
-    else rows.push(observation);
+    rows.push(observation);
     saveAll(this.path, rows);
     return observation;
   }
 
   async read(scope: string, idOrKey: string): Promise<Observation | null> {
-    const rows = loadAll(this.path);
-    return (
-      rows.find(
-        (r) => r.scope === scope && (r.id === idOrKey || r.key === idOrKey),
-      ) ?? null
-    );
+    const rows = loadAll(this.path).filter((r) => r.scope === scope);
+    const byId = rows.find((r) => r.id === idOrKey);
+    if (byId) return byId;
+    return currentView(rows, scope).find((r) => r.key === idOrKey) ?? null;
   }
 
   async search(scope: string, query: string, limit = 10): Promise<SearchHit[]> {
     const terms = tokenize(query);
-    return loadAll(this.path)
-      .filter((r) => r.scope === scope)
+    return currentView(loadAll(this.path), scope)
       .map((r) => ({ ...r, score: scoreRow(r, terms) }))
       .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -130,10 +145,7 @@ export class FileThirdMindStore implements ThirdMindStore {
   }
 
   async list(scope: string, limit = 50): Promise<Observation[]> {
-    return loadAll(this.path)
-      .filter((r) => r.scope === scope)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, limit);
+    return currentView(loadAll(this.path), scope).slice(0, limit);
   }
 }
 
@@ -145,6 +157,10 @@ interface PgObservationRow {
   tags: string[];
   agent: string;
   created_at: string | Date;
+  supersedes: string | null;
+  reason: string | null;
+  source_event_id: string | null;
+  revoked: boolean;
 }
 
 function rowToObservation(r: PgObservationRow): Observation {
@@ -156,22 +172,29 @@ function rowToObservation(r: PgObservationRow): Observation {
     tags: r.tags ?? [],
     agent: r.agent,
     createdAt: new Date(r.created_at).toISOString(),
+    supersedes: r.supersedes,
+    reason: r.reason ?? undefined,
+    sourceEventId: r.source_event_id ?? undefined,
+    revoked: r.revoked,
   };
 }
+
+const CURRENT_VIEW_SQL = `
+  distinct on (key) id, scope, key, content, tags, agent, created_at,
+                    supersedes, reason, source_event_id, revoked
+`;
 
 /** Postgres (Neon) scope-aware Third-Mind store. */
 export class PostgresThirdMindStore implements ThirdMindStore {
   async write(input: WriteInput): Promise<Observation> {
     await ensureSchema();
+    const current = await this.read(input.scope, input.key);
     const { rows } = await getPool().query<PgObservationRow>(
-      `insert into observations (id, scope, key, content, tags, agent)
-       values ($1, $2, $3, $4, $5, $6)
-       on conflict (scope, key) do update
-         set content = excluded.content,
-             tags = excluded.tags,
-             agent = excluded.agent,
-             created_at = now()
-       returning id, scope, key, content, tags, agent, created_at`,
+      `insert into observations
+         (id, scope, key, content, tags, agent, supersedes, reason, source_event_id, revoked)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, false)
+       returning id, scope, key, content, tags, agent, created_at,
+                 supersedes, reason, source_event_id, revoked`,
       [
         randomUUID(),
         input.scope,
@@ -179,6 +202,9 @@ export class PostgresThirdMindStore implements ThirdMindStore {
         input.content,
         input.tags ?? [],
         input.agent ?? "unknown",
+        current?.id ?? null,
+        input.reason ?? (current ? "superseded" : null),
+        input.sourceEventId ?? null,
       ],
     );
     return rowToObservation(rows[0]);
@@ -186,10 +212,20 @@ export class PostgresThirdMindStore implements ThirdMindStore {
 
   async read(scope: string, idOrKey: string): Promise<Observation | null> {
     await ensureSchema();
-    const { rows } = await getPool().query<PgObservationRow>(
-      `select id, scope, key, content, tags, agent, created_at
+    const byId = await getPool().query<PgObservationRow>(
+      `select id, scope, key, content, tags, agent, created_at,
+              supersedes, reason, source_event_id, revoked
          from observations
-        where scope = $1 and (key = $2 or id::text = $2)
+        where scope = $1 and id::text = $2
+        limit 1`,
+      [scope, idOrKey],
+    );
+    if (byId.rows[0]) return rowToObservation(byId.rows[0]);
+    const { rows } = await getPool().query<PgObservationRow>(
+      `select ${CURRENT_VIEW_SQL}
+         from observations
+        where scope = $1 and key = $2 and not revoked
+        order by key, created_at desc
         limit 1`,
       [scope, idOrKey],
     );
@@ -199,16 +235,20 @@ export class PostgresThirdMindStore implements ThirdMindStore {
   async search(scope: string, query: string, limit = 10): Promise<SearchHit[]> {
     await ensureSchema();
     const doc = "key || ' ' || content || ' ' || array_to_string(tags, ' ')";
-    // Full-text ranked search, with an ILIKE fallback for queries that produce
-    // no lexemes. Semantic (pgvector) recall is a later slice.
     const { rows } = await getPool().query<PgObservationRow & { score: number }>(
-      `select id, scope, key, content, tags, agent, created_at,
+      `with current as (
+         select distinct on (key) id, scope, key, content, tags, agent, created_at,
+                supersedes, reason, source_event_id, revoked
+           from observations
+          where scope = $1 and not revoked
+          order by key, created_at desc
+       )
+       select *,
               ts_rank(to_tsvector('english', ${doc}),
                       websearch_to_tsquery('english', $2)) as score
-         from observations
-        where scope = $1
-          and (to_tsvector('english', ${doc}) @@ websearch_to_tsquery('english', $2)
-               or ${doc} ilike '%' || $2 || '%')
+         from current
+        where to_tsvector('english', ${doc}) @@ websearch_to_tsquery('english', $2)
+           or ${doc} ilike '%' || $2 || '%'
         order by score desc, created_at desc
         limit $3`,
       [scope, query, limit],
@@ -219,14 +259,16 @@ export class PostgresThirdMindStore implements ThirdMindStore {
   async list(scope: string, limit = 50): Promise<Observation[]> {
     await ensureSchema();
     const { rows } = await getPool().query<PgObservationRow>(
-      `select id, scope, key, content, tags, agent, created_at
+      `select ${CURRENT_VIEW_SQL}
          from observations
-        where scope = $1
-        order by created_at desc
-        limit $2`,
-      [scope, limit],
+        where scope = $1 and not revoked
+        order by key, created_at desc`,
+      [scope],
     );
-    return rows.map(rowToObservation);
+    return rows
+      .map(rowToObservation)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit);
   }
 }
 

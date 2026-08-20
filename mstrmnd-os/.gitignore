@@ -40,8 +40,9 @@ yarn-error.log*
 /.eve/
 /.output/
 
-# Third-Mind local dev store (file-backed; prod uses Neon/Blob)
-/.mstrmnd/
+# Issued public genesis (bound to the local keystore; do not commit)
+/agent/genesis.json
+/agent/subagents/**/genesis.json
 
 # typescript
 *.tsbuildinfo

@@ -23,6 +23,9 @@ importers:
       '@ai-sdk/xai':
         specifier: ^4.0.40
         version: 4.0.40(zod@4.4.3)
+      '@mstrmnd/genesis':
+        specifier: file:../packages/genesis
+        version: file:../packages/genesis
       ai:
         specifier: ^7.0.66
         version: 7.0.66(zod@4.4.3)
@@ -665,6 +668,9 @@ packages:
   '@lukeed/csprng@1.1.0':
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
+
+  '@mstrmnd/genesis@file:../packages/genesis':
+    resolution: {directory: ../packages/genesis, type: directory}
 
   '@napi-rs/nice-android-arm-eabi@1.1.1':
     resolution: {integrity: sha512-kjirL3N6TnRPv5iuHw36wnucNqXAO46dzK9oPb0wj076R5Xm8PfUVA9nAFB5ZNMmfJQJVKACAPd/Z2KYMppthw==}
@@ -4784,6 +4790,8 @@ snapshots:
   '@keyv/serialize@1.1.1': {}
 
   '@lukeed/csprng@1.1.0': {}
+
+  '@mstrmnd/genesis@file:../packages/genesis': {}
 
   '@napi-rs/nice-android-arm-eabi@1.1.1':
     optional: true

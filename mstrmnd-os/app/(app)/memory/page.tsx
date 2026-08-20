@@ -60,6 +60,12 @@ export default async function MemoryPage() {
                 <p className="text-sm text-foreground/90 leading-relaxed">
                   {o.content}
                 </p>
+                {o.supersedes ? (
+                  <span className="label">
+                    supersedes {o.supersedes.slice(0, 8)}
+                    {o.reason ? ` · ${o.reason}` : ""}
+                  </span>
+                ) : null}
                 {o.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 pt-0.5">
                     {o.tags.map((t) => (

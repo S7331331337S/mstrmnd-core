@@ -21,13 +21,19 @@ mounts the **eve** agent runtime same-origin at `/eve/v1/*`.
 
 - `agent/` — the eve agent (filesystem-first).
   - `agent.ts` + `instructions.md` — Maestro, the root orchestrator.
+  - `hooks/genesis-witness.ts` — observe-only hook; posts unsigned observations
+    to the Genesis witness API (keys stay outside the runtime).
   - `lib/model.ts` — model-agnostic provider resolution from env.
-  - `lib/third-mind.ts` — the shared Third-Mind memory store + interface.
+  - `lib/third-mind.ts` — the shared Third-Mind memory store + interface
+    (append + supersede; no silent overwrite).
   - `tools/` — `memory_{write,read,search,list}`, approval-gated `execute_code`
     (Vercel Sandbox), and `disableTool()` stubs for the sandbox-backed builtins.
   - `subagents/{researcher,critic,memory-keeper}/` — specialists.
   - `skills/` — Markdown playbooks loaded on demand.
   - `sandbox.ts` — sandbox backend adapter (`MSTRMND_SANDBOX`).
+- `lib/genesis-service.ts` — Foundry/Chronicle witness (keystore + ledger).
+- `app/` — Next.js App Router UI (Alliance, Third-Mind, Foundry, Genesis,
+  Chronicle, Agents).
 - `workflows/` — durable Workflow SDK patterns (`"use workflow"`).
 - `app/` — Next.js App Router UI (Alliance command, Third-Mind, Agents).
 - `next.config.ts` — `withEve(withWorkflow(...))`; standalone output off Vercel.
