@@ -50,6 +50,7 @@ Learning
 - MCP interface layer
 - Obsidian-backed context and memory
 - identity profile loading
+- Genesis identity + signed evidence ledger (`@mstrmnd/genesis`)
 - ranked memory search
 - memory graph construction
 - connector workspace package

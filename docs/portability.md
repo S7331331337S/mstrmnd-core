@@ -25,6 +25,8 @@ coordination are what persist.
 | Model access | `agent/lib/model.ts` | Self-operated OpenAI-compatible gateway (LiteLLM, Portkey, vLLM, Ollama), or a direct provider SDK | `MSTRMND_MODEL_BASE_URL` / `MSTRMND_PROVIDER` |
 | Data | `mstrmnd-os/lib/db.ts` | Already portable — any Postgres via `DATABASE_URL` | connection string |
 | Auth | `lib/session.ts` (JWT via `jose`), `agent/channels/eve.ts` | Already portable — no platform identity provider; `AUTH_SECRET` is ours | — |
+| Agent signing keys | `packages/genesis` `Keystore` + `mstrmnd-os` / Hermes local adapter | AWS KMS, GCP KMS, or Turnkey behind the same interface; local encrypted files are the default | `MSTRMND_KEYSTORE` |
+| Transparency anchor | `packages/genesis` `AnchorAdapter` (`LogAnchor`) | Rekor or an EVM Merkle-root publisher (Base, etc.) — typed seams only in slice 1 | `MSTRMND_ANCHOR` |
 | Mobile client | `mstrmnd-alliance` | Points at a configurable base URL, never a baked-in domain | `EXPO_PUBLIC_MSTRMND_API_URL` |
 
 Nothing in the table is a rewrite. Every row is a configuration change, because
@@ -141,6 +143,11 @@ cannot reach the runtime.
 | `MSTRMND_MODEL_API_KEY` | unset | Credential for that gateway |
 | `MSTRMND_PROVIDER` | precedence | `compatible` \| `gateway` \| `anthropic` \| `openai` \| `xai` \| `perplexity` |
 | `DATABASE_URL` | file-backed dev store | Any Postgres |
+| `MSTRMND_KEYSTORE` | `local` | Signing-key backend: `local` encrypted files under `.mstrmnd/keystore`. AWS/GCP/Turnkey adapters implement the same interface. |
+| `MSTRMND_KEYSTORE_SECRET` | `AUTH_SECRET` or dev default | Wraps local private keys (AES-256-GCM). |
+| `MSTRMND_ANCHOR` | `log` | Merkle-root publisher: `log` (local). `evm` / `rekor` are named seams, not live clients. |
+| `MSTRMND_GENESIS_WITNESS_URL` | `http://127.0.0.1:3000/api/genesis/ingest` | Eve hook ingest endpoint (outside the sandbox). |
+| `MSTRMND_WITNESS_SECRET` | `AUTH_SECRET` | Bearer token the Eve hook uses to authenticate ingest. |
 | `AUTH_SECRET` | — | Shared by the app and the agent; required in every environment |
 
 `auto` sandbox selection resolves in eve's own priority order: Vercel Sandbox

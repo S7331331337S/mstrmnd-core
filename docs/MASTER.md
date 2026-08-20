@@ -87,7 +87,8 @@ What is still thin / next:
 ## Target shape (create only with real behavior)
 
 ```text
-@mstrmnd/schemas          ← exists (scope, provenance, audit, policy, memory…)
+@mstrmnd/genesis          ← cryptographic identity, signed evidence ledger
+@mstrmnd/schemas          ← exists (scope, provenance, audit, policy, memory, genesis…)
 @mstrmnd/context          ← company / operator / task context assembly
 @mstrmnd/memory           ← evolve from intelligence-core memory path
 @mstrmnd/orchestrator     ← runs, agents, sub-agents, handoffs
@@ -134,6 +135,9 @@ Update checkboxes here when work lands.
 - [x] **Host portability**: sandbox/durability/model-gateway adapters in
       `mstrmnd-os`, standalone build + self-host Dockerfile & compose stack,
       mobile client on a configured base URL, ledger in `portability.md`
+- [x] **Genesis slice 1**: Ed25519 agent IDs, signed manifests, dual-signed
+      hash-chained ledger, Eve hook + Hermes adapter, Foundry / Genesis ID /
+      Chronicle UI, local keystore + log anchor. See [`genesis.md`](./genesis.md).
 
 ### Deferred (do not start unless asked)
 
@@ -143,6 +147,11 @@ Update checkboxes here when work lands.
 - Empty package scaffolding for optics
 - Real model providers beyond EchoProvider
 - Workspace write tools
+- ERC-8004 public identity registry
+- Live EVM / Rekor anchoring (`MSTRMND_ANCHOR` seams exist)
+- Vercel Passport as human subject (session JWT is used today)
+- Foundry Eve-agent codegen (slice 1 binds existing `agent/` trees)
+- Execution-gateway enforcement (block direct model/tool egress)
 
 ---
 
@@ -190,6 +199,7 @@ Update checkboxes here when work lands.
 | Longer phased roadmap | [`modernization-roadmap.md`](./modernization-roadmap.md) |
 | Doctrine vs runtime | [`runtime-boundaries.md`](./runtime-boundaries.md) |
 | Hosting lock-in + exit plan | [`portability.md`](./portability.md) |
+| Genesis identity + evidence ledger | [`genesis.md`](./genesis.md) |
 | Doctrine sync | [`doctrine-integration.md`](./doctrine-integration.md) |
 | Overview | [`../README.md`](../README.md) |
 
@@ -197,7 +207,7 @@ Update checkboxes here when work lands.
 
 ## Status stamp
 
-- **Last aligned:** 2026-08-17
+- **Last aligned:** 2026-08-20
 - **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template, Genesis identity + evidence ledger (slice 1)
 - **Next:** Policy-gated workspace writes; richer agent planning; dogfood on a real vault with `MSTRMND_MODEL_PROVIDER=openai`
