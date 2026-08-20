@@ -10,7 +10,8 @@
     "doctrine:sync": "python3 scripts/sync-doctrine.py",
     "doctrine:validate": "python3 scripts/validate-doctrine.py",
     "doctrine:ci": "python3 scripts/validate-doctrine.py --fixture",
-    "verify": "pnpm typecheck && pnpm doctrine:ci",
+    "test:genesis": "pnpm --filter @mstrmnd/genesis test",
+    "verify": "pnpm typecheck && pnpm doctrine:ci && pnpm test:genesis",
     "operator:init": "python3 scripts/init-operator-pack.py",
     "hermes:dry": "pnpm --filter @mstrmnd/hermes dev -- --dry-run"
   },
