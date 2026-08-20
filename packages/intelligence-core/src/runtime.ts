@@ -12,6 +12,7 @@ import {
   type ModelProvider,
 } from "./model-provider";
 import { Orchestrator } from "./orchestrator";
+import { createGenesisRuntime } from "./genesis-runtime";
 import { loadIdentity, EMPTY_IDENTITY } from "./identity-loader";
 import type { IdentityModel } from "@mstrmnd/schemas";
 
@@ -87,6 +88,7 @@ export async function createRuntime(
   identity = context.identity;
 
   const provider = resolveModelProvider(config.modelProvider);
+  const genesis = createGenesisRuntime(repoRoot);
 
   return {
     config: { ...config, vaultPath, repoRoot },
@@ -103,6 +105,7 @@ export async function createRuntime(
         provider,
         repoRoot,
         dryRun: opts?.dryRun,
+        genesis,
       }),
   };
 }

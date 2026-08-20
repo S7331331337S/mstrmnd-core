@@ -19,6 +19,12 @@ import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
 import { localProvenance, nowIso } from "./operator-scope";
 import { resolveRepoRoot } from "./doctrine-loader";
+import {
+  emitGenesisEvent,
+  ensureOrchestratorAgent,
+  type GenesisRuntime,
+} from "./genesis-runtime";
+import type { GenesisEventType } from "@mstrmnd/genesis";
 
 export const OPERATOR_AGENT: AgentSpec = {
   id: "operator-agent",
@@ -87,12 +93,15 @@ export interface OrchestratorDeps {
   provider?: ModelProvider;
   repoRoot?: string;
   dryRun?: boolean;
+  genesis?: GenesisRuntime;
 }
 
 export class Orchestrator {
   private deps: OrchestratorDeps;
   private runsDir: string;
   private auditPath: string;
+  private genesis: GenesisRuntime | undefined;
+  private agentIds = new Map<string, { agentId: string; handle: string }>();
 
   constructor(deps: OrchestratorDeps) {
     this.deps = {
@@ -102,6 +111,7 @@ export class Orchestrator {
     const root = resolveRepoRoot(deps.repoRoot);
     this.runsDir = join(root, ".mstrmnd", "runs");
     this.auditPath = join(root, ".mstrmnd", "audit.jsonl");
+    this.genesis = deps.genesis;
   }
 
   createRun(agentId: string, goal: string): RunState {
@@ -131,6 +141,7 @@ export class Orchestrator {
     run.status = "running";
     run.updatedAt = nowIso();
     const parent = getAgentSpec(run.parentAgentId)!;
+    await this.ensureGenesisIdentities(parent);
 
     try {
       // Step 1: model plans from context
@@ -149,6 +160,10 @@ export class Orchestrator {
         outputSummary: plan.slice(0, 500),
         status: "ok",
       });
+      await this.genesisEmit(parent.id, "model.completed", {
+        stage: "plan",
+        preview: plan.slice(0, 500),
+      }, run.runId);
 
       // Step 2: memory search if available
       if (
@@ -202,9 +217,17 @@ export class Orchestrator {
         outputSummary: synthesis.slice(0, 1000),
         status: "ok",
       });
+      await this.genesisEmit(parent.id, "model.completed", {
+        stage: "synthesis",
+        preview: synthesis.slice(0, 1000),
+      }, run.runId);
 
       run.status = "succeeded";
       run.resultSummary = synthesis.slice(0, 2000);
+      await this.genesisEmit(parent.id, "run.completed", {
+        status: "succeeded",
+        goal: run.goal,
+      }, run.runId);
     } catch (err) {
       run.status = "failed";
       run.error = err instanceof Error ? err.message : String(err);
@@ -214,6 +237,9 @@ export class Orchestrator {
         outputSummary: run.error,
         status: "error",
       });
+      await this.genesisEmit(parent.id, "error.raised", {
+        error: run.error,
+      }, run.runId);
     }
 
     run.updatedAt = nowIso();
@@ -264,6 +290,11 @@ export class Orchestrator {
       data: { parentRunId: parent.runId, childId, goal },
       outcome: "success",
     });
+    await this.genesisEmit(parent.parentAgentId, "subagent.spawned", {
+      childId,
+      childAgentId: this.agentIds.get(childId)?.agentId,
+      goal,
+    }, parent.runId);
 
     // Sub-agent: list workspace root
     if (this.deps.workspace && child.toolsAllowlist.includes("list_workspace")) {
@@ -313,6 +344,12 @@ export class Orchestrator {
             ? "denied"
             : "pending_approval",
     });
+    await this.genesisEmit(agent.id, "policy.decided", {
+      toolId,
+      outcome: decision.outcome,
+      reason: decision.reason,
+      policyDecisionId: decision.id,
+    }, run.runId);
 
     if (decision.outcome !== "allow") {
       this.pushStep(run, {
@@ -377,6 +414,11 @@ export class Orchestrator {
       data: { toolId, args, preview: output.slice(0, 200) },
       outcome: "success",
     });
+    await this.genesisEmit(agent.id, "tool.execution.completed", {
+      toolId,
+      args,
+      preview: output.slice(0, 200),
+    }, run.runId);
   }
 
   private pushStep(
@@ -397,6 +439,54 @@ export class Orchestrator {
     }
     const path = join(this.runsDir, `${run.runId}.json`);
     await writeFile(path, JSON.stringify(run, null, 2), "utf8");
+  }
+
+  private async ensureGenesisIdentities(parent: AgentSpec): Promise<void> {
+    if (this.deps.dryRun || !this.genesis) return;
+    const parentIssued = await ensureOrchestratorAgent(this.genesis, parent, {
+      workspaceId: this.deps.context.scope.workspaceId,
+    });
+    this.agentIds.set(parent.id, {
+      agentId: parentIssued.signed.agentId,
+      handle: parentIssued.handle,
+    });
+    for (const childId of parent.subAgentsAllowlist ?? []) {
+      const child = getAgentSpec(childId);
+      if (!child) continue;
+      const issued = await ensureOrchestratorAgent(this.genesis, child, {
+        workspaceId: this.deps.context.scope.workspaceId,
+        parentAgentId: parentIssued.signed.agentId,
+        generation: 1,
+      });
+      this.agentIds.set(child.id, {
+        agentId: issued.signed.agentId,
+        handle: issued.handle,
+      });
+    }
+  }
+
+  private async genesisEmit(
+    specId: string,
+    eventType: GenesisEventType,
+    payload: unknown,
+    runId?: string,
+  ): Promise<void> {
+    if (this.deps.dryRun || !this.genesis) return;
+    const ids = this.agentIds.get(specId);
+    if (!ids) return;
+    try {
+      await emitGenesisEvent(this.genesis, {
+        agentId: ids.agentId,
+        handle: ids.handle,
+        eventType,
+        payload,
+        runId,
+        model: this.deps.provider?.id,
+      });
+    } catch (err) {
+      // Witness failures must not abort the run; the JSONL audit still lands.
+      console.error("genesis emit failed:", err);
+    }
   }
 
   private async audit(

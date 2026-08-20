@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mstrmnd/schemas": "workspace:*",
-    "@mstrmnd/connectors": "workspace:*"
+    "@mstrmnd/connectors": "workspace:*",
+    "@mstrmnd/genesis": "workspace:*"
   }
 }

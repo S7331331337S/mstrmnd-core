@@ -5,6 +5,18 @@ export type { RuntimeScope } from "./scope";
 export type { Provenance } from "./provenance";
 export type { AuditEvent } from "./audit";
 export type {
+  AgentRecord,
+  GenesisEvent,
+  GenesisEventType,
+  GenesisManifest,
+  MerkleBatch,
+  MerkleProof,
+  SignedGenesis,
+  UnsignedObservation,
+  VerifyResult,
+} from "./genesis";
+export { AGENT_ID_PREFIX, EVENT_SCHEMA, GENESIS_SCHEMA } from "./genesis";
+export type {
   PolicyDecision,
   PolicyOutcome,
   ConsequentialAction,

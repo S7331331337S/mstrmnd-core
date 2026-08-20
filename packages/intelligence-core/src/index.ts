@@ -51,3 +51,9 @@ export {
 export type { OrchestratorDeps } from "./orchestrator";
 export { createRuntime } from "./runtime";
 export type { RuntimeConfig, MstrmndRuntime } from "./runtime";
+export {
+  createGenesisRuntime,
+  ensureOrchestratorAgent,
+  emitGenesisEvent,
+} from "./genesis-runtime";
+export type { GenesisRuntime } from "./genesis-runtime";
