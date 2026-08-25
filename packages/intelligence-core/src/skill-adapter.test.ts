@@ -23,6 +23,10 @@ test("Market Intelligence skill compiles to Claude and AI SDK with one checksum"
   const claude = compileSkill(manifest, "claude");
   const aiSdk = compileSkill(manifest, "ai-sdk");
   assert.match(claude.contents, /^---\nname: market-intelligence/m);
+  assert.equal(
+    (claude.contents.match(/^# Market Intelligence$/gm) ?? []).length,
+    1
+  );
   assert.match(aiSdk.contents, /export const skill =/);
   assert.equal(claude.checksum, aiSdk.checksum);
 

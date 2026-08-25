@@ -157,15 +157,17 @@ function renderClaude(manifest: SkillManifest): string {
   const when = manifest.activation.length
     ? ` Load when: ${manifest.activation.join("; ")}.`
     : "";
+  const title = `# ${manifest.name}`;
+  const body = manifest.body.startsWith(title)
+    ? manifest.body
+    : `${title}\n\n${manifest.body}`;
   return [
     "---",
     `name: ${manifest.id}`,
     `description: ${jsonish(manifest.description + when)}`,
     "---",
     "",
-    `# ${manifest.name}`,
-    "",
-    manifest.body,
+    body,
     "",
     "## Activation",
     ...manifest.activation.map((a) => `- ${a}`),
