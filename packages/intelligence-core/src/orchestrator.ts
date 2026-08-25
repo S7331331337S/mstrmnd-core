@@ -7,18 +7,20 @@ import type {
   AgentStep,
   AuditEvent,
   ContextPack,
-  PolicyDecision,
-  PolicyOutcome,
   RunState,
   SubAgentHandoff,
+  ThreatBoundary,
 } from "@mstrmnd/schemas";
-import { CONSEQUENTIAL_ACTIONS } from "@mstrmnd/schemas";
 import type { ModelProvider } from "./model-provider";
 import { EchoProvider } from "./model-provider";
 import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
 import { localProvenance, nowIso } from "./operator-scope";
 import { resolveRepoRoot } from "./doctrine-loader";
+import {
+  assertBoundary,
+  evaluateBoundaryAction,
+} from "./policy-boundary";
 
 export const OPERATOR_AGENT: AgentSpec = {
   id: "operator-agent",
@@ -56,30 +58,6 @@ export function listAgentSpecs(): AgentSpec[] {
   return Object.values(SPECS);
 }
 
-function evaluateToolPolicy(
-  toolId: string,
-  scope: RunState["scope"]
-): PolicyDecision {
-  const consequential = (CONSEQUENTIAL_ACTIONS as readonly string[]).some((a) =>
-    toolId.includes(a.split(".").pop() ?? a)
-  );
-  const writeLike = /write|delete|publish|stage|send/i.test(toolId);
-  let outcome: PolicyOutcome = "allow";
-  let reason = "read/search tools are allowed for Operator Zero";
-  if (writeLike || consequential) {
-    outcome = "require-approval";
-    reason = "consequential or write tool requires approval";
-  }
-  return {
-    id: randomUUID(),
-    at: nowIso(),
-    outcome,
-    action: toolId,
-    scope,
-    reason,
-  };
-}
-
 export interface OrchestratorDeps {
   context: ContextPack;
   memory?: MemoryEngine;
@@ -87,6 +65,8 @@ export interface OrchestratorDeps {
   provider?: ModelProvider;
   repoRoot?: string;
   dryRun?: boolean;
+  /** Mandatory. Dispatch is refused without a valid threat boundary. */
+  boundary: ThreatBoundary;
 }
 
 export class Orchestrator {
@@ -99,14 +79,20 @@ export class Orchestrator {
       provider: deps.provider ?? new EchoProvider(),
       ...deps,
     };
+    assertBoundary(this.deps.boundary);
     const root = resolveRepoRoot(deps.repoRoot);
     this.runsDir = join(root, ".mstrmnd", "runs");
     this.auditPath = join(root, ".mstrmnd", "audit.jsonl");
   }
 
+  getBoundary(): ThreatBoundary {
+    return this.deps.boundary;
+  }
+
   createRun(agentId: string, goal: string): RunState {
     const spec = getAgentSpec(agentId);
     if (!spec) throw new Error(`unknown agent: ${agentId}`);
+    assertBoundary(this.deps.boundary);
     const now = nowIso();
     return {
       runId: randomUUID(),
@@ -124,13 +110,29 @@ export class Orchestrator {
         producedBy: agentId,
       }),
       handoffs: [],
+      boundaryId: this.deps.boundary.id,
+      costAccruedUsd: 0,
     };
   }
 
   async dispatch(run: RunState): Promise<RunState> {
+    assertBoundary(this.deps.boundary);
+    run.boundaryId = this.deps.boundary.id;
     run.status = "running";
     run.updatedAt = nowIso();
     const parent = getAgentSpec(run.parentAgentId)!;
+    await this.audit({
+      kind: "policy.boundary",
+      summary: `Threat boundary ${this.deps.boundary.id} attached`,
+      data: {
+        boundaryId: this.deps.boundary.id,
+        network: this.deps.boundary.networkAllowlist,
+        mcp: this.deps.boundary.mcpAllowlist,
+        costCeilingUsd: this.deps.boundary.costCeilingUsd,
+        tools: this.deps.boundary.toolsAllowlist,
+      },
+      outcome: "success",
+    });
 
     try {
       // Step 1: model plans from context
@@ -265,26 +267,52 @@ export class Orchestrator {
       outcome: "success",
     });
 
-    // Sub-agent: list workspace root
+    // Sub-agent: list workspace root (still inside the parent threat boundary)
     if (this.deps.workspace && child.toolsAllowlist.includes("list_workspace")) {
       const mounts = this.deps.workspace.listMounts();
       if (mounts[0]) {
-        const listing = await this.deps.workspace.list(mounts[0].id, "");
-        handoff.result = {
-          mountId: mounts[0].id,
-          entries: listing.slice(0, 30).map((n) => ({
-            path: n.path,
-            kind: n.kind,
-          })),
-        };
-        this.pushStep(parent, {
-          type: "tool",
-          summary: `${childId}: list_workspace`,
+        const fsDecision = evaluateBoundaryAction(this.deps.boundary, {
           toolId: "list_workspace",
-          agentId: childId,
-          outputSummary: JSON.stringify(handoff.result).slice(0, 500),
-          status: "ok",
+          filesystem: { mountId: mounts[0].id, path: "" },
         });
+        await this.audit({
+          kind: "policy.decision",
+          summary: `Policy ${fsDecision.outcome} for ${childId}:list_workspace`,
+          data: { decision: fsDecision, boundaryId: this.deps.boundary.id },
+          policyDecisionId: fsDecision.id,
+          outcome:
+            fsDecision.outcome === "allow"
+              ? "success"
+              : fsDecision.outcome === "deny"
+                ? "denied"
+                : "pending_approval",
+        });
+        if (fsDecision.outcome !== "allow") {
+          this.pushStep(parent, {
+            type: "approval",
+            summary: `blocked ${childId}:list_workspace: ${fsDecision.reason}`,
+            toolId: "list_workspace",
+            agentId: childId,
+            status: "error",
+          });
+        } else {
+          const listing = await this.deps.workspace.list(mounts[0].id, "");
+          handoff.result = {
+            mountId: mounts[0].id,
+            entries: listing.slice(0, 30).map((n) => ({
+              path: n.path,
+              kind: n.kind,
+            })),
+          };
+          this.pushStep(parent, {
+            type: "tool",
+            summary: `${childId}: list_workspace`,
+            toolId: "list_workspace",
+            agentId: childId,
+            outputSummary: JSON.stringify(handoff.result).slice(0, 500),
+            status: "ok",
+          });
+        }
       }
     }
 
@@ -300,11 +328,21 @@ export class Orchestrator {
     if (!agent.toolsAllowlist.includes(toolId)) {
       throw new Error(`tool ${toolId} not allowed for ${agent.id}`);
     }
-    const decision = evaluateToolPolicy(toolId, run.scope);
+    const mountId = String(
+      args.mountId ?? this.deps.workspace?.listMounts()[0]?.id ?? ""
+    );
+    const path = String(args.path ?? "");
+    const needsFs = toolId === "list_workspace" || toolId === "read_file";
+    const decision = evaluateBoundaryAction(this.deps.boundary, {
+      toolId,
+      filesystem: needsFs && mountId ? { mountId, path } : undefined,
+      accruedCostUsd: run.costAccruedUsd ?? 0,
+      estimatedCostUsd: 0,
+    });
     await this.audit({
       kind: "policy.decision",
       summary: `Policy ${decision.outcome} for ${toolId}`,
-      data: { decision },
+      data: { decision, boundaryId: this.deps.boundary.id },
       policyDecisionId: decision.id,
       outcome:
         decision.outcome === "allow"
@@ -336,17 +374,9 @@ export class Orchestrator {
         }))
       );
     } else if (toolId === "list_workspace" && this.deps.workspace) {
-      const mountId = String(
-        args.mountId ?? this.deps.workspace.listMounts()[0]?.id ?? ""
-      );
-      const path = String(args.path ?? "");
       const nodes = await this.deps.workspace.list(mountId, path);
       output = JSON.stringify(nodes.slice(0, 50));
     } else if (toolId === "read_file" && this.deps.workspace) {
-      const mountId = String(
-        args.mountId ?? this.deps.workspace.listMounts()[0]?.id ?? ""
-      );
-      const path = String(args.path ?? "");
       const file = await this.deps.workspace.read(mountId, path);
       output = JSON.stringify({
         path: file.path,

@@ -10,11 +10,17 @@ If this file conflicts with older docs or chat context, prefer: (1) hard invaria
 
 Build **MSTRMND** as a **model-agnostic agent intelligence layer** that sits between an operator’s vision and daily execution.
 
-Models are interchangeable execution resources. This repo owns the persistent layer: **company / business / operator context**, memory, **agent orchestration** (agents + sub-agents), files/folders as first-class workspace substrate, skills/tools, policy, and evaluation.
+Models are interchangeable execution resources. This repo owns the persistent layer: **company / business / operator context**, memory, **agent orchestration** (agents + sub-agents), files/folders as first-class workspace substrate, skills/tools, **policy / threat boundary**, and evaluation.
 
 Canonical product line:
 
 > MSTRMND installs the intelligence layer between a company's vision and its daily execution.
+
+Positioning (Operator Market Brief, 24 Aug 2026):
+
+> Own context, policy, identity, evaluation and business state; **rent execution**.
+> Execution agents (Cursor, Codex, Claude, Perplexity Computer) are becoming abundant.
+> Governed organizational intelligence is not.
 
 ### Delivery shape (in order)
 
@@ -72,15 +78,20 @@ What actually works today:
 - MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`
 - Operator pack template + `pnpm operator:init`
 - Doctrine pin active; `pnpm verify` CI gate
+- **Threat boundary** mandatory on every orchestrator run (network, credentials, tools, filesystem, cost ceiling, consequential approvals, MCP allow-list)
+- **Skill Adapter** — canonical `SKILL.md` → Claude Skills + AI SDK (`skills/market-intelligence`)
+- **SCM-neutral connector** (GitHub source of truth; Origin/GitLab/Bitbucket interchangeable, Origin not migrated)
+- Agent Governance Audit inventory graph + MCP exposure
 - Editorial worker exists but is **out of active focus**
 
 What is still thin / next:
 
 - ~~Real model providers (only `EchoProvider` offline stub today)~~ → `openai` / `openai-compatible` Chat Completions provider landed; default remains `echo` for CI
-- Workspace write tools + stronger policy enforcement
+- Workspace write tools + live (non-fixture) harness / creative-provider evals
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
 - Richer multi-step agent planning beyond the fixed orchestrator loop
+- A2A production mapping (adapter exists at the edge; not wired into Core)
 
 ---
 
@@ -107,9 +118,9 @@ Full longer roadmap: [`modernization-roadmap.md`](./modernization-roadmap.md). P
 
 **Intelligence layer core — landed (context, workspace, orchestrator, plugin factory, operator pack).**
 
-Next hardening: real model providers, workspace writes behind policy, broader harness adapters.
+Hardening now: **policy boundary before more autonomy**, portable skills, SCM-neutral repo context, harnesses under MSTRMND rather than a wrapper around coding agents.
 
-PRESS reference workflow remains deferred.
+PRESS reference workflow remains deferred. Closed-loop campaign intelligence is the documented resume posture ([`press-closed-loop.md`](./press-closed-loop.md)) — do not expand `editorial_worker.py`.
 
 ---
 
@@ -134,6 +145,14 @@ Update checkboxes here when work lands.
 - [x] **Host portability**: sandbox/durability/model-gateway adapters in
       `mstrmnd-os`, standalone build + self-host Dockerfile & compose stack,
       mobile client on a configured base URL, ledger in `portability.md`
+- [x] **Threat boundary** mandatory on every workflow (egress, credentials, tools,
+      filesystem, cost ceiling, consequential approvals, MCP allow-list)
+- [x] Agent Governance Audit inventory graph + containment / MCP exposure
+- [x] Skill Adapter (canonical `SKILL.md` → Claude Skills + AI SDK) + Market Intelligence skill
+- [x] SCM-neutral repository connector (GitHub source of truth; Origin beta not migrated)
+- [x] Execution-harness scoreboard (Cursor / Codex / Claude Code) above the harness
+- [x] A2A registered as an edge adapter only (`@mstrmnd/connectors/a2a`)
+- [x] GPT-Image-2 transparent output on the creative-provider benchmark (not default)
 
 ### Deferred (do not start unless asked)
 
@@ -143,6 +162,9 @@ Update checkboxes here when work lands.
 - Empty package scaffolding for optics
 - Real model providers beyond EchoProvider
 - Workspace write tools
+- Migrating Core git hosting to Cursor Origin
+- Proprietary agent-to-agent protocol (use A2A at the edge when needed)
+- Duplicating Claude computer-use / Skills / Files, Firefly, or Perplexity Computer
 
 ---
 
@@ -152,7 +174,9 @@ Update checkboxes here when work lands.
 - Creating empty packages to look complete
 - Treating MCP as the entire orchestrator (it is a **transport/plugin**, not planning)
 - Building the client onboarding template before Operator Zero context + orchestrator work
-- Broad autonomy without scoped context and clear agent/run boundaries
+- Broad autonomy without a named threat boundary
+- A generic orchestration wrapper around Cursor/Codex/Claude Code (they are execution harnesses)
+- Coupling company memory to Cursor Origin, GitHub, or any single forge
 
 ---
 
@@ -165,7 +189,8 @@ Update checkboxes here when work lands.
    does hosting. Domain code never imports a hosting SDK; new vendor couplings
    ship with a non-Vercel path and a row in [`portability.md`](./portability.md).
 5. **Explicit scope** on memory, credentials, tool calls, artifacts, runs.
-6. **Doctrine is pinned.** Never fetch mutable doctrine mid-run.
+6. **A threat boundary is mandatory** before a workflow runs (network, credentials, tools, filesystem, cost, approvals, MCP). Missing boundary = deny.
+7. **Doctrine is pinned.** Never fetch mutable doctrine mid-run.
 
 ---
 
@@ -192,12 +217,17 @@ Update checkboxes here when work lands.
 | Hosting lock-in + exit plan | [`portability.md`](./portability.md) |
 | Doctrine sync | [`doctrine-integration.md`](./doctrine-integration.md) |
 | Overview | [`../README.md`](../README.md) |
+| Aug 2026 market brief | [`market/operator-brief-2026-08-24.md`](./market/operator-brief-2026-08-24.md) |
+| Threat boundary | [`policy-boundary.md`](./policy-boundary.md) |
+| Skill Adapter | [`skill-adapter.md`](./skill-adapter.md) |
+| Agent Governance Audit | [`commercial/agent-governance-audit.md`](./commercial/agent-governance-audit.md) |
+| PRESS resume posture | [`press-closed-loop.md`](./press-closed-loop.md) |
 
 ---
 
 ## Status stamp
 
-- **Last aligned:** 2026-08-17
-- **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template
-- **Next:** Policy-gated workspace writes; richer agent planning; dogfood on a real vault with `MSTRMND_MODEL_PROVIDER=openai`
+- **Last aligned:** 2026-08-25
+- **Priority:** Policy boundary + portable skills + SCM-neutral context; rent execution harnesses
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template, mandatory threat boundary, Skill Adapter
+- **Next:** Policy-gated workspace writes; live harness / creative evals (replace fixtures); dogfood on a real vault with `MSTRMND_MODEL_PROVIDER=openai`

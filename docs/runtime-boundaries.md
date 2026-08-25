@@ -106,7 +106,7 @@ Tools expose bounded actions. Connectors integrate external systems. Both requir
 
 ### Policy
 
-Evaluates whether an action is allowed, requires approval, must be modified, or must be denied.
+Evaluates whether an action is allowed, requires approval, must be modified, or must be denied. Every workflow must carry a `ThreatBoundary` (network, credentials, tools, filesystem, cost ceiling, consequential approvals, MCP allow-list). Missing boundary is a deny.
 
 ### Evaluation
 

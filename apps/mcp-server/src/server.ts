@@ -323,6 +323,7 @@ server.registerTool(
                 runId: finished.runId,
                 status: finished.status,
                 doctrineRef: finished.doctrineRef,
+                boundaryId: finished.boundaryId,
                 resultSummary: finished.resultSummary,
                 steps: finished.steps.length,
                 error: finished.error,

@@ -26,6 +26,10 @@ coordination are what persist.
 | Data | `mstrmnd-os/lib/db.ts` | Already portable — any Postgres via `DATABASE_URL` | connection string |
 | Auth | `lib/session.ts` (JWT via `jose`), `agent/channels/eve.ts` | Already portable — no platform identity provider; `AUTH_SECRET` is ours | — |
 | Mobile client | `mstrmnd-alliance` | Points at a configurable base URL, never a baked-in domain | `EXPO_PUBLIC_MSTRMND_API_URL` |
+| Git / SCM | GitHub (source of truth) | Origin / GitLab / Bitbucket via `packages/connectors/src/scm` — same `ScmConnector` interface | `MSTRMND_SCM` |
+| Agent-to-agent | none in Core | Linux Foundation A2A adapter at `@mstrmnd/connectors/a2a` only | `MSTRMND_A2A` (unset = off) |
+| Skills | canonical `skills/*/SKILL.md` | Compile to Claude Skills + AI SDK; do not fork a proprietary runtime | Skill Adapter |
+| Coding agents | Hermes (in-repo) | Cursor / Codex / Claude Code as execution harnesses; MSTRMND records policy/cost/outcomes above them | harness scoreboard |
 
 Nothing in the table is a rewrite. Every row is a configuration change, because
 each vendor surface is reached through a seam rather than imported into domain
@@ -142,6 +146,8 @@ cannot reach the runtime.
 | `MSTRMND_PROVIDER` | precedence | `compatible` \| `gateway` \| `anthropic` \| `openai` \| `xai` \| `perplexity` |
 | `DATABASE_URL` | file-backed dev store | Any Postgres |
 | `AUTH_SECRET` | — | Shared by the app and the agent; required in every environment |
+| `MSTRMND_SCM` | `github` | SCM connector: `github` (source of truth) \| `origin` (beta, not migrated) \| `gitlab` \| `bitbucket` |
+| `MSTRMND_A2A` | unset (off) | Edge-only. Do not import A2A from intelligence-core. |
 
 `auto` sandbox selection resolves in eve's own priority order: Vercel Sandbox
 when deployed on Vercel, then Docker, then microsandbox, then just-bash.

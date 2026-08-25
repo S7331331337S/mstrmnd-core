@@ -10,9 +10,11 @@
     "doctrine:sync": "python3 scripts/sync-doctrine.py",
     "doctrine:validate": "python3 scripts/validate-doctrine.py",
     "doctrine:ci": "python3 scripts/validate-doctrine.py --fixture",
-    "verify": "pnpm typecheck && pnpm doctrine:ci",
     "operator:init": "python3 scripts/init-operator-pack.py",
-    "hermes:dry": "pnpm --filter @mstrmnd/hermes dev -- --dry-run"
+    "hermes:dry": "pnpm --filter @mstrmnd/hermes dev -- --dry-run",
+    "test": "tsx --test packages/intelligence-core/src/*.test.ts packages/connectors/src/scm/*.test.ts",
+    "skill:adapt": "tsx packages/intelligence-core/src/skill-adapter-cli.ts",
+    "verify": "pnpm typecheck && pnpm test && pnpm doctrine:ci"
   },
   "devDependencies": {
     "turbo": "latest",

@@ -21,3 +21,6 @@ __pycache__/
 # Generated editorial output
 kits/
 published/
+
+# Generated skill adapter output (compile with pnpm skill:adapt)
+skills/**/adapters/
