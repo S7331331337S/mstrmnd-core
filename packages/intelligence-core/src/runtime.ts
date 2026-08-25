@@ -11,9 +11,10 @@ import {
   resolveModelProvider,
   type ModelProvider,
 } from "./model-provider";
-import { Orchestrator } from "./orchestrator";
+import { Orchestrator, OPERATOR_AGENT } from "./orchestrator";
 import { loadIdentity, EMPTY_IDENTITY } from "./identity-loader";
-import type { IdentityModel } from "@mstrmnd/schemas";
+import type { IdentityModel, ThreatBoundary } from "@mstrmnd/schemas";
+import { operatorZeroBoundary } from "./policy-boundary";
 
 export interface RuntimeConfig {
   vaultPath?: string;
@@ -22,6 +23,8 @@ export interface RuntimeConfig {
   modelProvider?: string;
   /** Skip loading vault if missing */
   allowMissingVault?: boolean;
+  /** Override the default Operator Zero threat boundary */
+  boundary?: ThreatBoundary;
 }
 
 export interface MstrmndRuntime {
@@ -31,6 +34,7 @@ export interface MstrmndRuntime {
   context: ContextPack;
   identity: IdentityModel;
   provider: ModelProvider;
+  boundary: ThreatBoundary;
   createOrchestrator: (opts?: { dryRun?: boolean }) => Orchestrator;
 }
 
@@ -87,6 +91,16 @@ export async function createRuntime(
   identity = context.identity;
 
   const provider = resolveModelProvider(config.modelProvider);
+  const boundary =
+    config.boundary ??
+    operatorZeroBoundary({
+      toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
+      filesystemScope: workspace.listMounts().map((m) => ({
+        mountId: m.id,
+        pathPrefix: "",
+      })),
+      mcpAllowlist: ["mstrmnd"],
+    });
 
   return {
     config: { ...config, vaultPath, repoRoot },
@@ -95,6 +109,7 @@ export async function createRuntime(
     context,
     identity,
     provider,
+    boundary,
     createOrchestrator: (opts) =>
       new Orchestrator({
         context,
@@ -103,6 +118,7 @@ export async function createRuntime(
         provider,
         repoRoot,
         dryRun: opts?.dryRun,
+        boundary,
       }),
   };
 }

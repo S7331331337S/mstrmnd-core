@@ -32,5 +32,37 @@
   "hermes": {
     "command": "pnpm hermes",
     "args": ["--goal", "Summarize operator context", "--dry-run"]
+  },
+  "threatBoundary": {
+    "id": "operator-zero-default",
+    "workflowId": "operator-zero",
+    "networkAllowlist": [],
+    "credentialAllowlist": [],
+    "toolsAllowlist": [
+      "search_memory",
+      "list_workspace",
+      "read_file",
+      "get_context",
+      "spawn_subagent"
+    ],
+    "filesystemScope": [
+      { "mountId": "vault", "pathPrefix": "" }
+    ],
+    "costCeilingUsd": 1,
+    "consequentialApprovals": [
+      "external.communicate",
+      "content.publish",
+      "money.commit",
+      "data.delete",
+      "permission.change",
+      "production.code.change",
+      "contract.enter",
+      "sensitive.disclose"
+    ],
+    "mcpAllowlist": ["mstrmnd"]
+  },
+  "scm": {
+    "sourceOfTruth": "github",
+    "env": "MSTRMND_SCM"
   }
 }

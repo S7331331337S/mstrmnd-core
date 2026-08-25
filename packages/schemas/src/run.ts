@@ -57,4 +57,8 @@ export interface RunState {
   resultSummary?: string;
   provenance: Provenance;
   handoffs?: SubAgentHandoff[];
+  /** Threat boundary that must exist before dispatch. */
+  boundaryId: string;
+  /** Spend accrued during the run (USD). */
+  costAccruedUsd?: number;
 }

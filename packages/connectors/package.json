@@ -7,7 +7,12 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./obsidian": "./src/obsidian/vault-reader.ts"
+    "./obsidian": "./src/obsidian/vault-reader.ts",
+    "./scm": "./src/scm/index.ts",
+    "./a2a": "./src/a2a/adapter.ts"
+  },
+  "dependencies": {
+    "@mstrmnd/schemas": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "latest"

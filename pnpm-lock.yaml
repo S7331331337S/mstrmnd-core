@@ -66,6 +66,10 @@ importers:
         version: link:../schemas
 
   packages/connectors:
+    dependencies:
+      '@mstrmnd/schemas':
+        specifier: workspace:*
+        version: link:../schemas
     devDependencies:
       '@types/node':
         specifier: latest

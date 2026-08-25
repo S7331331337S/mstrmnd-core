@@ -52,7 +52,9 @@ Learning
 - identity profile loading
 - ranked memory search
 - memory graph construction
-- connector workspace package
+- connector workspace package (Obsidian, filesystem, SCM-neutral git)
+- mandatory per-workflow threat boundary
+- Skill Adapter (canonical SKILL.md → Claude Skills / AI SDK)
 - multimodal and vision foundations
 - creative and editorial intelligence workers
 
@@ -216,6 +218,7 @@ Hermes CLI and MCP both boot via `createRuntime()` in `@mstrmnd/intelligence-cor
 - `MSTRMND_MODEL_API_KEY` or `OPENAI_API_KEY` — required when provider is openai*
 - `MSTRMND_MODEL_BASE_URL` — Chat Completions base (default `https://api.openai.com/v1`)
 - `MSTRMND_MODEL_NAME` — model id (default `gpt-4o-mini`)
+- `MSTRMND_SCM` — `github` (source of truth) | `origin` | `gitlab` | `bitbucket`
 - Doctrine: `pnpm doctrine:sync` then pinned `doctrine.pin.json`
 
 Example (real model):

@@ -69,6 +69,9 @@ the parent agent. Default model provider is echo (offline).
     console.log(`Doctrine: ${context.doctrineRef ?? "unpinned"}`);
     console.log(`Model provider: ${runtime.provider.id}`);
     console.log(
+      `Threat boundary: ${runtime.boundary.id} network=${runtime.boundary.networkAllowlist.join(",") || "deny-all"} mcp=${runtime.boundary.mcpAllowlist.join(",") || "none"} cost<=$${runtime.boundary.costCeilingUsd}`
+    );
+    console.log(
       `Workspace mounts: ${workspace
         .listMounts()
         .map((m) => m.id)
