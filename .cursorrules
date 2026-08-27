@@ -19,6 +19,7 @@ Hosting is an adapter, exactly like Obsidian or a model provider.
     `MSTRMND_MODEL_BASE_URL`)
   - `mstrmnd-os/lib/db.ts` — Postgres (`DATABASE_URL`)
   - `mstrmnd-os/agent/agent.ts` — durability world (`MSTRMND_WORKFLOW_WORLD`)
+  - `mstrmnd-os/agent/connections/vgpu.ts` — WebGPU docs MCP (`MSTRMND_VGPU_MCP_URL`)
 - **Tools ask the runtime, not the vendor.** Use `ctx.getSandbox()`; do not
   construct a vendor sandbox inside a tool.
 - **Every new vendor dependency ships with its non-Vercel path** and a new row

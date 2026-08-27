@@ -17,6 +17,7 @@ Next.js 16.3 as the host application and UI surface.
 | Models | AI Gateway + AI SDK (`ai`) | Provider-agnostic model access via string IDs or direct providers |
 | Durability | Workflow SDK (`workflow`) | Checkpointed, resumable multi-agent patterns; world selectable |
 | Execution | Sandbox adapter (`agent/sandbox.ts`) | Vercel Sandbox, Docker, microsandbox, or just-bash — same `/workspace` |
+| WebGPU | [vgpu](https://vgpu.sh) MCP | Read-only docs + verified examples (`agent/connections/vgpu.ts`) |
 | Auth | Session (JWT via `jose`) | Sign in / sign up; gates the app **and** the agent; per-workspace scope |
 | Data | Postgres / Neon (`pg`) | Users + Third-Mind persist in Postgres when `DATABASE_URL` is set (file fallback otherwise) |
 | Memory | Third-Mind | Multi-tenant shared observation layer, read/written by agents via tools |
@@ -31,6 +32,7 @@ eve runtime (agent/)
   • Maestro (root orchestrator)
   • Subagents: Researcher · Critic · Memory-Keeper
   • Tools: memory_{read,write,search,list} · execute_code (Sandbox)
+  • Connections: vgpu (docs + examples MCP)
   • Skills (Markdown playbooks) · Sessions → Workflows
         │                                   │
    AI Gateway / AI SDK               Vercel Sandbox
@@ -116,6 +118,7 @@ environment variable:
 | Durability | `agent/agent.ts` | `MSTRMND_WORKFLOW_WORLD` (build time; unset → local file world) |
 | Models | `agent/lib/model.ts` | `MSTRMND_MODEL_BASE_URL` / `MSTRMND_PROVIDER` |
 | Data | `lib/db.ts` | `DATABASE_URL` (any Postgres) |
+| WebGPU docs | `agent/connections/vgpu.ts` | `MSTRMND_VGPU_MCP_URL` (default `https://vgpu.sh/api/mcp`) |
 
 Run the whole stack off-platform:
 
@@ -134,6 +137,9 @@ Sandbox egress defaults to `deny-all` (`MSTRMND_SANDBOX_NETWORK`) because
 Landed so far:
 
 - Maestro root orchestrator with Researcher / Critic / Memory-Keeper subagents.
+- **vgpu MCP connection** — public [vgpu.sh](https://vgpu.sh) docs + examples
+  (`docs`, `examples`); swap the URL with `MSTRMND_VGPU_MCP_URL` for local
+  `npx vgpu mcp`. Also registered in `.cursor/mcp.json` for Cursor agents.
 - Multi-tenant Third-Mind memory with `memory_{read,write,search,list}` tools, a
   durable file-backed store, and an interactive dashboard — scoped per workspace.
 - Swiss/dark Alliance command UI streaming live Maestro turns via `useEveAgent`.

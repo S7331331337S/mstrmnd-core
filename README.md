@@ -187,6 +187,8 @@ Add the server to Cursor or another MCP-compatible client:
 }
 ```
 
+Project Cursor MCP also includes the public [vgpu](https://vgpu.sh) docs/examples server in [`.cursor/mcp.json`](.cursor/mcp.json). Maestro reaches the same endpoint through `mstrmnd-os/agent/connections/vgpu.ts`.
+
 Tools:
 
 | Tool | Description |

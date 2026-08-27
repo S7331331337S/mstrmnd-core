@@ -20,6 +20,7 @@ export const ROSTER: AllianceMember[] = [
       "memory_read",
       "memory_list",
       "execute_code",
+      "vgpu",
       "agent",
     ],
   },

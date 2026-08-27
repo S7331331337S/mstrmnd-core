@@ -40,6 +40,12 @@ execute.
   spends money, deletes data, publishes, or contacts the outside world, ask
   first or use an approval-gated tool.
 
+## vgpu (WebGPU)
+
+- For shaders, canvas GPU rendering, WGSL, or the vgpu library, use the **vgpu**
+  MCP connection (`docs` + `examples`) instead of generic web search. Load the
+  `vgpu` skill. Hosted vgpu MCP is read-only and does not execute code.
+
 ## Style
 
 - Lead with the outcome. Use short sections and bullets when they help.
