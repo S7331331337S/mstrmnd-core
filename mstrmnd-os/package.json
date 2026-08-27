@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "eve:info": "eve info",
     "eve:build": "eve build",
-    "test:memory": "tsx scripts/third-mind-test.ts"
+    "test:memory": "tsx scripts/third-mind-test.ts",
+    "test:vgpu": "tsx scripts/vgpu-mcp-test.ts"
   },
   "engines": {
     "node": ">=24"
