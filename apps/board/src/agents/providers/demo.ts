@@ -125,7 +125,7 @@ function composeRuling(topic: string, priorSpeakers: string[]): string {
     "2. Build only the riskiest slice — the part that would kill this if it doesn't work.",
     "3. Set the kill criteria now, in writing, before you're attached to the outcome.",
     "",
-    "— Offline board. Add a Claude API key in Settings for a real deliberation.",
+    "— Offline board. Sign in to MSTRMND OS in Settings for a live deliberation.",
   ].join("\n");
 }
 
