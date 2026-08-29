@@ -64,6 +64,9 @@ jobs:
           cache: npm
           cache-dependency-path: apps/board/package-lock.json
 
+      - name: Materialize lockfile and assets
+        run: bash scripts/materialize-vendor.sh
+
       - name: Install Board
         run: npm ci
 
