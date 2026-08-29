@@ -11,6 +11,12 @@
     "doctrine:validate": "python3 scripts/validate-doctrine.py",
     "doctrine:ci": "python3 scripts/validate-doctrine.py --fixture",
     "verify": "pnpm typecheck && pnpm doctrine:ci",
+    "board": "npm --prefix apps/board start",
+    "board:web": "npm --prefix apps/board run web",
+    "board:typecheck": "npm --prefix apps/board run typecheck",
+    "board:test": "npm --prefix apps/board test",
+    "board:export": "npm --prefix apps/board run export:web",
+    "board:verify": "npm --prefix apps/board ci && npm --prefix apps/board run typecheck && npm --prefix apps/board test",
     "operator:init": "python3 scripts/init-operator-pack.py",
     "hermes:dry": "pnpm --filter @mstrmnd/hermes dev -- --dry-run"
   },
