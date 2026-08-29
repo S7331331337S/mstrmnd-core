@@ -9,8 +9,10 @@ Built with Expo SDK 57, Expo Router, and Reanimated 4. Runs on iOS, Android and 
 ## Provenance
 
 Extracted from [`S7331331337S/skills`](https://github.com/S7331331337S/skills)
-(`apps/mstrmnd`, commit `a74d2c9`) into `mstrmnd-core/apps/board`. The original
-author commit is preserved via `git filter-repo` (path rewrite only).
+(`apps/mstrmnd`, commit `a74d2c9`) into `mstrmnd-core/apps/board`. Source files
+match that commit (path rewrite `apps/mstrmnd` → `apps/board` only). A
+`git filter-repo` replay is ready locally if a git-capable push is available
+to replace this API-uploaded branch with first-class history.
 
 This is the decision-room product — not Alliance (agent companion) and not the
 profiles/bookings marketplace. Keep it independent until a later, verified merge.
@@ -59,9 +61,10 @@ npm start          # then press i / a, or scan with Expo Go
 npm run web        # browser
 ```
 
-`package-lock.json` and `assets/*.png` are stored as a split base64 tarball
-under `.vendor/` so they can survive GitHub API text uploads. Always run
-`materialize-vendor.sh` before `npm ci` on a fresh checkout.
+`package-lock.json` and `assets/*.png` are fetched from the pinned skills
+commit (`a74d2c9`) by `scripts/materialize-vendor.sh`. Run that before
+`npm ci` on a fresh checkout. Once a git-capable push lands those files in
+this repo, the script can be removed.
 
 Checks (from repo root or this directory):
 
