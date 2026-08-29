@@ -73,6 +73,7 @@ What actually works today:
 - Operator pack template + `pnpm operator:init`
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
+- **Board** (`apps/board`) — Expo decision-room: seven specialists + Chair, opening / crossfire / ruling, streaming + offline demo providers. Extracted from `S7331331337S/skills` (`apps/mstrmnd`). Isolated from the pnpm workspace.
 
 What is still thin / next:
 
@@ -81,6 +82,8 @@ What is still thin / next:
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
 - Richer multi-step agent planning beyond the fixed orchestrator loop
+- Board production hardening: route model calls through `mstrmnd-os`; replace `EngineKind = "claude" | "demo"` with a model-agnostic provider id; do not ship client Anthropic keys
+- Extract Board packages only after the app runs intact (`deliberation`, `agent-roster`, `model-router`, `design-tokens`)
 
 ---
 
@@ -134,6 +137,16 @@ Update checkboxes here when work lands.
 - [x] **Host portability**: sandbox/durability/model-gateway adapters in
       `mstrmnd-os`, standalone build + self-host Dockerfile & compose stack,
       mobile client on a configured base URL, ledger in `portability.md`
+- [x] **Board import**: extract `apps/mstrmnd` from `S7331331337S/skills` into
+      `apps/board` with history; keep isolated from the pnpm workspace
+
+### Next (Board)
+
+- [ ] Verify Board intact here (typecheck, SSE tests, web export / demo)
+- [ ] Route Board model calls through `mstrmnd-os` (usage, policy, audit, budget)
+- [ ] Replace `EngineKind = "claude" | "demo"` with a model-agnostic provider id
+- [ ] After intact verification, return the Expo skills fork to upstream-tracking
+- [ ] Later extract `packages/deliberation`, `agent-roster`, `model-router`, `design-tokens`
 
 ### Deferred (do not start unless asked)
 
@@ -192,12 +205,13 @@ Update checkboxes here when work lands.
 | Hosting lock-in + exit plan | [`portability.md`](./portability.md) |
 | Doctrine sync | [`doctrine-integration.md`](./doctrine-integration.md) |
 | Overview | [`../README.md`](../README.md) |
+| Board decision-room | [`../apps/board/README.md`](../apps/board/README.md) |
 
 ---
 
 ## Status stamp
 
-- **Last aligned:** 2026-08-17
+- **Last aligned:** 2026-08-29
 - **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template
-- **Next:** Policy-gated workspace writes; richer agent planning; dogfood on a real vault with `MSTRMND_MODEL_PROVIDER=openai`
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template; Board decision-room imported at `apps/board`
+- **Next:** Verify Board; route its providers through `mstrmnd-os`; policy-gated workspace writes; richer agent planning
