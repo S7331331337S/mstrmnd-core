@@ -14,5 +14,5 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["apps", "packages"],
-  "exclude": ["apps/board"]
+  "exclude": ["apps/board", "apps/alliance"]
 }
