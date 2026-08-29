@@ -12,36 +12,70 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { signInUrl } from "@/agents/providers/hosted";
 import { Button } from "@/components/button";
 import { Screen } from "@/components/screen";
 import { ThemedText } from "@/components/themed-text";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useSessions } from "@/lib/session-store";
-import { MODELS, useSettings } from "@/lib/settings-store";
+import { QUALITY, useSettings } from "@/lib/settings-store";
 import { colors, fonts, radius, shadows, spacing } from "@/theme";
 
 export function Settings() {
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
 
-  const { apiKey, model, depth, haptics: hapticsOn } = useSettings();
-  const { setApiKey, setModel, setDepth, setHaptics } = useSettings();
+  const { token, email, osBaseUrl, quality, depth, haptics: hapticsOn } = useSettings();
+  const { setSession, setOsBaseUrl, setQuality, setDepth, setHaptics } = useSettings();
   const clearSessions = useSessions((s) => s.clear);
   const sessionCount = useSessions((s) => s.sessions.length);
 
-  const [draftKey, setDraftKey] = useState("");
+  const [draftUrl, setDraftUrl] = useState(osBaseUrl);
+  const [draftEmail, setDraftEmail] = useState("");
+  const [draftPassword, setDraftPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const saveKey = async () => {
+  const connect = async () => {
     setSaving(true);
-    await setApiKey(draftKey);
-    setSaving(false);
-    setDraftKey("");
-    haptics.success();
+    setError(null);
+    const url = draftUrl.trim().replace(/\/$/, "");
+    setOsBaseUrl(url);
+    try {
+      const response = await fetch(signInUrl(url), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-mstrmnd-client": "board",
+        },
+        body: JSON.stringify({
+          email: draftEmail.trim(),
+          password: draftPassword,
+          client: "board",
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as
+        | { error?: string; token?: string; user?: { email?: string } }
+        | null;
+      if (!response.ok || !body?.token) {
+        setError(body?.error || "Could not sign in. Check the OS URL and credentials.");
+        haptics.warn();
+        return;
+      }
+      await setSession({ token: body.token, email: body.user?.email ?? draftEmail.trim() });
+      setDraftPassword("");
+      haptics.success();
+    } catch {
+      setError("Could not reach MSTRMND OS. Check the URL and that the host is running.");
+      haptics.warn();
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const removeKey = async () => {
-    await setApiKey(null);
+  const disconnect = async () => {
+    await setSession(null);
+    setDraftPassword("");
     haptics.warn();
   };
 
@@ -77,54 +111,82 @@ export function Settings() {
         <ThemedText variant="largeTitle">Settings</ThemedText>
 
         <Section title="Engine">
-          {apiKey ? (
+          {token ? (
             <View style={styles.keyActive}>
               <View style={styles.keyRow}>
                 <Ionicons name="shield-checkmark" size={18} color={colors.ink} />
                 <View style={styles.flex}>
-                  <ThemedText variant="headline">Claude connected</ThemedText>
+                  <ThemedText variant="headline">MSTRMND OS connected</ThemedText>
                   <ThemedText variant="caption" style={styles.mask}>
-                    {maskKey(apiKey)}
+                    {email ?? "Session active"}
+                  </ThemedText>
+                  <ThemedText variant="caption" style={styles.mask}>
+                    {osBaseUrl}
                   </ThemedText>
                 </View>
               </View>
-              <Button title="Remove key" variant="ghost" size="sm" onPress={() => void removeKey()} />
+              <Button title="Disconnect" variant="ghost" size="sm" onPress={() => void disconnect()} />
             </View>
           ) : (
             <View style={styles.keyForm}>
               <ThemedText variant="subhead">
-                Without a key the app runs an offline board — scripted stand-ins that
+                Without a session the app runs an offline board — scripted stand-ins that
                 demonstrate the format but cannot reason about your question.
               </ThemedText>
               <TextInput
-                value={draftKey}
-                onChangeText={setDraftKey}
-                placeholder="sk-ant-…"
+                value={draftUrl}
+                onChangeText={setDraftUrl}
+                placeholder="http://localhost:3001"
+                placeholderTextColor={colors.tertiaryLabel}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                style={styles.input}
+              />
+              <TextInput
+                value={draftEmail}
+                onChangeText={setDraftEmail}
+                placeholder="Email"
+                placeholderTextColor={colors.tertiaryLabel}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                style={styles.input}
+              />
+              <TextInput
+                value={draftPassword}
+                onChangeText={setDraftPassword}
+                placeholder="Password"
                 placeholderTextColor={colors.tertiaryLabel}
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry
                 style={styles.input}
               />
+              {error ? (
+                <ThemedText variant="caption" style={styles.error}>
+                  {error}
+                </ThemedText>
+              ) : null}
               <Button
                 title="Connect"
                 size="sm"
                 loading={saving}
-                disabled={draftKey.trim().length < 10}
-                onPress={() => void saveKey()}
+                disabled={draftUrl.trim().length < 8 || draftEmail.trim().length < 3 || draftPassword.length < 1}
+                onPress={() => void connect()}
               />
               <ThemedText variant="caption" style={styles.fine}>
                 {Platform.OS === "web"
-                  ? "On web the key is kept in browser storage. Prefer the native app for anything real."
-                  : "Stored in the device keychain and sent only to api.anthropic.com."}
+                  ? "On web the session token is kept in browser storage. Prefer the native app for anything real."
+                  : "Stored in the device keychain and sent only to your MSTRMND OS host."}
               </ThemedText>
             </View>
           )}
         </Section>
 
-        <Section title="Model">
-          {MODELS.map((option) => {
-            const active = option.id === model;
+        <Section title="Quality">
+          {QUALITY.map((option) => {
+            const active = option.id === quality;
             return (
               <Pressable
                 key={option.id}
@@ -132,7 +194,7 @@ export function Settings() {
                 accessibilityState={{ selected: active }}
                 onPress={() => {
                   haptics.select();
-                  setModel(option.id);
+                  setQuality(option.id);
                 }}
                 style={({ pressed }) => [
                   styles.option,
@@ -239,12 +301,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-/** Show enough of the key to recognise it, never enough to use it. */
-function maskKey(key: string): string {
-  if (key.length <= 12) return "•".repeat(key.length);
-  return `${key.slice(0, 7)}…${key.slice(-4)}`;
-}
-
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
@@ -299,6 +355,9 @@ const styles = StyleSheet.create({
   },
   fine: {
     color: colors.tertiaryLabel,
+  },
+  error: {
+    color: colors.label,
   },
   option: {
     boxShadow: shadows.card,
