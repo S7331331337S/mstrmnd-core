@@ -2,11 +2,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
 import { extractVerdict, runDeliberation, type Depth } from "@/agents/deliberation";
-import { createAnthropicProvider } from "@/agents/providers/anthropic";
 import { createDemoProvider } from "@/agents/providers/demo";
+import { createHostedProvider } from "@/agents/providers/hosted";
 import type { AgentId } from "@/agents/roster";
 import { createId } from "@/lib/id";
-import { useSettings, type ModelId } from "@/lib/settings-store";
+import { isHostedReady, useSettings } from "@/lib/settings-store";
 import type { EngineKind, Session, Turn } from "@/lib/types";
 
 const SESSIONS_KEY = "mstrmnd.sessions.v1";
@@ -65,9 +65,12 @@ export const useSessions = create<SessionState>((set, get) => {
       }
 
       // Anything left mid-run by a crash or force-quit is not resumable.
-      sessions = sessions.map((s) =>
-        s.status === "running" ? { ...s, status: "stopped" as const } : s,
-      );
+      // Pre-OS sessions tagged "claude" become "hosted" for the history badge.
+      sessions = sessions.map((s) => ({
+        ...s,
+        engine: s.engine === "demo" ? "demo" : "hosted",
+        status: s.status === "running" ? ("stopped" as const) : s.status,
+      }));
 
       set({ sessions, hydrated: true });
     },
@@ -98,9 +101,13 @@ export const useSessions = create<SessionState>((set, get) => {
       const session = get().get(id);
       if (!session || get().runningId) return;
 
-      const { apiKey, model, depth } = useSettings.getState();
-      const provider = apiKey
-        ? createAnthropicProvider(apiKey, model as ModelId)
+      const settings = useSettings.getState();
+      const provider = isHostedReady(settings)
+        ? createHostedProvider({
+            osBaseUrl: settings.osBaseUrl,
+            token: settings.token as string,
+            hint: settings.quality,
+          })
         : createDemoProvider();
 
       controller = new AbortController();
@@ -111,7 +118,7 @@ export const useSessions = create<SessionState>((set, get) => {
         await runDeliberation({
           session,
           provider,
-          depth: depth as Depth,
+          depth: settings.depth as Depth,
           signal: controller.signal,
           events: {
             onTurnStart(turn) {
@@ -173,7 +180,7 @@ export const useSessions = create<SessionState>((set, get) => {
 });
 
 function currentEngine(): EngineKind {
-  return useSettings.getState().apiKey ? "claude" : "demo";
+  return isHostedReady(useSettings.getState()) ? "hosted" : "demo";
 }
 
 let persistTimer: ReturnType<typeof setTimeout> | null = null;

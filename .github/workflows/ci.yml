@@ -28,6 +28,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Board policy tests
+        run: pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts
+
       - name: Doctrine pin + fixture self-test
         run: pnpm doctrine:ci
 

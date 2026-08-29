@@ -73,7 +73,7 @@ What actually works today:
 - Operator pack template + `pnpm operator:init`
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
-- **Board** (`apps/board`) — Expo decision-room: seven specialists + Chair, opening / crossfire / ruling, streaming + offline demo providers. Extracted from `S7331331337S/skills` (`apps/mstrmnd`). Isolated from the pnpm workspace.
+- **Board** (`apps/board`) — Expo decision-room: seven specialists + Chair, opening / crossfire / ruling. Live rooms stream through `mstrmnd-os` (`hosted`); offline demo stays for tests. Isolated from the pnpm workspace.
 
 What is still thin / next:
 
@@ -82,7 +82,6 @@ What is still thin / next:
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
 - Richer multi-step agent planning beyond the fixed orchestrator loop
-- Board production hardening: route model calls through `mstrmnd-os`; replace `EngineKind = "claude" | "demo"` with a model-agnostic provider id; do not ship client Anthropic keys
 - Extract Board packages only after the app runs intact (`deliberation`, `agent-roster`, `model-router`, `design-tokens`)
 
 ---
@@ -143,8 +142,8 @@ Update checkboxes here when work lands.
 ### Next (Board)
 
 - [x] Verify Board intact here (typecheck, SSE tests, web export / demo)
-- [ ] Route Board model calls through `mstrmnd-os` (usage, policy, audit, budget)
-- [ ] Replace `EngineKind = "claude" | "demo"` with a model-agnostic provider id
+- [x] Route Board model calls through `mstrmnd-os` (usage, policy, audit, budget)
+- [x] Replace `EngineKind = "claude" | "demo"` with `"hosted" | "demo"`
 - [ ] After intact verification, return the Expo skills fork to upstream-tracking
 - [ ] Later extract `packages/deliberation`, `agent-roster`, `model-router`, `design-tokens`
 
@@ -214,4 +213,4 @@ Update checkboxes here when work lands.
 - **Last aligned:** 2026-08-29
 - **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
 - **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template; Board decision-room imported at `apps/board`
-- **Next:** Route Board providers through `mstrmnd-os`; policy-gated workspace writes; richer agent planning
+- **Next:** Policy-gated workspace writes; richer agent planning; return the Expo skills fork to upstream-tracking

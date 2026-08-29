@@ -33,7 +33,11 @@ export type Session = {
   verdict?: string;
 };
 
-export type EngineKind = "claude" | "demo";
+/** Live rooms go through mstrmnd-os. Demo is the offline stand-in. */
+export type EngineKind = "hosted" | "demo";
+
+/** Quality hint sent to OS. Concrete model ids stay server-side. */
+export type QualityHint = "fast" | "balanced" | "capable";
 
 /** A single streamed chunk from a provider. */
 export type StreamChunk = { type: "delta"; text: string } | { type: "done" };
@@ -49,7 +53,7 @@ export type ProviderRequest = {
   maxTokens: number;
   signal?: AbortSignal;
   /**
-   * Who is speaking and about what. The Claude provider ignores this (everything
+   * Who is speaking and about what. The hosted provider ignores this (everything
    * it needs is already in `system`/`messages`); the offline provider uses it to
    * compose an in-character line.
    */

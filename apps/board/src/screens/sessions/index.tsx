@@ -96,11 +96,9 @@ export function Sessions() {
                     ) : null}
                   </View>
 
-                  {session.engine === "demo" ? (
-                    <ThemedText variant="caption" style={{ color: colors.tertiaryLabel }}>
-                      offline
-                    </ThemedText>
-                  ) : null}
+                  <ThemedText variant="caption" style={{ color: colors.tertiaryLabel }}>
+                    {session.engine === "demo" ? "offline" : "hosted"}
+                  </ThemedText>
                 </View>
               </Pressable>
             </Animated.View>

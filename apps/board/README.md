@@ -76,27 +76,40 @@ pnpm board:export      # full Metro bundle; catches import errors tsc can't
 
 ## The two engines
 
-**Offline board (default).** With no API key the app runs scripted stand-ins. Every
+**Offline board (default).** With no OS session the app runs scripted stand-ins. Every
 screen, animation and the whole session flow work without a network — it's how the
 app demos. These lines are written to show *how each member thinks*; they cannot
 reason about your actual question, and the ruling says so.
 
-**Claude.** Add a key in Settings and the same board runs against the Messages API,
-streaming token by token. Model and debate depth are configurable.
+**Hosted.** Sign in to MSTRMND OS in Settings. The same board streams through
+`POST /api/board/complete`. The client sends a quality hint (`fast` /
+`balanced` / `capable`); the host picks the model. No vendor API key lives on
+the device.
 
-### Bringing your own key
+```bash
+# Terminal 1 — OS (default port 3000; Board defaults to 3001)
+cd mstrmnd-os && AUTH_SECRET=dev pnpm dev -- --port 3001
 
-The app calls `api.anthropic.com` directly from the device. That's the right shape
-for a personal tool and the wrong shape for a shipped product:
+# Terminal 2 — Board
+pnpm board:web
+```
 
-- The key is stored in the device keychain (`expo-secure-store`), or `localStorage`
-  on web, and is only ever sent to Anthropic.
-- Anyone with the app binary and device access can extract it.
-- Before distributing this, route model calls through `mstrmnd-os` (usage, policy,
-  audit, budget). Do not ship user Anthropic keys in the mobile binary.
-- Replace `EngineKind = "claude" | "demo"` with a model-agnostic provider id.
-- Keep the offline demo provider for tests and demos.
-- The provider interface in `src/lib/types.ts` is the seam that has to change.
+Set `EXPO_PUBLIC_MSTRMND_API_URL` if the host is not `http://localhost:3001`.
+Create an OS account on `/sign-up`, then connect with that email and password
+in Board Settings.
+
+### Hosted routing
+
+- Session JWT is stored in the device keychain (`expo-secure-store`), or
+  `localStorage` on web, and is only sent to the configured OS base URL.
+- OS enforces auth, prompt size, and a per-workspace daily request budget
+  (`BOARD_DAILY_REQUEST_LIMIT`, default 200). Completions are appended to
+  `.mstrmnd/board-audit.jsonl`. The budget ledger is file-backed
+  (`.mstrmnd/board-budget.json`) — it persists on a mounted volume, not on
+  ephemeral Vercel serverless instances.
+- `EngineKind` is `"hosted" | "demo"`. Concrete model ids stay in OS env
+  (`MSTRMND_MODEL`, `MSTRMND_MODEL_FAST`, `MSTRMND_MODEL_CAPABLE`).
+- The offline demo provider stays for tests and demos.
 
 Streaming uses `expo/fetch`, not the global `fetch` — React Native's built-in fetch
 is XHR-backed and exposes no `response.body`, so token streaming is impossible
@@ -113,7 +126,7 @@ src/
   agents/
     roster.ts             # personas, system prompts, preset tables
     deliberation.ts       # round orchestration
-    providers/            # claude · offline · SSE decoder (+ tests)
+    providers/            # hosted · offline · SSE decoder (+ tests)
   components/             # shared UI primitives
   screens/                # screen bodies + their private parts
   lib/                    # stores, types
