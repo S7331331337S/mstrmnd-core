@@ -47,6 +47,7 @@ Learning
 ## Current Systems
 
 - Board — an Expo decision room where specialist agents deliberate and a Chair rules
+- Alliance — an Expo companion for Hermes, specialist agents, memory, and identity context
 - Hermes agent runtime
 - MCP interface layer
 - Obsidian-backed context and memory
@@ -216,6 +217,18 @@ pnpm --filter @mstrmnd/board typecheck
 pnpm --filter @mstrmnd/board test
 pnpm --filter @mstrmnd/board export:web
 ```
+
+### Alliance app
+
+```bash
+pnpm --filter @mstrmnd/alliance start
+pnpm --filter @mstrmnd/alliance typecheck
+pnpm --filter @mstrmnd/alliance lint
+pnpm --filter @mstrmnd/alliance export:web
+```
+
+`apps/mobile` is reserved for the customer-facing professional profiles,
+bookings, and mastermind-groups platform; it is not the agent companion.
 
 ### Host integration
 

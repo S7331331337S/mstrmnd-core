@@ -119,6 +119,7 @@ Update checkboxes here when work lands.
 
 ### Done
 
+- [x] Consolidate the mobile Agent Alliance implementations as `apps/alliance`
 - [x] Preserve and import the Expo mastermind decision-room app as `apps/board`
 - [x] Doctrine pin + sync + CI
 - [x] Scope / provenance on memory, identity, artifacts
@@ -134,7 +135,7 @@ Update checkboxes here when work lands.
 - [x] Operator pack template + `pnpm operator:init`
 - [x] **Host portability**: sandbox/durability/model-gateway adapters in
       `mstrmnd-os`, standalone build + self-host Dockerfile & compose stack,
-      mobile client on a configured base URL, ledger in `portability.md`
+      Alliance client on a configured base URL, ledger in `portability.md`
 
 ### Deferred (do not start unless asked)
 
