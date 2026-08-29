@@ -53,10 +53,15 @@ pnpm board:web     # browser
 Or from this directory (isolated npm lockfile, not the root pnpm workspace):
 
 ```bash
+bash scripts/materialize-vendor.sh   # lockfile + PNG assets
 npm ci
 npm start          # then press i / a, or scan with Expo Go
 npm run web        # browser
 ```
+
+`package-lock.json` and `assets/*.png` are stored as a split base64 tarball
+under `.vendor/` so they can survive GitHub API text uploads. Always run
+`materialize-vendor.sh` before `npm ci` on a fresh checkout.
 
 Checks (from repo root or this directory):
 
