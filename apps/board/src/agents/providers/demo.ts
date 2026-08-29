@@ -6,7 +6,7 @@ import type { Provider, ProviderRequest, StreamChunk } from "@/lib/types";
  *
  * This is a scripted stand-in, not a model: it composes an in-character line from
  * templates so the whole app — the room, the pacing, the ruling, history — can be
- * used and demoed before anyone adds an API key. Every line is deliberately about
+ * used and demoed before anyone signs in to MSTRMND OS. Every line is deliberately about
  * *how* that member thinks, since it cannot actually reason about the topic.
  */
 export function createDemoProvider(): Provider {
