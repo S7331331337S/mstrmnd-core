@@ -219,7 +219,7 @@ pnpm board:test
 pnpm board:web
 ```
 
-See [`apps/board/README.md`](apps/board/README.md). Do not ship client Anthropic keys; production routing belongs in `mstrmnd-os`.
+See [`apps/board/README.md`](apps/board/README.md). Live rooms sign in to `mstrmnd-os` and stream through `/api/board/complete`. No vendor API key lives on the device.
 
 ### Host integration
 
