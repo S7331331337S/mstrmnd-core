@@ -30,18 +30,20 @@ Set "Quick round" in Settings to skip crossfire.
 
 ## Running it
 
+From the `mstrmnd-core` repository root:
+
 ```bash
-npm install
-npm start          # then press i / a, or scan with Expo Go
-npm run web        # browser
+pnpm install
+pnpm --filter @mstrmnd/board start    # then press i / a, or scan with Expo Go
+pnpm --filter @mstrmnd/board web      # browser
 ```
 
 Checks:
 
 ```bash
-npm run typecheck  # tsc, strict
-npm test           # bun test — SSE stream decoding
-npm run export:web # full Metro bundle; catches import errors tsc can't
+pnpm --filter @mstrmnd/board typecheck   # tsc, strict
+pnpm --filter @mstrmnd/board test        # Vitest — SSE stream decoding
+pnpm --filter @mstrmnd/board export:web  # full Metro bundle; catches import errors tsc can't
 ```
 
 ## The two engines

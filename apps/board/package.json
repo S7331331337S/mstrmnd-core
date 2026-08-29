@@ -1,5 +1,5 @@
 {
-  "name": "mstrmnd",
+  "name": "@mstrmnd/board",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
@@ -31,10 +31,10 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.14",
     "@types/react": "~19.2.2",
     "@types/react-dom": "~19.2.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^4.0.17"
   },
   "scripts": {
     "start": "expo start",
@@ -43,7 +43,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "export:web": "expo export --platform web",
-    "test": "bun test"
+    "test": "vitest run"
   },
   "private": true
 }

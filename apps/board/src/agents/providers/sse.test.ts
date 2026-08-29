@@ -1,5 +1,4 @@
-/// <reference types="bun-types" />
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 
 import { AnthropicError, decodeSse } from "./sse";
 

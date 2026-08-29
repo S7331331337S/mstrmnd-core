@@ -119,6 +119,7 @@ Update checkboxes here when work lands.
 
 ### Done
 
+- [x] Preserve and import the Expo mastermind decision-room app as `apps/board`
 - [x] Doctrine pin + sync + CI
 - [x] Scope / provenance on memory, identity, artifacts
 - [x] Obsidian adapter boundary (`MemorySourceRecord`)

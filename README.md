@@ -46,6 +46,7 @@ Learning
 
 ## Current Systems
 
+- Board — an Expo decision room where specialist agents deliberate and a Chair rules
 - Hermes agent runtime
 - MCP interface layer
 - Obsidian-backed context and memory
@@ -205,6 +206,15 @@ Tools:
 ```bash
 pnpm verify
 pnpm hermes -- --dry-run
+```
+
+### Board app
+
+```bash
+pnpm --filter @mstrmnd/board start
+pnpm --filter @mstrmnd/board typecheck
+pnpm --filter @mstrmnd/board test
+pnpm --filter @mstrmnd/board export:web
 ```
 
 ### Host integration
