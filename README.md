@@ -48,6 +48,7 @@ Learning
 
 - Hermes agent runtime
 - MCP interface layer
+- **Board** — Expo decision-room (`apps/board`): specialist agents + Chair, extracted from the Expo skills fork
 - Obsidian-backed context and memory
 - identity profile loading
 - ranked memory search
@@ -206,6 +207,19 @@ Tools:
 pnpm verify
 pnpm hermes -- --dry-run
 ```
+
+### Board (decision room)
+
+Isolated Expo app — not part of the root pnpm workspace. Uses its own npm lockfile.
+
+```bash
+npm --prefix apps/board ci
+pnpm board:typecheck
+pnpm board:test
+pnpm board:web
+```
+
+See [`apps/board/README.md`](apps/board/README.md). Do not ship client Anthropic keys; production routing belongs in `mstrmnd-os`.
 
 ### Host integration
 
