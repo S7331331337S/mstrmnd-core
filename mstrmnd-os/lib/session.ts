@@ -59,10 +59,20 @@ export function readSessionCookie(cookieHeader: string | null): string | null {
   return null;
 }
 
-/** Verify the session from an incoming Request (used by the eve channel). */
+/** Bearer token from a mobile / Board client, if present. */
+export function readBearerToken(header: string | null): string | null {
+  if (!header) return null;
+  const [scheme, token] = header.split(" ");
+  if (!scheme || !token) return null;
+  return scheme.toLowerCase() === "bearer" ? token.trim() : null;
+}
+
+/** Verify the session from an incoming Request (used by the eve channel and Board). */
 export async function getSessionFromRequest(
   request: Request,
 ): Promise<SessionUser | null> {
+  const bearer = readBearerToken(request.headers.get("authorization"));
+  if (bearer) return verifySession(bearer);
   const token = readSessionCookie(request.headers.get("cookie"));
   return token ? verifySession(token) : null;
 }
