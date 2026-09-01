@@ -151,6 +151,10 @@ importers:
       '@mstrmnd/plugin-sdk':
         specifier: workspace:*
         version: link:../plugin-sdk
+    devDependencies:
+      tsx:
+        specifier: latest
+        version: 4.23.13
 
 packages:
 
@@ -921,6 +925,11 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
+  tsx@4.23.13:
+    resolution: {integrity: sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   tsx@4.23.5:
     resolution: {integrity: sha512-rw55FUaqOoI7RvlQwLbhO4nSDApnQ4/CykPuiQ/EPvtrX3WA9Ig55jIt9VvbBJbzJuj12ueRu4PMZ2SxPVbihg==}
     engines: {node: '>=18.0.0'}
@@ -1634,6 +1643,12 @@ snapshots:
   toidentifier@1.0.1: {}
 
   tsx@4.23.1:
+    dependencies:
+      esbuild: 0.28.1
+    optionalDependencies:
+      fsevents: 2.3.3
+
+  tsx@4.23.13:
     dependencies:
       esbuild: 0.28.1
     optionalDependencies:

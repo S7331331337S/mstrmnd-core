@@ -53,6 +53,11 @@ export class WorkspaceManager {
       allowedExtensions: config.allowedExtensions.map((e) =>
         e.startsWith(".") ? e.toLowerCase() : `.${e.toLowerCase()}`
       ),
+      // Resolve prefixes up front so that `..` segments and trailing
+      // separators cannot change how the boundary check below behaves.
+      allowedPrefixes: config.allowedPrefixes.map((prefix) =>
+        path.resolve(prefix)
+      ),
     };
   }
 
@@ -70,9 +75,7 @@ export class WorkspaceManager {
     content: string,
     opts: WriteOptions = {}
   ): Promise<WriteResult> {
-    const abs = path.isAbsolute(filePath)
-      ? filePath
-      : path.resolve(this.policy.workspaceRoot, filePath);
+    const abs = this.resolvePath(filePath);
 
     const violation = this.checkPolicy(abs);
 
@@ -96,28 +99,42 @@ export class WorkspaceManager {
    * permitted (agents need to read before they can plan writes).
    */
   async read(filePath: string): Promise<string | null> {
-    const abs = path.isAbsolute(filePath)
-      ? filePath
-      : path.resolve(this.policy.workspaceRoot, filePath);
+    const abs = this.resolvePath(filePath);
     if (!existsSync(abs)) return null;
     return readFile(abs, "utf8");
   }
 
-  /** Returns whether the given absolute path satisfies the write policy. */
+  /** Returns whether the given path satisfies the write policy. */
   isAllowed(filePath: string): boolean {
-    return this.checkPolicy(filePath) === null;
+    return this.checkPolicy(this.resolvePath(filePath)) === null;
   }
 
+  /**
+   * Resolve `filePath` to an absolute path. Relative paths are always resolved
+   * against the workspace root — never the process cwd — so that policy
+   * decisions do not depend on where the agent happened to be launched from.
+   */
+  resolvePath(filePath: string): string {
+    return path.isAbsolute(filePath)
+      ? path.resolve(filePath)
+      : path.resolve(this.policy.workspaceRoot, filePath);
+  }
+
+  /** `abs` must already be resolved via {@link resolvePath}. */
   private checkPolicy(abs: string): string | null {
     const ext = path.extname(abs).toLowerCase();
     if (!this.policy.allowedExtensions.includes(ext)) {
       return `Extension "${ext}" is not in the allowed-extension list (${this.policy.allowedExtensions.join(", ")}).`;
     }
 
-    const normalised = abs.endsWith(path.sep) ? abs : abs + path.sep;
+    // Compare on path-component boundaries. A bare `startsWith` on the raw
+    // prefix would also accept siblings that merely share a textual prefix —
+    // e.g. an allowed prefix of "/data/vault" would admit
+    // "/data/vault-backup/note.md", which is outside the approved workspace.
     const allowed = this.policy.allowedPrefixes.some((prefix) => {
-      const p = prefix.endsWith(path.sep) ? prefix : prefix + path.sep;
-      return normalised.startsWith(p) || abs.startsWith(prefix);
+      if (abs === prefix) return true;
+      const withSep = prefix.endsWith(path.sep) ? prefix : prefix + path.sep;
+      return abs.startsWith(withSep);
     });
 
     if (!allowed) {

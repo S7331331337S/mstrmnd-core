@@ -1,9 +1,8 @@
-#!/usr/bin/env node
 /**
  * plugin-client-init — Client setup CLI for customer deployments.
  *
  * Usage:
- *   tsx src/plugin-client-init.ts [--headless] [--context-path ./mstrmnd-context]
+ *   pnpm --filter @mstrmnd/setup-cli client-init -- [--headless] [--context-path ./mstrmnd-context]
  *
  * In headless mode reads from MSTRMND_ONBOARDING_JSON env var.
  * Logs a structured audit trail to <context-path>/audit.log.json.

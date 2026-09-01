@@ -58,6 +58,13 @@ OBSIDIAN_VAULT_PATH="/path/to/your/vault" pnpm --filter @mstrmnd/hermes dev
 
 Expected output: note count, identity status, sample titles.
 
+When Hermes runs a plan (`HERMES_GOAL=...`), any file it proposes to write is
+staged as a draft under `<vault>/.mstrmnd/drafts/` and published only after the
+operator approves it at the prompt — the approval gate is a hard stop and
+nothing auto-publishes. A non-interactive run (CI, cron, a pipeline) has no
+operator to ask, so it leaves the drafts in place and writes nothing to the
+vault. There is deliberately no flag or environment variable that skips this.
+
 ### 5. Connect to Cursor via MCP
 
 Add to your Cursor MCP config (`~/.cursor/mcp.json` or project-level):

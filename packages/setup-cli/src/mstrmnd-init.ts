@@ -1,9 +1,8 @@
-#!/usr/bin/env node
 /**
  * mstrmnd-init — Internal MSTRMND developer setup CLI.
  *
  * Usage:
- *   tsx src/mstrmnd-init.ts [--headless] [--context-path ./mstrmnd-context]
+ *   pnpm --filter @mstrmnd/setup-cli init -- [--headless] [--context-path ./mstrmnd-context]
  *
  * Runs the full onboarding interview and generates the locked context folder.
  * In --headless mode, reads answers from MSTRMND_ONBOARDING_JSON env var (JSON).

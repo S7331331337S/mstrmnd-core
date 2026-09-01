@@ -8,6 +8,12 @@ import { MstrmndPlugin } from "@mstrmnd/plugin-sdk";
 import type { AgentPlan, PlanStep } from "@mstrmnd/schemas";
 import { existsSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import {
+  createApprover,
+  isInteractiveSession,
+  publishWithApproval,
+  type Approver,
+} from "./approval";
 
 // ---------------------------------------------------------------------------
 // Planner — decomposes a goal into ordered steps using the LLM
@@ -55,11 +61,14 @@ const EXECUTOR_SYSTEM = `You are Hermes, an execution agent.
 You are carrying out one step of a larger plan. The user message describes the
 step. If the step requires writing a file, respond with a JSON object:
 { "action": "write_file", "path": "<relative-path>", "content": "<file-content>" }
+Every proposed write is staged as a draft and published only after the operator
+approves it, so write the content you would want published.
 Otherwise respond with a plain string summarising what was done or decided.`;
 
 async function executeStep(
   plugin: MstrmndPlugin,
   workspace: WorkspaceManager,
+  approve: Approver,
   step: PlanStep,
   planContext: string
 ): Promise<string> {
@@ -79,12 +88,10 @@ async function executeStep(
       typeof obj.path === "string" &&
       typeof obj.content === "string"
     ) {
-      const result = await workspace.write(obj.path, obj.content);
-      if (result.written) {
-        return `Wrote file: ${result.path}`;
-      } else {
-        return `Write blocked by policy: ${result.policyViolation}`;
-      }
+      // Never persist model-authored content straight into the vault: stage a
+      // draft and publish only on explicit operator approval (AGENTS.md — the
+      // approval gate is a hard stop, nothing auto-publishes).
+      return publishWithApproval(workspace, approve, obj.path, obj.content);
     }
   } catch {
     // Not a JSON action — treat as narrative result
@@ -166,6 +173,13 @@ export class Hermes {
     );
     console.log(`Workspace: governed writes enabled (root: ${vaultPath})`);
 
+    const approve = createApprover();
+    console.log(
+      isInteractiveSession()
+        ? "Approval gate: interactive — each write is drafted and must be approved."
+        : "Approval gate: non-interactive — writes are drafted to .mstrmnd/drafts and never published."
+    );
+
     // ------------------------------------------------------------------
     // Demo planning loop — driven by HERMES_GOAL env var
     // ------------------------------------------------------------------
@@ -195,7 +209,13 @@ export class Hermes {
       step.status = "running";
       console.log(`\nExecuting step: ${step.description}`);
       try {
-        const result = await executeStep(plugin, workspace, step, planContext);
+        const result = await executeStep(
+          plugin,
+          workspace,
+          approve,
+          step,
+          planContext
+        );
         step.status = "done";
         step.result = result;
         console.log(`  → ${result}`);

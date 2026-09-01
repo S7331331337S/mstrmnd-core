@@ -9,7 +9,7 @@ The MSTRMND plugin layer packages the core intelligence infrastructure as an emb
 | `@mstrmnd/plugin-sdk` | Vercel AI SDK 7 wrapper — model factory, token tracking |
 | `@mstrmnd/onboarding-agent` | Interactive questionnaire via `generateObject` + Zod |
 | `@mstrmnd/context-generator` | Locked folder structure + `.mstrmnd-seal` integrity |
-| `@mstrmnd/setup-cli` | `mstrmnd-init` and `plugin-client-init` CLIs |
+| `@mstrmnd/setup-cli` | Internal (`init`) and client (`client-init`) setup CLIs |
 
 ---
 
@@ -133,24 +133,24 @@ if (!valid) throw new Error("Context tampered!");
 
 ```sh
 # Interactive
-tsx packages/setup-cli/src/mstrmnd-init.ts
+pnpm --filter @mstrmnd/setup-cli init
 
 # Headless (CI/automation)
 MSTRMND_ONBOARDING_JSON='{"companyName":"Test","domain":"dev",...}' \
-  tsx packages/setup-cli/src/mstrmnd-init.ts --headless --context-path ./ctx
+  pnpm --filter @mstrmnd/setup-cli init -- --headless --context-path ./ctx
 ```
 
 ### Client Setup
 
 ```sh
 # Interactive
-tsx packages/setup-cli/src/plugin-client-init.ts
+pnpm --filter @mstrmnd/setup-cli client-init
 
 # Headless
 MSTRMND_MODEL_PROVIDER=anthropic \
 MSTRMND_MODEL_ID=claude-3-5-sonnet-20241022 \
 MSTRMND_ONBOARDING_JSON='{"companyName":"Acme",...}' \
-  tsx packages/setup-cli/src/plugin-client-init.ts --headless --context-path ./client-ctx
+  pnpm --filter @mstrmnd/setup-cli client-init -- --headless --context-path ./client-ctx
 ```
 
 ### Environment Variables

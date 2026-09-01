@@ -5,6 +5,7 @@
     "dev": "turbo dev",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test \"packages/**/*.test.ts\" \"apps/**/*.test.ts\"",
     "hermes": "pnpm --filter @mstrmnd/hermes dev",
     "mcp": "pnpm --filter @mstrmnd/mcp-server start"
   },

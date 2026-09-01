@@ -8,13 +8,16 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "bin": {
-    "mstrmnd-init": "./src/mstrmnd-init.ts",
-    "plugin-client-init": "./src/plugin-client-init.ts"
+  "scripts": {
+    "init": "tsx src/mstrmnd-init.ts",
+    "client-init": "tsx src/plugin-client-init.ts"
   },
   "dependencies": {
     "@mstrmnd/onboarding-agent": "workspace:*",
     "@mstrmnd/context-generator": "workspace:*",
     "@mstrmnd/plugin-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "latest"
   }
 }
