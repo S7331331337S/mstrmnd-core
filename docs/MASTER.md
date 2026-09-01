@@ -138,6 +138,8 @@ Update checkboxes here when work lands.
       mobile client on a configured base URL, ledger in `portability.md`
 - [x] **Board import**: extract `apps/mstrmnd` from `S7331331337S/skills` into
       `apps/board` with history; keep isolated from the pnpm workspace
+- [x] **Bounded CI repair orchestration**: on CI failure, Codex proposes and
+      verifies a minimal patch in a reviewable PR; stop after three failed rounds
 
 ### Next (Board)
 

@@ -93,6 +93,16 @@ Local Obsidian is a **first-party adapter**, not the boundary of the platform.
 - Name reality accurately in docs (scaffold vs shipped).
 - `pnpm typecheck` before done.
 
+## CI repair agent rules
+
+- CI repair is bounded to three attempts and works only through a reviewable PR.
+- Never auto-merge, promote, publish, deploy production, or bypass a required check.
+- Fix root causes; do not skip, weaken, quarantine, or delete failing tests to get green.
+- Stop for human approval when a failure depends on credentials, external services,
+  data/schema migration, destructive action, or ambiguous product behavior.
+- The repair agent may not edit its own workflow, this file, `doctrine.pin.json`,
+  `CODEOWNERS`, or repository security/approval configuration.
+
 ## Git
 
 - This is its own git repo (`mstrmnd-core/.git`). Commit normally from the repo root.
