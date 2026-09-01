@@ -8,15 +8,19 @@ import {
   resolveVaultPath,
   loadIdentity,
   EMPTY_IDENTITY,
+  WorkspaceManager,
 } from "@mstrmnd/intelligence-core";
 import type { IdentityModel, MemoryNode } from "@mstrmnd/schemas";
-import { verifySeal } from "@mstrmnd/context-generator";
+import { verifySeal, computeSeal } from "@mstrmnd/context-generator";
+import { writeFileSync } from "fs";
 
 const engine = new MemoryEngine();
 let identity: IdentityModel = { ...EMPTY_IDENTITY };
+let workspace: WorkspaceManager | null = null;
 
 async function boot(): Promise<void> {
   const vaultPath = resolveVaultPath();
+  workspace = new WorkspaceManager(WorkspaceManager.defaultConfig(vaultPath));
   try {
     const nodes = await engine.loadVault(vaultPath);
     identity = await loadIdentity(vaultPath);
@@ -28,6 +32,7 @@ async function boot(): Promise<void> {
         "MSTRMND MCP: no identity profile found — add identity.md to your vault"
       );
     }
+    console.error(`MSTRMND MCP: workspace policy active (root: ${vaultPath})`);
   } catch (err) {
     console.error(`MSTRMND MCP: WARNING could not load vault at ${vaultPath}`, err);
   }
@@ -216,6 +221,256 @@ server.registerTool(
         {
           type: "text" as const,
           text: JSON.stringify({ contextPath: ctxPath, integrityValid: valid }),
+        },
+      ],
+    };
+  }
+);
+
+
+// ── Workspace write tools ────────────────────────────────────────────────────
+
+server.registerTool(
+  "list_notes",
+  {
+    description:
+      "List all notes in the vault memory index. Optionally filter by tag. Returns id, title, and tags for each note.",
+    inputSchema: {
+      tag: z
+        .string()
+        .optional()
+        .describe("Filter notes to only those with this tag (case-insensitive)."),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(200)
+        .optional()
+        .describe("Maximum number of notes to return (default 50)."),
+    },
+  },
+  async ({ tag, limit = 50 }) => {
+    let notes = engine.all();
+    if (tag) {
+      const t = tag.toLowerCase();
+      notes = notes.filter((n) =>
+        n.relationships.some((r) => r.toLowerCase() === t)
+      );
+    }
+    const results = notes.slice(0, limit).map((n) => ({
+      id: n.id,
+      title: n.title,
+      tags: n.relationships,
+    }));
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(
+            { total: notes.length, returned: results.length, notes: results },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+server.registerTool(
+  "write_note",
+  {
+    description:
+      "Write or overwrite a note in the vault. The path must be relative to the vault root and use an allowed extension (.md or .txt). Writes are governed by the workspace policy — paths outside the vault root are blocked unless force is true (representing explicit operator approval).",
+    inputSchema: {
+      path: z
+        .string()
+        .describe(
+          "Relative path within the vault (e.g. 20-Areas/daily-brief.md). Must end in .md or .txt."
+        ),
+      content: z.string().describe("Full file content to write."),
+      force: z
+        .boolean()
+        .optional()
+        .describe(
+          "Set true to bypass the workspace policy gate (requires explicit operator approval). Defaults to false."
+        ),
+      reloadMemory: z
+        .boolean()
+        .optional()
+        .describe(
+          "If true, reload the in-memory vault index after writing so the new note is immediately searchable. Defaults to true."
+        ),
+    },
+  },
+  async ({ path: notePath, content, force = false, reloadMemory = true }) => {
+    if (!workspace) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ error: "Workspace not initialised. Server may still be booting." }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const result = await workspace.write(notePath, content, { force });
+
+    if (!result.written) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              written: false,
+              path: result.path,
+              policyViolation: result.policyViolation,
+            }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    if (reloadMemory) {
+      try {
+        const vaultPath = resolveVaultPath();
+        await engine.loadVault(vaultPath);
+      } catch {
+        // Non-fatal — write succeeded; index reload failed.
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify({ written: true, path: result.path }),
+        },
+      ],
+    };
+  }
+);
+
+const CONTEXT_MUTABLE_KEYS = ["organization", "vault", "model", "agents", "integrations"] as const;
+type ContextMutableKey = typeof CONTEXT_MUTABLE_KEYS[number];
+
+server.registerTool(
+  "update_context",
+  {
+    description:
+      "Merge a partial update into config.json inside the locked context directory, then re-seal the context. Only top-level keys (organization, vault, model, agents, integrations) may be updated. The seal is recomputed and written to .mstrmnd-seal after every successful update.",
+    inputSchema: {
+      contextPath: z
+        .string()
+        .optional()
+        .describe(
+          "Path to the mstrmnd-context directory (default: MSTRMND_CONTEXT_PATH env var or ./mstrmnd-context)"
+        ),
+      patch: z
+        .record(z.string(), z.unknown())
+        .describe(
+          "A partial config object. Only keys in [organization, vault, model, agents, integrations] are applied."
+        ),
+    },
+  },
+  async ({ contextPath, patch }) => {
+    const ctxPath =
+      contextPath ?? process.env["MSTRMND_CONTEXT_PATH"] ?? "./mstrmnd-context";
+    const configFile = join(ctxPath, "config.json");
+
+    if (!existsSync(configFile)) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ error: "config.json not found", contextPath: ctxPath }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    let config: Record<string, unknown>;
+    try {
+      config = JSON.parse(readFileSync(configFile, "utf-8")) as Record<string, unknown>;
+    } catch (err) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ error: "failed to parse config.json", detail: String(err) }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const applied: string[] = [];
+    const rejected: string[] = [];
+
+    for (const [key, value] of Object.entries(patch)) {
+      if ((CONTEXT_MUTABLE_KEYS as ReadonlyArray<string>).includes(key)) {
+        config[key as ContextMutableKey] =
+          typeof value === "object" && value !== null && !Array.isArray(value)
+            ? { ...(config[key as ContextMutableKey] as object), ...(value as object) }
+            : value;
+        applied.push(key);
+      } else {
+        rejected.push(key);
+      }
+    }
+
+    config["updatedAt"] = new Date().toISOString();
+
+    try {
+      writeFileSync(configFile, JSON.stringify(config, null, 2), "utf-8");
+    } catch (err) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ error: "failed to write config.json", detail: String(err) }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    // Re-seal
+    const newSeal = computeSeal(ctxPath, CONTEXT_TRACKED_FILES);
+    try {
+      writeFileSync(join(ctxPath, ".mstrmnd-seal"), newSeal, "utf-8");
+    } catch (err) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              error: "config updated but failed to write seal",
+              detail: String(err),
+              applied,
+              rejected,
+            }),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify({
+            updated: true,
+            contextPath: ctxPath,
+            applied,
+            rejected,
+            newSeal,
+          }, null, 2),
         },
       ],
     };
