@@ -144,7 +144,7 @@ Update checkboxes here when work lands.
 - [x] Verify Board intact here (typecheck, SSE tests, web export / demo)
 - [x] Route Board model calls through `mstrmnd-os` (usage, policy, audit, budget)
 - [x] Replace `EngineKind = "claude" | "demo"` with `"hosted" | "demo"`
-- [ ] After intact verification, return the Expo skills fork to upstream-tracking
+- [x] After intact verification, return the Expo skills fork to upstream-tracking
 - [ ] Later extract `packages/deliberation`, `agent-roster`, `model-router`, `design-tokens`
 
 ### Deferred (do not start unless asked)
@@ -210,7 +210,7 @@ Update checkboxes here when work lands.
 
 ## Status stamp
 
-- **Last aligned:** 2026-08-29
+- **Last aligned:** 2026-09-01
 - **Priority:** Intelligence layer full build (context → workspace → orchestrator → plugin → template)
 - **Code maturity:** Operator Zero runtime with context pack, workspace mounts, Hermes orchestrator, MCP plugin tools, operator-pack template; Board decision-room imported at `apps/board`
-- **Next:** Policy-gated workspace writes; richer agent planning; return the Expo skills fork to upstream-tracking
+- **Next:** Policy-gated workspace writes; richer agent planning
