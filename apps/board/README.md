@@ -17,9 +17,9 @@ to replace this API-uploaded branch with first-class history.
 This is the decision-room product — not Alliance (agent companion) and not the
 profiles/bookings marketplace. Keep it independent until a later, verified merge.
 
-The Expo skills fork should stay untouched until this app is verified here. Do
-not reset that fork until Board typecheck, tests, and a demo run succeed in
-this repo.
+The app was verified here, then the Expo skills fork's `main` branch was returned
+to exact upstream tracking. Its pre-sync state remains recoverable at
+`archive/mstrmnd-board-before-upstream-sync-1b1926d` in that fork.
 
 ## Why it works
 
