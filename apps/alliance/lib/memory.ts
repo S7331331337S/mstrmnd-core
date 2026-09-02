@@ -18,7 +18,7 @@ export const memoryNodes: MemoryNode[] = [
     type: 'concept',
     title: 'Identity Profile',
     content:
-      'Values: autonomy, clarity, craft. Interests: logistics, AI systems, personal knowledge. Prefers direct communication and dark mode interfaces.',
+      'Values: clarity, reliability, collaboration. Interests: product architecture, system design, reusable workflows. Prefers concise updates and accessible interfaces.',
     confidence: 0.94,
     relationships: ['vault-map', 'brand-system'],
   },

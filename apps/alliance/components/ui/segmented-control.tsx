@@ -28,7 +28,8 @@ export function SegmentedControl<T extends string>({
     0,
     options.findIndex((option) => option.value === value),
   );
-  const segmentWidth = width / options.length;
+  const segmentCount = options.length || 1;
+  const segmentWidth = width / segmentCount;
 
   const indicatorStyle = useAnimatedStyle(() => ({
     width: segmentWidth,

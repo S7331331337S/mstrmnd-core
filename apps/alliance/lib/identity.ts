@@ -6,9 +6,9 @@ export interface IdentityModel {
 
 /** Mirrors `templates/identity.md` — swap for `get_identity` over MCP once wired. */
 export const identity: IdentityModel = {
-  values: ['autonomy', 'clarity', 'craft'],
-  interests: ['logistics', 'ai systems', 'personal knowledge'],
-  creativePatterns: ['brief-first', 'visual storytelling'],
+  values: ['quality', 'clarity', 'collaboration'],
+  interests: ['product strategy', 'software architecture', 'knowledge systems'],
+  creativePatterns: ['hypothesis-driven', 'iteration-focused'],
 };
 
 export interface ConnectionStatus {
