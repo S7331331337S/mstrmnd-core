@@ -30,10 +30,20 @@ Personal Intelligence Infrastructure. Models change; the intelligence layer pers
   publish. Nothing auto-publishes. Ping Signal on publish. (MSTRMND // PRESS editorial
   engine here is the execution layer.)
 - **Editorial brand — ONE accent only:** Platinum `#e8e2d0` (RGB 232,226,208) over
-  obsidian `#0a0a0b`. No second hue. Electric Cyan `(0,200,225)` was a P0 brand reject;
-  the Hermes skill engine (`generate_issue_kit.py`) is fixed to Platinum-only — do not
-  reintroduce cyan/teal/blue as an accent. Regression guard: `verify_issue_kit.py` must
-  assert platinum present and cyan/teal/blue pixel windows ≈ 0 on every kit.
+  obsidian `#0a0a0b`. No second hue. Electric Cyan `(0,200,225)` was a P0 brand reject —
+  do not reintroduce cyan/teal/blue as an accent. Regression guard: `verify_issue_kit.py`
+  asserts platinum present and cyan/teal/blue pixel windows ≈ 0 on every kit.
+  - ⚠️ **The engine does NOT currently pass this guard.** A fresh `sample_brief.json`
+    render trips ~9950 cyan hits against a max of 27, and the cyan-heavy assets
+    (quote cards, carousels, cover, linkedin/x) carry ~0 platinum while the
+    schematic assets (architecture, timeline, comparison) are clean at 0% cyan.
+    So `generate_issue_kit.py` is **not** yet fixed to Platinum-only, despite
+    earlier notes here saying so. Fixing it lives in the Hermes skill, outside
+    this repo: `~/.hermes/skills/creative/editorial-brand-system/scripts/`.
+  - `editorial_worker.py` runs the guard on every `/render` and `/stage` and returns
+    it as `brand_qa`. It is **advisory by default** so the pipeline still runs;
+    set `EDITORIAL_BRAND_ENFORCE=1` to make a violation fail the render and block
+    staging (per-call override: `force:true`). Flip it on once the engine is fixed.
 - Visual identity source of truth: `~/Downloads/mstrmnd-marketing-dashboard/BRAND.md`
   (Platinum-only, no rockets, real-world monochrome industrial photo, Stripe/Linear
   schematics). Cross-check generated assets there.

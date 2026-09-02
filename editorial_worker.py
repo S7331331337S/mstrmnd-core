@@ -5,10 +5,18 @@ Wraps generate_issue_kit.py so n8n can drive the render without touching n8n's
 JS/Python sandbox (which blocks fs/child_process). All filesystem + subprocess
 work happens HERE, in a normal OS process.
 
+Every render and every stage runs the brand guard (platinum present, no
+cyan/teal/blue second hue) via verify_issue_kit.brand_qa, reporting the result
+as `brand_qa`. Results are advisory by default because the engine does not
+currently pass; set EDITORIAL_BRAND_ENFORCE=1 to make a violation fail the
+render and block staging (overridable per call with force:true). A kit that
+fails is always left on disk for inspection.
+
 Endpoints (loopback 127.0.0.1:5055, auth header X-Editorial-Key):
   POST /render   {issue, brief:{flat brief dict}, bg_portrait, bg_landscape, bg_face}
-                  -> writes brief JSON, runs engine, returns {ok, out_dir, count}
-  POST /stage    {issue}  -> mv kits/issue00N -> published/issue00N
+                  -> writes brief JSON, runs engine, runs brand QA,
+                     returns {ok, out_dir, count, brand_qa}
+  POST /stage    {issue, force?}  -> brand QA, then mv kits/issue00N -> published/issue00N
   POST /discard  {issue}  -> rm -rf kits/issue00N
   GET  /health   -> {ok:true}
 """
@@ -34,11 +42,73 @@ ENGINE = Path(
         / "generate_issue_kit.py",
     )
 )
+VERIFIER = Path(
+    os.environ.get("EDITORIAL_VERIFIER", ENGINE.parent / "verify_issue_kit.py")
+)
+# AGENTS.md treats platinum-only as a hard invariant, but the engine currently
+# fails it (a fresh sample_brief render trips ~9950 cyan hits against a max of
+# 27), so enforcing by default would block every render. Report by default,
+# enforce once the engine is actually platinum-only:
+#   EDITORIAL_BRAND_ENFORCE=1
+ENFORCE_BRAND = os.environ.get("EDITORIAL_BRAND_ENFORCE", "0") == "1"
 BRIEFS = BASE / "briefs"
 KITS = BASE / "kits"
 PUBLISHED = BASE / "published"
 KEY = os.environ.get("EDITORIAL_KEY", "mstrmnd-local")
 HOST, PORT = "127.0.0.1", 5055
+
+# Runs the verifier's brand_qa against an already-rendered kit and reports JSON.
+# Executed under PY (not this process) because brand_qa needs the working Pillow
+# from the engine's venv, which is the same interpreter that did the render.
+_QA_SNIPPET = """
+import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("verify_issue_kit", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+try:
+    platinum, cyan, sampled = mod.brand_qa(sys.argv[2])
+except AssertionError as e:
+    print(json.dumps({"ok": False, "error": str(e)}))
+else:
+    print(json.dumps({
+        "ok": True, "platinum_hits": platinum, "cyan_hits": cyan, "sampled": sampled
+    }))
+"""
+
+
+def _brand_qa(out_dir):
+    """Enforce the platinum-only brand invariant on a rendered kit.
+
+    AGENTS.md makes this a hard invariant: platinum present, cyan/teal/blue
+    windows ≈ 0 on every kit. A kit that cannot be checked is not treated as
+    passing — `checked: False` blocks staging the same way a violation does,
+    since an unverifiable kit is exactly what the guard exists to catch.
+    """
+    if not VERIFIER.exists():
+        return {
+            "ok": False,
+            "checked": False,
+            "error": f"brand verifier not found at {VERIFIER} "
+            "(set EDITORIAL_VERIFIER)",
+        }
+    try:
+        r = subprocess.run(
+            [PY, "-c", _QA_SNIPPET, str(VERIFIER), str(out_dir)],
+            capture_output=True,
+            text=True,
+            timeout=180,
+            env=_clean_env(),
+        )
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "checked": False, "error": "brand QA timed out"}
+    if r.returncode != 0:
+        return {"ok": False, "checked": False, "error": r.stderr[-800:]}
+    try:
+        result = json.loads(r.stdout.strip().splitlines()[-1])
+    except (ValueError, IndexError) as e:
+        return {"ok": False, "checked": False, "error": f"unparseable QA output: {e}"}
+    result["checked"] = True
+    return result
 
 
 def _clean_env():
@@ -84,12 +154,24 @@ def _render(data):
     if r.returncode != 0:
         return {"ok": False, "error": r.stderr[-1500:], "returncode": r.returncode}
     files = sorted(os.listdir(out_dir))
+    # The kit always stays on disk so a brand failure can be inspected. Under
+    # enforcement a violation also flips `ok`, which stops the caller advancing
+    # to /stage; otherwise the result is reported and the render still succeeds.
+    qa = _brand_qa(out_dir)
+    failed = not qa.get("ok")
     return {
-        "ok": True,
+        "ok": not (failed and ENFORCE_BRAND),
         "out_dir": str(out_dir),
         "issue": issue,
         "assets": files,
         "count": len(files),
+        "brand_qa": qa,
+        **(
+            {"error": f"brand QA failed: {qa.get('error')}"}
+            if failed and ENFORCE_BRAND
+            else {}
+        ),
+        **({"warning": f"brand QA failed: {qa.get('error')}"} if failed and not ENFORCE_BRAND else {}),
     }
 
 
@@ -99,12 +181,31 @@ def _stage(data):
     src = KITS / f"issue{pad}"
     if not src.is_dir():
         return {"ok": False, "error": f"no such kit {src}"}
+
+    # Staging is the last gate before a kit is publishable, so re-check the
+    # brand invariant here rather than trusting the render-time result — the
+    # files may have been edited by hand in between. `force` is the deliberate
+    # human override; it is recorded in the response.
+    qa = _brand_qa(src)
+    if not qa.get("ok") and ENFORCE_BRAND and not data.get("force"):
+        return {
+            "ok": False,
+            "error": f"brand QA failed: {qa.get('error')} "
+            "(pass force:true to stage anyway)",
+            "brand_qa": qa,
+        }
+
     PUBLISHED.mkdir(parents=True, exist_ok=True)
     dst = PUBLISHED / f"issue{pad}"
     if dst.exists():
         dst = PUBLISHED / f"issue{pad}-{uuid.uuid4().hex[:6]}"
     shutil.move(str(src), str(dst))
-    return {"ok": True, "staged_to": str(dst)}
+    return {
+        "ok": True,
+        "staged_to": str(dst),
+        "brand_qa": qa,
+        "forced": bool(data.get("force")) and not qa.get("ok"),
+    }
 
 
 def _discard(data):
