@@ -17,7 +17,7 @@ Next.js 16.3 as the host application and UI surface.
 | Models | AI Gateway + AI SDK (`ai`) | Provider-agnostic model access via string IDs or direct providers |
 | Durability | Workflow SDK (`workflow`) | Checkpointed, resumable multi-agent patterns; world selectable |
 | Execution | Sandbox adapter (`agent/sandbox.ts`) | Vercel Sandbox, Docker, microsandbox, or just-bash — same `/workspace` |
-| WebGPU | [vgpu](https://vgpu.sh) MCP | Read-only docs + verified examples (`vgpu_docs`, `vgpu_examples`) |
+| WebGPU | [vgpu](https://vgpu.sh) | MCP docs/examples plus the public `/field` shader (WebGL2 fallback) |
 | Auth | Session (JWT via `jose`) | Sign in / sign up; gates the app **and** the agent; per-workspace scope |
 | Data | Postgres / Neon (`pg`) | Users + Third-Mind persist in Postgres when `DATABASE_URL` is set (file fallback otherwise) |
 | Memory | Third-Mind | Multi-tenant shared observation layer, read/written by agents via tools |
@@ -26,7 +26,7 @@ Next.js 16.3 as the host application and UI surface.
 
 ```
 Next.js 16.3 (Swiss / dark / Geist)
-  • Alliance command UI (useEveAgent)   • Third-Mind view   • Agents dashboard
+  • Alliance command UI (useEveAgent)   • Third-Mind view   • Agents dashboard   • Field (/field)
         │ same-origin /eve/v1/*
 eve runtime (agent/)
   • Maestro (root orchestrator)
@@ -74,7 +74,8 @@ MSTRMND_PROVIDER=perplexity AUTH_SECRET=$(openssl rand -hex 32) pnpm dev
 
 Email/password auth issues a signed-JWT session cookie (`jose`, HS256). The
 same cookie gates the app (via `middleware.ts`) **and** the agent (via
-`agent/channels/eve.ts`, which maps the session to a user principal). The
+`agent/channels/eve.ts`, which maps the session to a user principal). `/field`
+is public so the shader demo can run without a session. The
 Third-Mind is scoped to the caller's `workspaceId`, so workspaces never see each
 other's memory. Set `AUTH_SECRET` in every environment (a stable random string;
 the app and agent must share it).
@@ -149,7 +150,8 @@ Landed so far:
 - **vgpu stack tools** — `vgpu_docs` and `vgpu_examples` wrap the public
   [vgpu.sh](https://vgpu.sh) MCP (`docs`, `examples`) over modern HTTP
   (`agent/lib/vgpu-mcp.ts`). Swap the URL with `MSTRMND_VGPU_MCP_URL`. Also
-  registered in `.cursor/mcp.json` for Cursor agents.
+  registered in `.cursor/mcp.json` for Cursor agents. Public `/field` is a
+  platinum raymarch using `vgpu` when WebGPU is present, WebGL2 otherwise.
 - Multi-tenant Third-Mind memory with `memory_{read,write,search,list}` tools, a
   durable file-backed store, and an interactive dashboard — scoped per workspace.
 - Swiss/dark Alliance command UI streaming live Maestro turns via `useEveAgent`.

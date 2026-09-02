@@ -7,6 +7,7 @@ const NAV = [
   { href: "/", label: "Alliance" },
   { href: "/memory", label: "Third-Mind" },
   { href: "/runs", label: "Agents" },
+  { href: "/field", label: "Field" },
 ];
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {

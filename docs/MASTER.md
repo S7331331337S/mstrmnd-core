@@ -74,6 +74,7 @@ What actually works today:
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
 - vgpu stack tools on Maestro (`vgpu_docs` + `vgpu_examples`; URL via `MSTRMND_VGPU_MCP_URL`)
+- **Field** (`/field`) — public platinum raymarch: vgpu WebGPU with WebGL2 fallback
 - **Board** (`apps/board`) — Expo decision-room: seven specialists + Chair, opening / crossfire / ruling. Live rooms stream through `mstrmnd-os` (`hosted`); offline demo stays for tests. Isolated from the pnpm workspace.
 
 What is still thin / next:
@@ -139,7 +140,8 @@ Update checkboxes here when work lands.
       mobile client on a configured base URL, ledger in `portability.md`
 - [x] **vgpu stack tool**: `vgpu_docs` / `vgpu_examples` wrap the public
       [vgpu.sh](https://vgpu.sh) MCP via `agent/lib/vgpu-mcp.ts`, plus
-      `.cursor/mcp.json` for Cursor agents
+      `.cursor/mcp.json` for Cursor agents. Public `/field` demo: vgpu
+      WebGPU path plus a matching WebGL2 fallback (platinum / obsidian only).
 - [x] **Board import**: extract `apps/mstrmnd` from `S7331331337S/skills` into
       `apps/board` with history; keep isolated from the pnpm workspace
 - [x] **Bounded CI repair orchestration**: on CI failure, Codex proposes and
