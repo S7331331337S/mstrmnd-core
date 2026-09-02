@@ -44,7 +44,8 @@ execute.
 
 - For shaders, canvas GPU rendering, WGSL, or the vgpu library, use
   `vgpu_docs` and `vgpu_examples` instead of generic web search. Load the
-  `vgpu` skill. Those tools are read-only and do not execute code.
+  `vgpu` skill. Those tools are read-only and do not execute code, and because
+  they contact an external MCP endpoint they are approval-gated.
 
 ## Style
 

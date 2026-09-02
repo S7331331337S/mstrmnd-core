@@ -1,4 +1,5 @@
 import { defineTool } from "eve/tools";
+import { always } from "eve/tools/approval";
 import { z } from "zod";
 import { callVgpuMcpTool } from "../lib/vgpu-mcp";
 
@@ -8,7 +9,8 @@ import { callVgpuMcpTool } from "../lib/vgpu-mcp";
  */
 export default defineTool({
   description:
-    "Search, inspect, and read verified vgpu WebGPU examples (browser canvas, headless Node). Use search then show then read. Read-only; does not execute code.",
+    "Search, inspect, and read verified vgpu WebGPU examples (browser canvas, headless Node). Use search then show then read. Read-only; does not execute code. Requires human approval.",
+  approval: always(),
   inputSchema: z.discriminatedUnion("operation", [
     z.object({
       operation: z.literal("search"),
