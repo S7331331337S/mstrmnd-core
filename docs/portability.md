@@ -27,6 +27,8 @@ coordination are what persist.
 | Auth | `lib/session.ts` (JWT via `jose`), `agent/channels/eve.ts` | Already portable — no platform identity provider; `AUTH_SECRET` is ours | — |
 | Mobile client | `mstrmnd-alliance` | Points at a configurable base URL, never a baked-in domain | `EXPO_PUBLIC_MSTRMND_API_URL` |
 | WebGPU docs MCP | `mstrmnd-os/agent/lib/vgpu-mcp.ts` | Local modern MCP HTTP (`npx vgpu mcp` behind HTTP, or another URL) | `MSTRMND_VGPU_MCP_URL` |
+| Board client | `apps/board` | Signs in to OS; streams `/api/board/complete`; no vendor SDK | `EXPO_PUBLIC_MSTRMND_API_URL` |
+| Board budget / audit | `mstrmnd-os/lib/board-*.ts` | File ledger under `MSTRMND_HOME`; needs a mounted volume off-laptop | `MSTRMND_HOME` |
 
 Nothing in the table is a rewrite. Every row is a configuration change, because
 each vendor surface is reached through a seam rather than imported into domain
@@ -144,6 +146,12 @@ cannot reach the runtime.
 | `MSTRMND_VGPU_MCP_URL` | `https://vgpu.sh/api/mcp` | vgpu docs/examples MCP (modern HTTP `2026-07-28`); eve 0.38's MCP client still speaks legacy initialize, so Maestro uses `agent/lib/vgpu-mcp.ts` instead of `defineMcpClientConnection` |
 | `DATABASE_URL` | file-backed dev store | Any Postgres |
 | `AUTH_SECRET` | — | Shared by the app and the agent; required in every environment |
+| `MSTRMND_MODEL_FAST` | `MSTRMND_MODEL` | Model id for Board `fast` hint |
+| `MSTRMND_MODEL_CAPABLE` | `MSTRMND_MODEL` | Model id for Board `capable` hint |
+| `BOARD_DAILY_REQUEST_LIMIT` | `200` | Per-workspace Board completions per UTC day |
+| `BOARD_MAX_PROMPT_CHARS` | `48000` | Max system + messages size for one Board turn |
+| `BOARD_CORS_ORIGIN` | `*` | Allowed origin for Board web → OS |
+| `MSTRMND_HOME` | `./.mstrmnd` | File home for Board budget/audit (and other OS files) |
 
 `auto` sandbox selection resolves in eve's own priority order: Vercel Sandbox
 when deployed on Vercel, then Docker, then microsandbox, then just-bash.

@@ -28,6 +28,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Board policy tests
+        run: pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts
+
       - name: Doctrine pin + fixture self-test
         run: pnpm doctrine:ci
 
@@ -47,3 +50,34 @@ jobs:
 
       - name: Hermes orchestrator dry-run
         run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI dry-run"
+
+  board:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/board
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Materialize lockfile and assets
+        run: bash scripts/materialize-vendor.sh
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/board/package-lock.json
+
+      - name: Install Board
+        run: npm ci
+
+      - name: Typecheck Board
+        run: npm run typecheck
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Test Board SSE decoder
+        run: npm test

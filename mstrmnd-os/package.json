@@ -11,7 +11,8 @@
     "eve:info": "eve info",
     "eve:build": "eve build",
     "test:memory": "tsx scripts/third-mind-test.ts",
-    "test:vgpu": "tsx scripts/vgpu-mcp-test.ts"
+    "test:vgpu": "tsx scripts/vgpu-mcp-test.ts",
+    "test:board-policy": "tsx --test lib/board-policy.test.ts"
   },
   "engines": {
     "node": ">=24"

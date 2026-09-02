@@ -79,6 +79,16 @@ Third-Mind is scoped to the caller's `workspaceId`, so workspaces never see each
 other's memory. Set `AUTH_SECRET` in every environment (a stable random string;
 the app and agent must share it).
 
+Board (the Expo decision-room) signs in with `{ "client": "board" }` and
+receives the JWT in the JSON body as `token`, then sends
+`Authorization: Bearer` to `POST /api/board/complete`. That route is
+middleware-public so Expo web does not get an HTML redirect; the handler
+still requires a session. Completions are budgeted per workspace
+(`BOARD_DAILY_REQUEST_LIMIT`) and appended to `.mstrmnd/board-audit.jsonl`.
+The budget ledger is file-backed — mount `MSTRMND_HOME` on a volume if you
+need it to survive process restarts. On Vercel serverless it will not persist
+across instances.
+
 ### Database (Postgres / Neon)
 
 Set `DATABASE_URL` to a Postgres connection string and both the user store and
