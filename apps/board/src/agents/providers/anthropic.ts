@@ -23,7 +23,7 @@ export { AnthropicError };
  */
 export function createAnthropicProvider(apiKey: string, model: string): Provider {
   return {
-    kind: "claude",
+    kind: "hosted",
     async *stream(request: ProviderRequest): AsyncGenerator<StreamChunk> {
       const response = await fetch(API_URL, {
         method: "POST",
