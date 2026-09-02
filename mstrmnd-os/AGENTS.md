@@ -24,9 +24,11 @@ mounts the **eve** agent runtime same-origin at `/eve/v1/*`.
   - `lib/model.ts` — model-agnostic provider resolution from env.
   - `lib/third-mind.ts` — the shared Third-Mind memory store + interface.
   - `tools/` — `memory_{write,read,search,list}`, approval-gated `execute_code`
-    (Vercel Sandbox), and `disableTool()` stubs for the sandbox-backed builtins.
+    (sandbox), `vgpu_docs` / `vgpu_examples` (read-only WebGPU MCP at
+    [vgpu.sh](https://vgpu.sh); URL via `MSTRMND_VGPU_MCP_URL`), and
+    `disableTool()` stubs for the sandbox-backed builtins.
   - `subagents/{researcher,critic,memory-keeper}/` — specialists.
-  - `skills/` — Markdown playbooks loaded on demand.
+  - `skills/` — Markdown playbooks loaded on demand (`vgpu` for WebGPU/WGSL).
   - `sandbox.ts` — sandbox backend adapter (`MSTRMND_SANDBOX`).
 - `workflows/` — durable Workflow SDK patterns (`"use workflow"`).
 - `app/` — Next.js App Router UI (Alliance command, Third-Mind, Agents).

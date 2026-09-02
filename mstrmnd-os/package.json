@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "eve:info": "eve info",
     "eve:build": "eve build",
-    "test:memory": "tsx scripts/third-mind-test.ts"
+    "test:memory": "tsx scripts/third-mind-test.ts",
+    "test:vgpu": "tsx scripts/vgpu-mcp-test.ts",
+    "test:board-policy": "tsx --test lib/board-policy.test.ts"
   },
   "engines": {
     "node": ">=24"
@@ -29,6 +31,7 @@
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "vgpu": "^0.3.1",
     "workflow": "^4.8.3",
     "zod": "^4.4.3"
   },
@@ -38,6 +41,8 @@
     "@types/pg": "^8.21.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vgpu/wgsl": "^0.3.1",
+    "@webgpu/types": "^0.1.72",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",

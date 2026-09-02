@@ -38,7 +38,7 @@ export function Table() {
   const insets = useSafeAreaInsets();
 
   const createSession = useSessions((s) => s.create);
-  const hasKey = useSettings((s) => Boolean(s.apiKey));
+  const hosted = useSettings((s) => Boolean(s.token && s.osBaseUrl));
   const depth = useSettings((s) => s.depth);
 
   const [topic, setTopic] = useState("");
@@ -107,11 +107,11 @@ export function Table() {
             </View>
           </View>
 
-          {!hasKey ? (
+          {!hosted ? (
             <Animated.View entering={FadeIn} style={styles.notice}>
               <Ionicons name="flash-outline" size={15} color={colors.secondaryLabel} />
               <ThemedText variant="caption" style={{ flex: 1, color: colors.secondaryLabel }}>
-                Running the offline board. Add a Claude API key in Settings for a real
+                Running the offline board. Sign in to MSTRMND OS in Settings for a live
                 deliberation.
               </ThemedText>
             </Animated.View>

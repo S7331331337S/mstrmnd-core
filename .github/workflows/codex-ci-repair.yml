@@ -1,0 +1,256 @@
+name: Codex CI Repair
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+# A repair commit starts CI again. If CI still fails, this workflow updates the
+# same repair PR. The round counter and concurrency group keep that loop bounded.
+concurrency:
+  group: codex-ci-repair-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  MAX_REPAIR_ROUNDS: "3"
+
+jobs:
+  prepare:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.actor.login == github.repository_owner ||
+       github.event.workflow_run.actor.login == 'github-actions[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      should_repair: ${{ steps.round.outputs.should_repair }}
+      round: ${{ steps.round.outputs.round }}
+    steps:
+      - name: Checkout failed commit without credentials
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 50
+          persist-credentials: false
+
+      - name: Enforce repair-round limit
+        id: round
+        shell: bash
+        run: |
+          completed=$(git log -50 --format=%s | grep -c '^fix(ci): Codex repair round ' || true)
+          round=$((completed + 1))
+          echo "round=$round" >> "$GITHUB_OUTPUT"
+          if [ "$round" -gt "$MAX_REPAIR_ROUNDS" ]; then
+            echo "Repair limit reached ($MAX_REPAIR_ROUNDS); human diagnosis required."
+            echo "should_repair=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Starting bounded repair round $round of $MAX_REPAIR_ROUNDS."
+            echo "should_repair=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  generate_patch:
+    needs: prepare
+    if: needs.prepare.outputs.should_repair == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      has_patch: ${{ steps.patch.outputs.has_patch }}
+      artifact_name: ${{ steps.patch.outputs.artifact_name }}
+    steps:
+      - name: Checkout failed commit without credentials
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install core dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Materialize Board vendor files
+        run: bash apps/board/scripts/materialize-vendor.sh
+
+      - name: Install Board dependencies
+        run: npm --prefix apps/board ci
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Remove materialized vendor inputs from the candidate diff
+        shell: bash
+        run: |
+          git restore apps/board/assets/favicon.png
+          git clean -f -- \
+            apps/board/package-lock.json \
+            apps/board/assets/icon.png \
+            apps/board/assets/splash-icon.png \
+            apps/board/assets/android-icon-background.png \
+            apps/board/assets/android-icon-foreground.png \
+            apps/board/assets/android-icon-monochrome.png
+
+      - name: Require OpenAI API key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "Add the OPENAI_API_KEY Actions secret to enable Codex CI repair."
+            exit 1
+          fi
+
+      - name: Run bounded Codex repair agent
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          safety-strategy: drop-sudo
+          allow-bot-users: "github-actions[bot]"
+          effort: high
+          prompt: |
+            You are the bounded CI repair agent for MSTRMND Core.
+
+            CI failed at commit ${{ github.event.workflow_run.head_sha }}.
+            This is repair round ${{ needs.prepare.outputs.round }} of ${{ env.MAX_REPAIR_ROUNDS }}.
+
+            Read AGENTS.md and docs/MASTER.md completely before editing. Reproduce the
+            failure using the repository's exact CI commands:
+
+              pnpm typecheck
+              pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts
+              pnpm doctrine:ci
+              pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI repair verification"
+              npm --prefix apps/board run typecheck
+              npm --prefix apps/board test
+
+            Diagnose the root cause, make the smallest source or test change that restores
+            the intended behavior, and rerun the affected check plus the full command list.
+
+            Hard boundaries:
+            - Do not modify files under .github/workflows, AGENTS.md, doctrine.pin.json,
+              CODEOWNERS, or repository security/approval configuration.
+            - Do not delete, skip, weaken, quarantine, or reduce assertions in tests.
+            - Do not add secrets, external credentials, publishing, deployment, or merge steps.
+            - Do not change unrelated files or perform broad refactors.
+            - Do not commit or push. The publication job handles the patch separately.
+            - If the failure depends on unavailable credentials, external infrastructure,
+              unclear product intent, or a consequential migration, make no code change and
+              explain why human approval is required.
+
+            Success means all listed checks pass. Stop immediately when they do.
+
+      - name: Package candidate patch
+        id: patch
+        shell: bash
+        env:
+          ARTIFACT_NAME: codex-ci-repair-${{ github.event.workflow_run.run_id }}-${{ github.run_id }}
+        run: |
+          git add -N .
+          git diff --check
+          git diff --binary HEAD -- . \
+            ':(exclude).mstrmnd/**' \
+            ':(exclude).generated/**' \
+            ':(exclude)apps/board/dist/**' > codex.patch
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          if [ -s codex.patch ]; then
+            echo "has_patch=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload candidate patch
+        if: steps.patch.outputs.has_patch == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.patch.outputs.artifact_name }}
+          path: codex.patch
+          if-no-files-found: error
+          retention-days: 7
+
+  publish_patch:
+    needs: [prepare, generate_patch]
+    if: needs.generate_patch.outputs.has_patch == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout failed commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Download candidate patch
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.generate_patch.outputs.artifact_name }}
+
+      - name: Validate and apply patch
+        shell: bash
+        run: |
+          blocked='^(\.github/workflows/|\.github/actions/|AGENTS\.md$|doctrine\.pin\.json$|CODEOWNERS$)'
+          changed=$(git apply --numstat codex.patch | awk '{print $3}')
+          if printf '%s\n' "$changed" | grep -Eq "$blocked"; then
+            echo "Patch touches protected orchestration or policy files; refusing publication."
+            printf '%s\n' "$changed"
+            exit 1
+          fi
+          git apply --check codex.patch
+          git apply --index codex.patch
+
+      - name: Commit patch and open or update repair PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILED_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          FAILED_SHA: ${{ github.event.workflow_run.head_sha }}
+          FAILED_RUN_ID: ${{ github.event.workflow_run.run_id }}
+          FAILED_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          REPAIR_ROUND: ${{ needs.prepare.outputs.round }}
+        run: |
+          if [[ "$FAILED_BRANCH" == codex/ci-repair-* ]]; then
+            repair_branch="$FAILED_BRANCH"
+          else
+            repair_branch="codex/ci-repair-$FAILED_RUN_ID"
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$repair_branch"
+          git commit -m "fix(ci): Codex repair round $REPAIR_ROUND"
+          git push --force-with-lease origin "HEAD:$repair_branch"
+
+          existing=$(gh pr list --head "$repair_branch" --state open --json number --jq '.[0].number // empty')
+          if [ -z "$existing" ]; then
+            {
+              echo "Codex generated this bounded repair after CI failed at \`$FAILED_SHA\`."
+              echo
+              echo "- Failed run: $FAILED_RUN_URL"
+              echo "- Repair limit: $MAX_REPAIR_ROUNDS rounds"
+              echo "- Current round: $REPAIR_ROUND"
+              echo
+              echo "CI reruns on every repair commit. This PR requires human review and is never auto-merged or promoted."
+            } > pr-body.md
+            gh pr create \
+              --base "$FAILED_BRANCH" \
+              --head "$repair_branch" \
+              --title "fix(ci): bounded Codex repair" \
+              --body-file pr-body.md
+          else
+            gh pr comment "$existing" --body "Repair round $REPAIR_ROUND pushed after another CI failure: $FAILED_RUN_URL"
+          fi

@@ -1,7 +1,6 @@
 packages:
   - apps/*
   - packages/*
-
-allowBuilds:
-  esbuild: true
-  unrs-resolver: true
+  # Expo SDK 57 app with its own npm lockfile. Keep it out of the
+  # intelligence-layer workspace so React Native deps cannot break Hermes/MCP.
+  - "!apps/board"

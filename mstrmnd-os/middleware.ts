@@ -6,7 +6,7 @@ import { readSessionCookie, verifySession } from "@/lib/session";
  * routes (/eve/*) are intentionally excluded — the eve channel enforces its
  * own auth against the same session cookie.
  */
-const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth", "/eve"];
+const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth", "/api/board", "/eve", "/field"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

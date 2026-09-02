@@ -4,95 +4,133 @@ import { Platform } from "react-native";
 import { create } from "zustand";
 
 import type { Depth } from "@/agents/deliberation";
+import type { QualityHint } from "@/lib/types";
 
-export const MODELS = [
-  { id: "claude-opus-5", label: "Opus 5", hint: "Sharpest board. Slowest." },
-  { id: "claude-sonnet-5", label: "Sonnet 5", hint: "Best balance. Recommended." },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", hint: "Fastest, cheapest." },
-] as const;
+export const QUALITY = [
+  { id: "fast" as const, label: "Fast", hint: "Cheapest. Good for a quick pass." },
+  { id: "balanced" as const, label: "Balanced", hint: "Default. Best for most rooms." },
+  { id: "capable" as const, label: "Capable", hint: "Slowest. Use when the question is hard." },
+];
 
-export type ModelId = (typeof MODELS)[number]["id"];
+const PREFS_KEY = "mstrmnd.prefs.v2";
+const TOKEN_KEY = "mstrmnd.os.session";
+const LEGACY_PREFS_KEY = "mstrmnd.prefs.v1";
+const LEGACY_API_KEY = "mstrmnd.anthropic.key";
 
-const PREFS_KEY = "mstrmnd.prefs.v1";
-const API_KEY_KEY = "mstrmnd.anthropic.key";
+const DEFAULT_OS_URL =
+  process.env.EXPO_PUBLIC_MSTRMND_API_URL?.replace(/\/$/, "") || "http://localhost:3001";
 
 type Prefs = {
-  model: ModelId;
+  quality: QualityHint;
   depth: Depth;
   haptics: boolean;
+  osBaseUrl: string;
 };
 
 const DEFAULT_PREFS: Prefs = {
-  model: "claude-sonnet-5",
+  quality: "balanced",
   depth: "full",
   haptics: true,
+  osBaseUrl: DEFAULT_OS_URL,
 };
 
 type SettingsState = Prefs & {
-  apiKey: string | null;
+  token: string | null;
+  email: string | null;
   hydrated: boolean;
   hydrate(): Promise<void>;
-  setModel(model: ModelId): void;
+  setQuality(quality: QualityHint): void;
   setDepth(depth: Depth): void;
   setHaptics(haptics: boolean): void;
-  setApiKey(key: string | null): Promise<void>;
+  setOsBaseUrl(url: string): void;
+  setSession(input: { token: string; email: string } | null): Promise<void>;
 };
 
 /**
  * SecureStore is unavailable on web, where AsyncStorage (localStorage) is the
- * only option. The web build is for previewing, so the key is stored there with
- * that tradeoff made explicit in the UI.
+ * only option. The web build is for previewing, so the session token is stored
+ * there with that tradeoff made explicit in the UI.
  */
-async function readApiKey(): Promise<string | null> {
+async function readSecret(key: string): Promise<string | null> {
   try {
-    if (Platform.OS === "web") return await AsyncStorage.getItem(API_KEY_KEY);
-    return await SecureStore.getItemAsync(API_KEY_KEY);
+    if (Platform.OS === "web") return await AsyncStorage.getItem(key);
+    return await SecureStore.getItemAsync(key);
   } catch {
     return null;
   }
 }
 
-async function writeApiKey(key: string | null): Promise<void> {
+async function writeSecret(key: string, value: string | null): Promise<void> {
   try {
     if (Platform.OS === "web") {
-      if (key) await AsyncStorage.setItem(API_KEY_KEY, key);
-      else await AsyncStorage.removeItem(API_KEY_KEY);
+      if (value) await AsyncStorage.setItem(key, value);
+      else await AsyncStorage.removeItem(key);
       return;
     }
-    if (key) await SecureStore.setItemAsync(API_KEY_KEY, key);
-    else await SecureStore.deleteItemAsync(API_KEY_KEY);
+    if (value) await SecureStore.setItemAsync(key, value);
+    else await SecureStore.deleteItemAsync(key);
   } catch {
-    // Storage failure shouldn't crash settings; the key just won't persist.
+    // Storage failure shouldn't crash settings; the secret just won't persist.
   }
+}
+
+function normalizePrefs(raw: unknown): Prefs {
+  if (!raw || typeof raw !== "object") return DEFAULT_PREFS;
+  const value = raw as Partial<Prefs> & { model?: string };
+  const quality =
+    value.quality === "fast" || value.quality === "capable" || value.quality === "balanced"
+      ? value.quality
+      : DEFAULT_PREFS.quality;
+  return {
+    quality,
+    depth: value.depth === "quick" || value.depth === "full" ? value.depth : DEFAULT_PREFS.depth,
+    haptics: typeof value.haptics === "boolean" ? value.haptics : DEFAULT_PREFS.haptics,
+    osBaseUrl:
+      typeof value.osBaseUrl === "string" && value.osBaseUrl.trim()
+        ? value.osBaseUrl.replace(/\/$/, "")
+        : DEFAULT_PREFS.osBaseUrl,
+  };
 }
 
 export const useSettings = create<SettingsState>((set, get) => ({
   ...DEFAULT_PREFS,
-  apiKey: null,
+  token: null,
+  email: null,
   hydrated: false,
 
   async hydrate() {
     if (get().hydrated) return;
 
-    const [raw, apiKey] = await Promise.all([
+    const [raw, legacyRaw, token] = await Promise.all([
       AsyncStorage.getItem(PREFS_KEY).catch(() => null),
-      readApiKey(),
+      AsyncStorage.getItem(LEGACY_PREFS_KEY).catch(() => null),
+      readSecret(TOKEN_KEY),
     ]);
 
+    // Drop any leftover client Anthropic key from the pre-OS build.
+    await writeSecret(LEGACY_API_KEY, null);
+
     let prefs = DEFAULT_PREFS;
-    if (raw) {
+    const source = raw ?? legacyRaw;
+    if (source) {
       try {
-        prefs = { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<Prefs>) };
+        prefs = normalizePrefs(JSON.parse(source) as unknown);
       } catch {
         // Corrupt prefs fall back to defaults rather than blocking startup.
       }
     }
 
-    set({ ...prefs, apiKey, hydrated: true });
+    let email: string | null = null;
+    if (token) {
+      email = emailFromJwt(token);
+    }
+
+    set({ ...prefs, token, email, hydrated: true });
+    if (!raw) void persist(get());
   },
 
-  setModel(model) {
-    set({ model });
+  setQuality(quality) {
+    set({ quality });
     void persist(get());
   },
   setDepth(depth) {
@@ -103,18 +141,40 @@ export const useSettings = create<SettingsState>((set, get) => ({
     set({ haptics });
     void persist(get());
   },
-  async setApiKey(key) {
-    const trimmed = key?.trim() || null;
-    set({ apiKey: trimmed });
-    await writeApiKey(trimmed);
+  setOsBaseUrl(url) {
+    set({ osBaseUrl: url.trim().replace(/\/$/, "") || DEFAULT_OS_URL });
+    void persist(get());
+  },
+  async setSession(input) {
+    const token = input?.token?.trim() || null;
+    const email = input?.email?.trim() || (token ? emailFromJwt(token) : null);
+    set({ token, email });
+    await writeSecret(TOKEN_KEY, token);
   },
 }));
 
+export function isHostedReady(state: Pick<SettingsState, "token" | "osBaseUrl">): boolean {
+  return Boolean(state.token && state.osBaseUrl);
+}
+
+export function emailFromJwt(token: string): string | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const padded = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = JSON.parse(globalThis.atob(padded)) as { email?: unknown };
+    return typeof json.email === "string" ? json.email : null;
+  } catch {
+    return null;
+  }
+}
+
 function persist(state: SettingsState): Promise<void> {
   const prefs: Prefs = {
-    model: state.model,
+    quality: state.quality,
     depth: state.depth,
     haptics: state.haptics,
+    osBaseUrl: state.osBaseUrl,
   };
   return AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs)).catch(() => {});
 }

@@ -46,10 +46,9 @@ Learning
 
 ## Current Systems
 
-- Board — an Expo decision room where specialist agents deliberate and a Chair rules
-- Alliance — an Expo companion for Hermes, specialist agents, memory, and identity context
 - Hermes agent runtime
 - MCP interface layer
+- **Board** — Expo decision-room (`apps/board`): specialist agents + Chair, extracted from the Expo skills fork
 - Obsidian-backed context and memory
 - identity profile loading
 - ranked memory search
@@ -189,6 +188,8 @@ Add the server to Cursor or another MCP-compatible client:
 }
 ```
 
+Project Cursor MCP also includes the public [vgpu](https://vgpu.sh) docs/examples server in [`.cursor/mcp.json`](.cursor/mcp.json). Maestro reaches the same endpoint through `vgpu_docs` / `vgpu_examples`.
+
 Tools:
 
 | Tool | Description |
@@ -209,26 +210,18 @@ pnpm verify
 pnpm hermes -- --dry-run
 ```
 
-### Board app
+### Board (decision room)
+
+Isolated Expo app — not part of the root pnpm workspace. Uses its own npm lockfile.
 
 ```bash
-pnpm --filter @mstrmnd/board start
-pnpm --filter @mstrmnd/board typecheck
-pnpm --filter @mstrmnd/board test
-pnpm --filter @mstrmnd/board export:web
+npm --prefix apps/board ci
+pnpm board:typecheck
+pnpm board:test
+pnpm board:web
 ```
 
-### Alliance app
-
-```bash
-pnpm --filter @mstrmnd/alliance start
-pnpm --filter @mstrmnd/alliance typecheck
-pnpm --filter @mstrmnd/alliance lint
-pnpm --filter @mstrmnd/alliance export:web
-```
-
-`apps/mobile` is reserved for the customer-facing professional profiles,
-bookings, and mastermind-groups platform; it is not the agent companion.
+See [`apps/board/README.md`](apps/board/README.md). Live rooms sign in to `mstrmnd-os` and stream through `/api/board/complete`. No vendor API key lives on the device.
 
 ### Host integration
 

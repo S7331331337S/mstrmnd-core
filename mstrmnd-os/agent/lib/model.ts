@@ -48,68 +48,82 @@ function compatibleModel(id: string): LanguageModel {
  *
  * `MSTRMND_MODEL` overrides the concrete model id for the selected provider.
  */
-export function resolveModel(): LanguageModel | string {
+export type ModelHint = "fast" | "balanced" | "capable";
+
+function modelId(fallback: string, override?: string): string {
+  return override ?? process.env.MSTRMND_MODEL ?? fallback;
+}
+
+/** Map a Board quality hint to a model id. Vendor names stay in env, not in the app. */
+export function modelIdForHint(hint?: ModelHint): string | undefined {
+  if (hint === "fast") return process.env.MSTRMND_MODEL_FAST ?? process.env.MSTRMND_MODEL;
+  if (hint === "capable") return process.env.MSTRMND_MODEL_CAPABLE ?? process.env.MSTRMND_MODEL;
+  if (hint === "balanced") return process.env.MSTRMND_MODEL;
+  return undefined;
+}
+
+export function resolveModel(overrideId?: string): LanguageModel | string {
   const provider = process.env.MSTRMND_PROVIDER?.toLowerCase();
 
   if (provider === "compatible") {
-    return compatibleModel(process.env.MSTRMND_MODEL ?? "gpt-4o");
+    return compatibleModel(modelId("gpt-4o", overrideId));
   }
   if (provider === "gateway") {
-    return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
+    return gatewayModel(modelId("xai/grok-4", overrideId));
   }
   if (provider === "openai") {
     return createOpenAI({ apiKey: process.env.OPENAI_API_KEY })(
-      process.env.MSTRMND_MODEL ?? "gpt-4o",
+      modelId("gpt-4o", overrideId),
     );
   }
   if (provider === "anthropic") {
     return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(
-      process.env.MSTRMND_MODEL ?? "claude-3-5-sonnet-latest",
+      modelId("claude-3-5-sonnet-latest", overrideId),
     );
   }
   if (provider === "perplexity") {
     return createPerplexity({ apiKey: process.env.PERPLEXITY_API_TOKEN })(
-      process.env.MSTRMND_MODEL ?? "sonar",
+      modelId("sonar", overrideId),
     );
   }
   if (provider === "xai") {
     return createXai({ apiKey: process.env.XAI_TOKEN })(
-      process.env.MSTRMND_MODEL ?? "grok-4",
+      modelId("grok-4", overrideId),
     );
   }
 
   // Default precedence — prefer tool-capable providers for the agent loop,
   // and a gateway we operate over one a vendor operates.
   if (compatibleBaseUrl()) {
-    return compatibleModel(process.env.MSTRMND_MODEL ?? "gpt-4o");
+    return compatibleModel(modelId("gpt-4o", overrideId));
   }
   if (gatewayKey()) {
-    return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
+    return gatewayModel(modelId("xai/grok-4", overrideId));
   }
   if (process.env.ANTHROPIC_API_KEY) {
     return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(
-      process.env.MSTRMND_MODEL ?? "claude-3-5-sonnet-latest",
+      modelId("claude-3-5-sonnet-latest", overrideId),
     );
   }
   if (process.env.OPENAI_API_KEY) {
     return createOpenAI({ apiKey: process.env.OPENAI_API_KEY })(
-      process.env.MSTRMND_MODEL ?? "gpt-4o",
+      modelId("gpt-4o", overrideId),
     );
   }
   if (process.env.XAI_TOKEN) {
     return createXai({ apiKey: process.env.XAI_TOKEN })(
-      process.env.MSTRMND_MODEL ?? "grok-4",
+      modelId("grok-4", overrideId),
     );
   }
   if (process.env.PERPLEXITY_API_TOKEN) {
     return createPerplexity({ apiKey: process.env.PERPLEXITY_API_TOKEN })(
-      process.env.MSTRMND_MODEL ?? "sonar",
+      modelId("sonar", overrideId),
     );
   }
 
   // Nothing configured: build a Gateway model so the failure is a clear
   // "missing credential" at request time rather than a silent default.
-  return gatewayModel(process.env.MSTRMND_MODEL ?? "xai/grok-4");
+  return gatewayModel(modelId("xai/grok-4", overrideId));
 }
 
 /** Human-readable label for the active provider (for UI / status surfaces). */

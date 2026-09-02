@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MSTRMND",
-    "slug": "mstrmnd",
+    "name": "MSTRMND Board",
+    "slug": "mstrmnd-board",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

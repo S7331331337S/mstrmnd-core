@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "vgpu": {
+      "url": "https://vgpu.sh/api/mcp"
+    }
+  }
+}

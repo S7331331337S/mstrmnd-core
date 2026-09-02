@@ -25,7 +25,8 @@ Do not invent empty platform packages before Operator Zero context + orchestrato
 
 ## Stack & tooling
 
-- **pnpm 10+ / Node 20+ / turbo monorepo.** Use pnpm, never npm.
+- **pnpm 10+ / Node 20+ / turbo monorepo.** Use pnpm, never npm — except `apps/board`,
+  which is an isolated Expo app with its own `package-lock.json`.
 - Drive via turbo + pnpm filters from the repo root — do not cd into packages ad-hoc.
 
 ## Common commands (run from repo root)
@@ -35,12 +36,15 @@ Do not invent empty platform packages before Operator Zero context + orchestrato
 - `pnpm typecheck` / `pnpm build` — `tsc --noEmit` (verify gate; run before declaring done)
 - `pnpm --filter @mstrmnd/hermes dev` — Hermes orchestrator shell (`--goal`, `--dry-run`)
 - `pnpm --filter @mstrmnd/mcp-server start` — MCP plugin (`search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`)
+- `pnpm board` / `pnpm board:web` — isolated Expo Board app (`apps/board`)
+- `pnpm board:typecheck` / `pnpm board:test` — Board verify (npm lockfile + bun tests)
 - `pnpm operator:init --dir ../my-operator` — bootstrap operator pack from template
 - `pnpm verify` — typecheck + doctrine fixture gate
 
 ## Layout
 
 - `apps/`, `packages/` — workspaces (`packages/connectors` is the connector package; no root `connectors/`)
+- `apps/board` — Expo mastermind Board (isolated; own npm lockfile; not in the pnpm workspace)
 - `briefs/` — editorial input briefs · `kits/` — generated editorial kits (gitignored) · `templates/` — vault templates (e.g. `identity.md`)
 - `editorial_worker.py` — PRESS editorial HTTP worker
 - `docs/MASTER.md` — **shared agent master plan + backlog**
@@ -88,6 +92,16 @@ Local Obsidian is a **first-party adapter**, not the boundary of the platform.
 - Preserve the working vault → memory → MCP path unless the PR migrates it deliberately.
 - Name reality accurately in docs (scaffold vs shipped).
 - `pnpm typecheck` before done.
+
+## CI repair agent rules
+
+- CI repair is bounded to three attempts and works only through a reviewable PR.
+- Never auto-merge, promote, publish, deploy production, or bypass a required check.
+- Fix root causes; do not skip, weaken, quarantine, or delete failing tests to get green.
+- Stop for human approval when a failure depends on credentials, external services,
+  data/schema migration, destructive action, or ambiguous product behavior.
+- The repair agent may not edit its own workflow, this file, `doctrine.pin.json`,
+  `CODEOWNERS`, or repository security/approval configuration.
 
 ## Git
 

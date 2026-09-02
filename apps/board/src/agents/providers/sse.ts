@@ -3,20 +3,23 @@ import type { StreamChunk } from "@/lib/types";
 /**
  * Deliberately free of any React Native / Expo import so it can be unit tested
  * directly — network streaming is otherwise impossible to exercise without a
- * live API key.
+ * live OS session.
  */
 
-export class AnthropicError extends Error {
+export class StreamError extends Error {
   constructor(
     message: string,
     readonly status?: number,
   ) {
     super(message);
-    this.name = "AnthropicError";
+    this.name = "StreamError";
   }
 }
 
-/** Turns a raw Anthropic SSE byte stream into text deltas. */
+/** @deprecated Use StreamError. Kept so older tests and imports still resolve. */
+export const AnthropicError = StreamError;
+
+/** Turns a raw SSE byte stream into text deltas. */
 export async function* decodeSse(
   body: ReadableStream<Uint8Array>,
 ): AsyncGenerator<StreamChunk> {
@@ -59,6 +62,7 @@ function parseEvent(event: string): StreamChunk | null {
 
   let parsed: {
     type?: string;
+    text?: string;
     delta?: { type?: string; text?: string };
     error?: { message?: string };
   };
@@ -69,7 +73,13 @@ function parseEvent(event: string): StreamChunk | null {
   }
 
   if (parsed.type === "error") {
-    throw new AnthropicError(parsed.error?.message ?? "The stream reported an error.");
+    throw new StreamError(parsed.error?.message ?? "The stream reported an error.");
+  }
+  if (parsed.type === "delta" && typeof parsed.text === "string") {
+    return { type: "delta", text: parsed.text };
+  }
+  if (parsed.type === "done") {
+    return { type: "done" };
   }
   if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
     return { type: "delta", text: parsed.delta.text ?? "" };
