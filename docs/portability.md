@@ -26,6 +26,7 @@ coordination are what persist.
 | Data | `mstrmnd-os/lib/db.ts` | Already portable — any Postgres via `DATABASE_URL` | connection string |
 | Auth | `lib/session.ts` (JWT via `jose`), `agent/channels/eve.ts` | Already portable — no platform identity provider; `AUTH_SECRET` is ours | — |
 | Mobile client | `mstrmnd-alliance` | Points at a configurable base URL, never a baked-in domain | `EXPO_PUBLIC_MSTRMND_API_URL` |
+| WebGPU docs MCP | `mstrmnd-os/agent/lib/vgpu-mcp.ts` | Local modern MCP HTTP (`npx vgpu mcp` behind HTTP, or another URL) | `MSTRMND_VGPU_MCP_URL` |
 | Board client | `apps/board` | Signs in to OS; streams `/api/board/complete`; no vendor SDK | `EXPO_PUBLIC_MSTRMND_API_URL` |
 | Board budget / audit | `mstrmnd-os/lib/board-*.ts` | File ledger under `MSTRMND_HOME`; needs a mounted volume off-laptop | `MSTRMND_HOME` |
 
@@ -142,6 +143,7 @@ cannot reach the runtime.
 | `MSTRMND_MODEL_BASE_URL` | unset | Self-hosted OpenAI-compatible gateway; wins over the AI Gateway |
 | `MSTRMND_MODEL_API_KEY` | unset | Credential for that gateway |
 | `MSTRMND_PROVIDER` | precedence | `compatible` \| `gateway` \| `anthropic` \| `openai` \| `xai` \| `perplexity` |
+| `MSTRMND_VGPU_MCP_URL` | `https://vgpu.sh/api/mcp` | vgpu docs/examples MCP (modern HTTP `2026-07-28`); eve 0.38's MCP client still speaks legacy initialize, so Maestro uses `agent/lib/vgpu-mcp.ts` instead of `defineMcpClientConnection` |
 | `DATABASE_URL` | file-backed dev store | Any Postgres |
 | `AUTH_SECRET` | — | Shared by the app and the agent; required in every environment |
 | `MSTRMND_MODEL_FAST` | `MSTRMND_MODEL` | Model id for Board `fast` hint |

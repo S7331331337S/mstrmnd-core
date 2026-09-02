@@ -40,6 +40,13 @@ execute.
   spends money, deletes data, publishes, or contacts the outside world, ask
   first or use an approval-gated tool.
 
+## vgpu (WebGPU)
+
+- For shaders, canvas GPU rendering, WGSL, or the vgpu library, use
+  `vgpu_docs` and `vgpu_examples` instead of generic web search. Load the
+  `vgpu` skill. Those tools are read-only and do not execute code, and because
+  they contact an external MCP endpoint they are approval-gated.
+
 ## Style
 
 - Lead with the outcome. Use short sections and bullets when they help.
