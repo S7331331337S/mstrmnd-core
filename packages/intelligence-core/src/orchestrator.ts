@@ -62,6 +62,49 @@ export function listAgentSpecs(): AgentSpec[] {
   return Object.values(SPECS);
 }
 
+const MAX_PROPOSED_TOOLS = 12;
+
+export interface ProposedTool {
+  tool: string;
+  args: Record<string, unknown>;
+}
+
+/**
+ * Extract a JSON array of {tool,args} from a model plan. Echo output and
+ * prose without a JSON array yield [] — the run still succeeds.
+ */
+export function parseProposedTools(text: string): ProposedTool[] {
+  const stripped = text.replace(/^\[echo\]\s*/i, "").trim();
+  const start = stripped.indexOf("[");
+  const end = stripped.lastIndexOf("]");
+  if (start === -1 || end <= start) return [];
+  try {
+    const parsed: unknown = JSON.parse(stripped.slice(start, end + 1));
+    if (!Array.isArray(parsed)) return [];
+    const out: ProposedTool[] = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== "object") continue;
+      const rec = item as Record<string, unknown>;
+      const tool =
+        typeof rec.tool === "string"
+          ? rec.tool
+          : typeof rec.name === "string"
+            ? rec.name
+            : "";
+      if (!tool.trim()) continue;
+      const rawArgs = rec.args;
+      const args =
+        rawArgs && typeof rawArgs === "object" && !Array.isArray(rawArgs)
+          ? (rawArgs as Record<string, unknown>)
+          : {};
+      out.push({ tool: tool.trim(), args });
+    }
+    return out.slice(0, MAX_PROPOSED_TOOLS);
+  } catch {
+    return [];
+  }
+}
+
 function evaluateToolPolicy(
   toolId: string,
   scope: RunState["scope"]
@@ -141,13 +184,12 @@ export class Orchestrator {
     const parent = getAgentSpec(run.parentAgentId)!;
 
     try {
-      // Step 1: model plans from context
       const planPrompt = this.buildPlanPrompt(run, parent);
       const plan = await this.deps.provider!.complete([
         {
           role: "system",
           content:
-            "You are the MSTRMND operator agent. Propose brief next tools as JSON array of {tool,args}.",
+            "You are the MSTRMND operator agent. Reply with a JSON array of {\"tool\",\"args\"} using only allowlisted tools. Unknown tools are denied.",
         },
         { role: "user", content: planPrompt },
       ]);
@@ -158,26 +200,18 @@ export class Orchestrator {
         status: "ok",
       });
 
-      // Step 2: memory search if available
-      if (
-        parent.toolsAllowlist.includes("search_memory") &&
-        this.deps.memory
-      ) {
-        await this.runTool(run, parent, "search_memory", {
-          query: run.goal,
-          limit: 5,
+      const proposed = parseProposedTools(plan);
+      if (proposed.length === 0) {
+        this.pushStep(run, {
+          type: "model",
+          summary: "no parseable tool list; skipping execution",
+          outputSummary: "empty or unparseable plan (echo/prose is ok)",
+          status: "ok",
         });
       }
-
-      // Step 3: spawn workspace-scout sub-agent once
-      if (
-        parent.subAgentsAllowlist?.includes("workspace-scout") &&
-        this.deps.workspace
-      ) {
-        await this.runSubAgent(run, "workspace-scout", `Scout workspace for: ${run.goal}`);
+      for (const step of proposed) {
+        await this.executeProposed(run, parent, step.tool, step.args);
       }
-
-      // Step 4: final model synthesis
       const synthesis = await this.deps.provider!.complete([
         {
           role: "system",
@@ -240,9 +274,65 @@ export class Orchestrator {
       `Operator: ${ctx.operator.displayName}`,
       `Doctrine: ${ctx.doctrineRef ?? "unpinned"}`,
       `Tools: ${agent.toolsAllowlist.join(", ")}`,
+      `Sub-agents: ${agent.subAgentsAllowlist?.join(", ") || "none"}`,
       `Memory hits: ${ctx.memoryHits.length}`,
       `Workspace roots: ${ctx.workspaceRoots.join(", ") || "none"}`,
+      "Reply with a JSON array of tool/args objects only.",
     ].join("\n");
+  }
+
+  private async executeProposed(
+    run: RunState,
+    agent: AgentSpec,
+    toolId: string,
+    args: Record<string, unknown>
+  ): Promise<void> {
+    if (toolId === "spawn_subagent") {
+      const childId = String(args.agentId ?? args.id ?? "");
+      if (!childId) {
+        this.pushStep(run, {
+          type: "approval",
+          summary: "denied spawn_subagent: missing agentId",
+          toolId,
+          status: "error",
+        });
+        return;
+      }
+      if (!agent.subAgentsAllowlist?.includes(childId) || !getAgentSpec(childId)) {
+        this.pushStep(run, {
+          type: "approval",
+          summary: `denied spawn ${childId}: not a registered allowlisted sub-agent`,
+          toolId,
+          agentId: childId,
+          status: "error",
+        });
+        return;
+      }
+      await this.runSubAgent(
+        run,
+        childId,
+        String(args.goal ?? `Scout workspace for: ${run.goal}`)
+      );
+      return;
+    }
+
+    if (!agent.toolsAllowlist.includes(toolId)) {
+      this.pushStep(run, {
+        type: "approval",
+        summary: `denied ${toolId}: not on allowlist`,
+        toolId,
+        status: "error",
+      });
+      await this.audit({
+        kind: "policy.decision",
+        summary: `Policy deny for ${toolId}`,
+        data: { toolId, reason: "not on allowlist" },
+        outcome: "denied",
+      });
+      return;
+    }
+
+    await this.runTool(run, agent, toolId, args);
   }
 
   private async runSubAgent(

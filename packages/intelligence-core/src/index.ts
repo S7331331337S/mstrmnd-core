@@ -61,7 +61,8 @@ export {
   WORKSPACE_SCOUT,
   getAgentSpec,
   listAgentSpecs,
+  parseProposedTools,
 } from "./orchestrator";
-export type { OrchestratorDeps } from "./orchestrator";
+export type { OrchestratorDeps, ProposedTool } from "./orchestrator";
 export { createRuntime } from "./runtime";
 export type { RuntimeConfig, MstrmndRuntime } from "./runtime";

@@ -5,7 +5,7 @@
     "dev": "turbo dev",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test packages/intelligence-core/src/workspace-service.test.ts packages/intelligence-core/src/write-approval.test.ts apps/hermes/src/approval.test.ts",
+    "test": "tsx --test packages/intelligence-core/src/workspace-service.test.ts packages/intelligence-core/src/write-approval.test.ts packages/intelligence-core/src/orchestrator.test.ts apps/hermes/src/approval.test.ts",
     "hermes": "pnpm --filter @mstrmnd/hermes dev",
     "mcp": "pnpm --filter @mstrmnd/mcp-server start",
     "doctrine:sync": "python3 scripts/sync-doctrine.py",
