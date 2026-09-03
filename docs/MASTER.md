@@ -67,7 +67,7 @@ What actually works today:
 - Obsidian vault → `MemoryEngine` + graph; scoped memory/identity/artifacts
 - `assembleContext()` → `ContextPack` (doctrine pin + company/operator + identity + memory hits)
 - `WorkspaceService` mounts with list/read/stat and path-escape denial
-- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (`EchoProvider`)
+- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (default `EchoProvider`; `openai` / `openai-compatible` when env is set)
 - Shared `createRuntime()` factory used by Hermes and MCP
 - MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`
 - Operator pack template + `pnpm operator:init`
