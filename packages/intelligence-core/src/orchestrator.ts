@@ -11,6 +11,7 @@ import type {
   PolicyOutcome,
   RunState,
   SubAgentHandoff,
+  ThreatBoundary,
 } from "@mstrmnd/schemas";
 import { CONSEQUENTIAL_ACTIONS } from "@mstrmnd/schemas";
 import type { ModelProvider } from "./model-provider";
@@ -24,6 +25,7 @@ import {
 } from "./write-approval";
 import { localProvenance, nowIso } from "./operator-scope";
 import { resolveRepoRoot } from "./doctrine-loader";
+import { assertBoundary } from "./policy-boundary";
 
 export const OPERATOR_AGENT: AgentSpec = {
   id: "operator-agent",
@@ -138,6 +140,8 @@ export interface OrchestratorDeps {
   dryRun?: boolean;
   /** Human-approval callback for write_file. Defaults to deny (never auto-publish). */
   writeApprover?: WriteApprover;
+  /** Mandatory. Construct/createRun refuse without a valid threat boundary. */
+  boundary: ThreatBoundary;
 }
 
 export class Orchestrator {
@@ -146,6 +150,7 @@ export class Orchestrator {
   private auditPath: string;
 
   constructor(deps: OrchestratorDeps) {
+    assertBoundary(deps.boundary);
     this.deps = {
       provider: deps.provider ?? new EchoProvider(),
       ...deps,
@@ -155,9 +160,14 @@ export class Orchestrator {
     this.auditPath = join(root, ".mstrmnd", "audit.jsonl");
   }
 
+  getBoundary(): ThreatBoundary {
+    return this.deps.boundary;
+  }
+
   createRun(agentId: string, goal: string): RunState {
     const spec = getAgentSpec(agentId);
     if (!spec) throw new Error(`unknown agent: ${agentId}`);
+    assertBoundary(this.deps.boundary);
     const now = nowIso();
     return {
       runId: randomUUID(),
@@ -175,10 +185,14 @@ export class Orchestrator {
         producedBy: agentId,
       }),
       handoffs: [],
+      boundaryId: this.deps.boundary.id,
+      costAccruedUsd: 0,
     };
   }
 
   async dispatch(run: RunState): Promise<RunState> {
+    assertBoundary(this.deps.boundary);
+    run.boundaryId = this.deps.boundary.id;
     run.status = "running";
     run.updatedAt = nowIso();
     const parent = getAgentSpec(run.parentAgentId)!;

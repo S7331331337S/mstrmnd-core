@@ -30,3 +30,9 @@ export type {
   RunStatus,
   SubAgentHandoff,
 } from "./run";
+export type {
+  ThreatBoundary,
+  FilesystemScopeEntry,
+  BoundaryAction,
+  BoundaryViolationCode,
+} from "./boundary";

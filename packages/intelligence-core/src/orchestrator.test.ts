@@ -9,9 +9,14 @@ import {
   Orchestrator,
   OPERATOR_AGENT,
   parseProposedTools,
+  type OrchestratorDeps,
 } from "./orchestrator";
 import { WorkspaceService } from "./workspace-service";
 import { OPERATOR_ZERO_SCOPE, localProvenance, nowIso } from "./operator-scope";
+import {
+  MissingBoundaryError,
+  operatorZeroBoundary,
+} from "./policy-boundary";
 
 function fixtureContext(): ContextPack {
   const scope = OPERATOR_ZERO_SCOPE;
@@ -61,6 +66,13 @@ class ScriptedProvider implements ModelProvider {
   }
 }
 
+function testBoundary() {
+  return operatorZeroBoundary({
+    toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
+    filesystemScope: [{ mountId: "vault", pathPrefix: "" }],
+  });
+}
+
 test("parseProposedTools reads a JSON array and ignores echo prefix", () => {
   const tools = parseProposedTools(
     `[echo] [{"tool":"get_context","args":{}},{"tool":"search_memory","args":{"query":"x"}}]`
@@ -83,6 +95,7 @@ test("EchoProvider dry-run succeeds without a hardcoded tool sequence", async ()
     context: fixtureContext(),
     provider: new EchoProvider(),
     dryRun: true,
+    boundary: testBoundary(),
   });
   const run = orch.createRun(OPERATOR_AGENT.id, "Summarize operator context");
   const finished = await orch.dispatch(run);
@@ -107,6 +120,7 @@ test("parent executes model-proposed allowlisted tools", async () => {
       "synthesis",
     ]),
     dryRun: true,
+    boundary: testBoundary(),
   });
   const run = orch.createRun(OPERATOR_AGENT.id, "goal");
   const finished = await orch.dispatch(run);
@@ -124,6 +138,7 @@ test("unknown tools become deny steps and do not fail the run", async () => {
       "synthesis",
     ]),
     dryRun: true,
+    boundary: testBoundary(),
   });
   const run = orch.createRun(OPERATOR_AGENT.id, "goal");
   const finished = await orch.dispatch(run);
@@ -149,6 +164,7 @@ test("unregistered sub-agents are denied; workspace-scout still runs when propos
       "synthesis",
     ]),
     dryRun: true,
+    boundary: testBoundary(),
   });
   const run = orch.createRun(OPERATOR_AGENT.id, "goal");
   const finished = await orch.dispatch(run);
@@ -158,4 +174,27 @@ test("unregistered sub-agents are denied; workspace-scout still runs when propos
   );
   assert.equal(denied?.status, "error");
   assert.ok(finished.steps.some((s) => s.summary === "spawn workspace-scout"));
+});
+
+test("constructor and createRun refuse a missing threat boundary", () => {
+  assert.throws(
+    () =>
+      new Orchestrator({
+        context: fixtureContext(),
+        dryRun: true,
+        boundary: undefined as unknown as OrchestratorDeps["boundary"],
+      }),
+    MissingBoundaryError
+  );
+});
+
+test("createRun stamps boundaryId from the attached ThreatBoundary", () => {
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    dryRun: true,
+    boundary: testBoundary(),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  assert.equal(run.boundaryId, "operator-zero-default");
+  assert.equal(orch.getBoundary().id, "operator-zero-default");
 });
