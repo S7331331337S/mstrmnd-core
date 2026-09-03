@@ -84,7 +84,7 @@ What is still thin / next:
 - Multi-operator managed deploy
 - Extract Board packages only after the app runs intact (`deliberation`, `agent-roster`, `model-router`, `design-tokens`)
 
-**Two runtimes (until a later adapter):** Hermes/MCP boot `@mstrmnd/intelligence-core`. Board live path and Field boot eve inside `mstrmnd-os`. They do not share packages today. `mstrmnd-os` is a nested pnpm workspace (Node 24), not part of the root graph.
+**Two runtimes (until a later adapter):** Hermes/MCP boot `@mstrmnd/intelligence-core` (root pnpm workspace, Node 20 in CI). Board live path and Field boot eve inside `mstrmnd-os` (nested pnpm workspace, Node 24). They do not share packages today. Do not fold `mstrmnd-os` into the root graph. CI runs `pnpm --dir mstrmnd-os typecheck` as a separate job (`next typegen` then `tsc --noEmit`; `next-env.d.ts` is gitignored).
 
 **Models:** `openai` / `openai-compatible` Chat Completions provider is landed; CI and Hermes default remain `echo`.
 
@@ -113,7 +113,7 @@ Full longer roadmap: [`modernization-roadmap.md`](./modernization-roadmap.md). P
 
 **Intelligence layer core — landed (context, workspace, orchestrator, plugin factory, operator pack).**
 
-Next hardening: `mstrmnd-os` typecheck in CI, broader harness adapters. Policy-gated workspace writes and model-proposed parent planning landed. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
+Next hardening: fail-closed ThreatBoundary on orchestrator runs, broader harness adapters. Policy-gated workspace writes, model-proposed parent planning, and `mstrmnd-os` Node 24 typecheck in CI landed. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
 
 PRESS reference workflow remains deferred.
 
@@ -150,10 +150,11 @@ Update checkboxes here when work lands.
       verifies a minimal patch in a reviewable PR; stop after three failed rounds
 - [x] Policy-gated workspace writes (draft → human approval → publish; no env bypass)
 - [x] Richer parent loop: execute model-proposed allowlisted tools (still policy-checked)
+- [x] CI typecheck for `mstrmnd-os` on Node 24 (kept out of the root pnpm workspace)
 
 ### Next (Operator Zero)
 
-- [ ] CI typecheck for `mstrmnd-os` on Node 24 (keep it out of the root pnpm workspace)
+- [ ] Fail-closed ThreatBoundary attach on `Orchestrator.createRun`
 
 ### Next (Board)
 
@@ -229,4 +230,4 @@ Update checkboxes here when work lands.
 - **Last aligned:** 2026-09-03
 - **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning. Plugin SDK after that.
 - **Code maturity:** Operator Zero runtime with context pack, workspace mounts, policy-gated writes (draft → approve → publish), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`
-- **Next:** `mstrmnd-os` typecheck in CI
+- **Next:** fail-closed ThreatBoundary on `Orchestrator.createRun`

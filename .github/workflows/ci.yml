@@ -54,6 +54,31 @@ jobs:
       - name: Hermes orchestrator dry-run
         run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI dry-run"
 
+  # Nested workspace (Node 24). Keep out of the root pnpm graph —
+  # Hermes/MCP and eve OS are two runtimes until a later adapter.
+  mstrmnd-os:
+    name: mstrmnd-os typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: mstrmnd-os/pnpm-lock.yaml
+
+      - name: Install mstrmnd-os
+        run: pnpm --dir mstrmnd-os install --frozen-lockfile
+
+      - name: Typecheck mstrmnd-os
+        run: pnpm --dir mstrmnd-os typecheck
+
   board:
     runs-on: ubuntu-latest
     defaults:
