@@ -271,7 +271,7 @@ bash scripts/run-icloud-map.sh
 
 Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent), shared runtime factory, MCP plugin tools, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
 
-Hermes/MCP (`@mstrmnd/intelligence-core`) and eve OS (`mstrmnd-os`) are two runtimes until a later adapter. Plugin SDK / onboarding template wait until Operator Zero can run a model-proposed parent loop (writes behind approval are landed).
+Hermes/MCP (`@mstrmnd/intelligence-core`) and eve OS (`mstrmnd-os`) are two runtimes until a later adapter. Plugin SDK / onboarding template wait until after Operator Zero writes + model-proposed planning (both landed on this stack).
 
 **Deferred:** PRESS / editorial governance; un-gated workspace writes; plugin SDK before writes + plan.
 
