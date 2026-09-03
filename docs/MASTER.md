@@ -213,6 +213,7 @@ Update checkboxes here when work lands.
 | Doctrine sync | [`doctrine-integration.md`](./doctrine-integration.md) |
 | Overview | [`../README.md`](../README.md) |
 | Board decision-room | [`../apps/board/README.md`](../apps/board/README.md) |
+| Next-sprint structure review (2026-09-03) | [`sprint-review-2026-09-03.md`](./sprint-review-2026-09-03.md) |
 
 ---
 
