@@ -1,8 +1,11 @@
 import {
   createRuntime,
+  denyApprover,
+  isInteractiveSession,
   OPERATOR_AGENT,
 } from "@mstrmnd/intelligence-core";
 import { existsSync } from "node:fs";
+import { createApprover } from "./approval";
 
 function parseArgs(argv: string[]) {
   const out: {
@@ -38,6 +41,9 @@ Usage:
 
 Boots the shared runtime (context, memory, workspace), then dispatches
 the parent agent. Default model provider is echo (offline).
+Workspace writes are staged as drafts under .mstrmnd/drafts/ and published
+only after explicit y/yes. Non-interactive and --dry-run never publish.
+There is no flag that disables the approval gate.
 `);
       return;
     }
@@ -87,7 +93,23 @@ the parent agent. Default model provider is echo (offline).
     console.log(`Dispatch: agent=${args.agent} dryRun=${args.dryRun}`);
     console.log(`Goal: ${args.goal}`);
 
-    const orch = runtime.createOrchestrator({ dryRun: args.dryRun });
+    const writeApprover = args.dryRun ? denyApprover : createApprover();
+    if (args.dryRun) {
+      console.log(
+        "Approval gate: dry-run — workspace writes are not staged or published."
+      );
+    } else {
+      console.log(
+        isInteractiveSession()
+          ? "Approval gate: interactive — each write is drafted and must be approved (y/yes)."
+          : "Approval gate: non-interactive — writes are drafted to .mstrmnd/drafts and never published."
+      );
+    }
+
+    const orch = runtime.createOrchestrator({
+      dryRun: args.dryRun,
+      writeApprover,
+    });
     const run = orch.createRun(args.agent, args.goal);
     const finished = await orch.dispatch(run);
 
