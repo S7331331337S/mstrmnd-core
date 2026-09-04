@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { mkdtemp, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -197,4 +198,107 @@ test("createRun stamps boundaryId from the attached ThreatBoundary", () => {
   const run = orch.createRun(OPERATOR_AGENT.id, "goal");
   assert.equal(run.boundaryId, "operator-zero-default");
   assert.equal(orch.getBoundary().id, "operator-zero-default");
+});
+
+test("evaluateBoundaryAction denies tools missing from the boundary allow-list", async () => {
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    provider: new ScriptedProvider([
+      `[{"tool":"search_memory","args":{"query":"x"}},{"tool":"get_context","args":{}}]`,
+      "synthesis",
+    ]),
+    dryRun: true,
+    boundary: operatorZeroBoundary({
+      toolsAllowlist: ["get_context"],
+      filesystemScope: [{ mountId: "vault", pathPrefix: "" }],
+    }),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  const denied = finished.steps.find((s) => s.toolId === "search_memory");
+  assert.equal(denied?.status, "error");
+  assert.match(denied?.summary ?? "", /not on the boundary allow-list/);
+  assert.ok(finished.steps.some((s) => s.toolId === "get_context"));
+});
+
+test("evaluateBoundaryAction denies filesystem paths outside the boundary", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "mstrmnd-bound-"));
+  const vault = path.join(root, "vault");
+  await mkdir(vault, { recursive: true });
+  const workspace = new WorkspaceService();
+  workspace.registerVaultMount(vault);
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    workspace,
+    provider: new ScriptedProvider([
+      `[{"tool":"read_file","args":{"mountId":"vault","path":"00-Inbox/secret.md"}}]`,
+      "synthesis",
+    ]),
+    dryRun: true,
+    boundary: operatorZeroBoundary({
+      toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
+      filesystemScope: [{ mountId: "vault", pathPrefix: "20-Areas" }],
+    }),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  const denied = finished.steps.find((s) => s.toolId === "read_file");
+  assert.equal(denied?.status, "error");
+  assert.match(denied?.summary ?? "", /out of scope|filesystem/);
+});
+
+test("workspace-scout list is blocked when the mount is outside filesystemScope", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "mstrmnd-scout-"));
+  const vault = path.join(root, "vault");
+  await mkdir(vault, { recursive: true });
+  const workspace = new WorkspaceService();
+  workspace.registerVaultMount(vault);
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    workspace,
+    provider: new ScriptedProvider([
+      `[{"tool":"spawn_subagent","args":{"agentId":"workspace-scout"}}]`,
+      "synthesis",
+    ]),
+    dryRun: true,
+    boundary: operatorZeroBoundary({
+      toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
+      filesystemScope: [],
+    }),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  assert.ok(finished.steps.some((s) => s.summary === "spawn workspace-scout"));
+  const blocked = finished.steps.find((s) =>
+    (s.summary ?? "").includes("list_workspace")
+  );
+  assert.equal(blocked?.status, "error");
+});
+
+test("write_file stays require-approval and dry-run does not publish", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "mstrmnd-write-"));
+  const vault = path.join(root, "vault");
+  await mkdir(vault, { recursive: true });
+  const workspace = new WorkspaceService();
+  workspace.registerVaultMount(vault);
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    workspace,
+    provider: new ScriptedProvider([
+      `[{"tool":"write_file","args":{"mountId":"vault","path":"note.md","content":"hi"}}]`,
+      "synthesis",
+    ]),
+    dryRun: true,
+    boundary: testBoundary(),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  const write = finished.steps.find((s) => s.toolId === "write_file");
+  assert.ok(write);
+  assert.match(write?.summary ?? "", /dry-run|not staged|not published/i);
+  assert.equal(existsSync(path.join(vault, "note.md")), false);
 });

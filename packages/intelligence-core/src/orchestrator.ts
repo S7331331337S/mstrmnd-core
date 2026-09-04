@@ -8,12 +8,10 @@ import type {
   AuditEvent,
   ContextPack,
   PolicyDecision,
-  PolicyOutcome,
   RunState,
   SubAgentHandoff,
   ThreatBoundary,
 } from "@mstrmnd/schemas";
-import { CONSEQUENTIAL_ACTIONS } from "@mstrmnd/schemas";
 import type { ModelProvider } from "./model-provider";
 import { EchoProvider } from "./model-provider";
 import type { WorkspaceService } from "./workspace-service";
@@ -25,7 +23,7 @@ import {
 } from "./write-approval";
 import { localProvenance, nowIso } from "./operator-scope";
 import { resolveRepoRoot } from "./doctrine-loader";
-import { assertBoundary } from "./policy-boundary";
+import { assertBoundary, evaluateBoundaryAction } from "./policy-boundary";
 
 export const OPERATOR_AGENT: AgentSpec = {
   id: "operator-agent",
@@ -105,30 +103,6 @@ export function parseProposedTools(text: string): ProposedTool[] {
   } catch {
     return [];
   }
-}
-
-function evaluateToolPolicy(
-  toolId: string,
-  scope: RunState["scope"]
-): PolicyDecision {
-  const consequential = (CONSEQUENTIAL_ACTIONS as readonly string[]).some((a) =>
-    toolId.includes(a.split(".").pop() ?? a)
-  );
-  const writeLike = /write|delete|publish|stage|send/i.test(toolId);
-  let outcome: PolicyOutcome = "allow";
-  let reason = "read/search tools are allowed for Operator Zero";
-  if (writeLike || consequential) {
-    outcome = "require-approval";
-    reason = "consequential or write tool requires approval";
-  }
-  return {
-    id: randomUUID(),
-    at: nowIso(),
-    outcome,
-    action: toolId,
-    scope,
-    reason,
-  };
 }
 
 export interface OrchestratorDeps {
@@ -302,6 +276,20 @@ export class Orchestrator {
     args: Record<string, unknown>
   ): Promise<void> {
     if (toolId === "spawn_subagent") {
+      const spawnDecision = evaluateBoundaryAction(this.deps.boundary, {
+        toolId: "spawn_subagent",
+        accruedCostUsd: run.costAccruedUsd ?? 0,
+      });
+      await this.auditPolicy(spawnDecision, "spawn_subagent");
+      if (spawnDecision.outcome === "deny") {
+        this.pushStep(run, {
+          type: "approval",
+          summary: `denied spawn_subagent: ${spawnDecision.reason}`,
+          toolId,
+          status: "error",
+        });
+        return;
+      }
       const childId = String(args.agentId ?? args.id ?? "");
       if (!childId) {
         this.pushStep(run, {
@@ -381,22 +369,38 @@ export class Orchestrator {
     if (this.deps.workspace && child.toolsAllowlist.includes("list_workspace")) {
       const mounts = this.deps.workspace.listMounts();
       if (mounts[0]) {
-        const listing = await this.deps.workspace.list(mounts[0].id, "");
-        handoff.result = {
-          mountId: mounts[0].id,
-          entries: listing.slice(0, 30).map((n) => ({
-            path: n.path,
-            kind: n.kind,
-          })),
-        };
-        this.pushStep(parent, {
-          type: "tool",
-          summary: `${childId}: list_workspace`,
+        const fsDecision = evaluateBoundaryAction(this.deps.boundary, {
           toolId: "list_workspace",
-          agentId: childId,
-          outputSummary: JSON.stringify(handoff.result).slice(0, 500),
-          status: "ok",
+          filesystem: { mountId: mounts[0].id, path: "" },
+          accruedCostUsd: parent.costAccruedUsd ?? 0,
         });
+        await this.auditPolicy(fsDecision, `${childId}:list_workspace`);
+        if (fsDecision.outcome !== "allow") {
+          this.pushStep(parent, {
+            type: "approval",
+            summary: `blocked ${childId}:list_workspace: ${fsDecision.reason}`,
+            toolId: "list_workspace",
+            agentId: childId,
+            status: "error",
+          });
+        } else {
+          const listing = await this.deps.workspace.list(mounts[0].id, "");
+          handoff.result = {
+            mountId: mounts[0].id,
+            entries: listing.slice(0, 30).map((n) => ({
+              path: n.path,
+              kind: n.kind,
+            })),
+          };
+          this.pushStep(parent, {
+            type: "tool",
+            summary: `${childId}: list_workspace`,
+            toolId: "list_workspace",
+            agentId: childId,
+            outputSummary: JSON.stringify(handoff.result).slice(0, 500),
+            status: "ok",
+          });
+        }
       }
     }
 
@@ -412,19 +416,23 @@ export class Orchestrator {
     if (!agent.toolsAllowlist.includes(toolId)) {
       throw new Error(`tool ${toolId} not allowed for ${agent.id}`);
     }
-    const decision = evaluateToolPolicy(toolId, run.scope);
-    await this.audit({
-      kind: "policy.decision",
-      summary: `Policy ${decision.outcome} for ${toolId}`,
-      data: { decision },
-      policyDecisionId: decision.id,
-      outcome:
-        decision.outcome === "allow"
-          ? "success"
-          : decision.outcome === "deny"
-            ? "denied"
-            : "pending_approval",
+    const defaultMount =
+      toolId === "write_file"
+        ? "vault"
+        : (this.deps.workspace?.listMounts()[0]?.id ?? "");
+    const mountId = String(args.mountId ?? defaultMount);
+    const path = String(args.path ?? "");
+    const needsFs =
+      toolId === "list_workspace" ||
+      toolId === "read_file" ||
+      toolId === "write_file";
+    const decision = evaluateBoundaryAction(this.deps.boundary, {
+      toolId,
+      filesystem: needsFs && mountId ? { mountId, path } : undefined,
+      accruedCostUsd: run.costAccruedUsd ?? 0,
+      estimatedCostUsd: 0,
     });
+    await this.auditPolicy(decision, toolId);
 
     if (decision.outcome === "deny") {
       this.pushStep(run, {
@@ -461,17 +469,9 @@ export class Orchestrator {
         }))
       );
     } else if (toolId === "list_workspace" && this.deps.workspace) {
-      const mountId = String(
-        args.mountId ?? this.deps.workspace.listMounts()[0]?.id ?? ""
-      );
-      const path = String(args.path ?? "");
       const nodes = await this.deps.workspace.list(mountId, path);
       output = JSON.stringify(nodes.slice(0, 50));
     } else if (toolId === "read_file" && this.deps.workspace) {
-      const mountId = String(
-        args.mountId ?? this.deps.workspace.listMounts()[0]?.id ?? ""
-      );
-      const path = String(args.path ?? "");
       const file = await this.deps.workspace.read(mountId, path);
       output = JSON.stringify({
         path: file.path,
@@ -485,14 +485,12 @@ export class Orchestrator {
         doctrineRef: this.deps.context.doctrineRef,
       });
     } else if (toolId === "write_file" && this.deps.workspace) {
-      const mountId = String(args.mountId ?? "vault");
-      const targetPath = String(args.path ?? "");
       const content = String(args.content ?? "");
       const outcome = await stageAndMaybePublish(
         this.deps.workspace,
         this.deps.writeApprover ?? denyApprover,
         mountId,
-        targetPath,
+        path,
         content,
         { dryRun: this.deps.dryRun }
       );
@@ -508,7 +506,7 @@ export class Orchestrator {
         toolId,
         inputSummary: JSON.stringify({
           mountId,
-          path: targetPath,
+          path,
         }).slice(0, 300),
         outputSummary: output.slice(0, 800),
         status: outcome.published || this.deps.dryRun ? "ok" : "pending",
@@ -516,7 +514,7 @@ export class Orchestrator {
       await this.audit({
         kind: outcome.published ? "tool.call" : "approval.requested",
         summary: outcome.message,
-        data: { toolId, args: { mountId, path: targetPath }, preview: output.slice(0, 200) },
+        data: { toolId, args: { mountId, path }, preview: output.slice(0, 200) },
         outcome: outcome.published ? "success" : "pending_approval",
       });
       return;
@@ -550,6 +548,24 @@ export class Orchestrator {
       ...partial,
     });
     run.updatedAt = nowIso();
+  }
+
+  private async auditPolicy(
+    decision: PolicyDecision,
+    label: string
+  ): Promise<void> {
+    await this.audit({
+      kind: "policy.decision",
+      summary: `Policy ${decision.outcome} for ${label}`,
+      data: { decision, boundaryId: this.deps.boundary.id },
+      policyDecisionId: decision.id,
+      outcome:
+        decision.outcome === "allow"
+          ? "success"
+          : decision.outcome === "deny"
+            ? "denied"
+            : "pending_approval",
+    });
   }
 
   private async persistRun(run: RunState): Promise<void> {
