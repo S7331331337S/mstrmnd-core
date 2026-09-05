@@ -67,7 +67,7 @@ What actually works today:
 - Obsidian vault → `MemoryEngine` + graph; scoped memory/identity/artifacts
 - `assembleContext()` → `ContextPack` (doctrine pin + company/operator + identity + memory hits)
 - `WorkspaceService` mounts with list/read/stat/write; writes stage under `.mstrmnd/drafts/` and publish only after human approval
-- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (default `EchoProvider`; `openai` / `openai-compatible` when env is set). Parent executes **model-proposed** allowlisted tools (policy-checked). Interactive writes prompt `y/yes`; non-interactive and `--dry-run` never publish.
+- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (default `EchoProvider`; `openai` / `openai-compatible` when env is set). Parent executes **model-proposed** allowlisted tools (`evaluateBoundaryAction` on each dispatch). Interactive writes prompt `y/yes`; non-interactive and `--dry-run` never publish. `Orchestrator.createRun` is fail-closed on a `ThreatBoundary`; `createRuntime` attaches the Operator Zero default (deny-all egress).
 - Shared `createRuntime()` factory used by Hermes and MCP
 - MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `write_file` (draft), `approve_write`, `list_agents`, `run_agent`
 - Operator pack template + `pnpm operator:init`
@@ -79,7 +79,6 @@ What actually works today:
 
 What is still thin / next:
 
-- Stronger policy enforcement on orchestrator runs
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
 - Extract Board packages only after the app runs intact (`deliberation`, `agent-roster`, `model-router`, `design-tokens`)
@@ -113,7 +112,7 @@ Full longer roadmap: [`modernization-roadmap.md`](./modernization-roadmap.md). P
 
 **Intelligence layer core — landed (context, workspace, orchestrator, plugin factory, operator pack).**
 
-Next hardening: fail-closed ThreatBoundary on orchestrator runs, broader harness adapters. Policy-gated workspace writes, model-proposed parent planning, and `mstrmnd-os` Node 24 typecheck in CI landed. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
+Next hardening: broader harness adapters / plugin SDK after this Operator Zero stack. Policy-gated workspace writes, model-proposed parent planning, `mstrmnd-os` Node 24 typecheck in CI, fail-closed ThreatBoundary attach, and per-tool `evaluateBoundaryAction` on dispatch landed. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
 
 PRESS reference workflow remains deferred.
 
@@ -151,10 +150,12 @@ Update checkboxes here when work lands.
 - [x] Policy-gated workspace writes (draft → human approval → publish; no env bypass)
 - [x] Richer parent loop: execute model-proposed allowlisted tools (still policy-checked)
 - [x] CI typecheck for `mstrmnd-os` on Node 24 (kept out of the root pnpm workspace)
+- [x] Fail-closed ThreatBoundary attach on `Orchestrator.createRun`
+- [x] Per-tool `evaluateBoundaryAction` on orchestrator dispatch (deny / require-approval / allow)
 
 ### Next (Operator Zero)
 
-- [ ] Fail-closed ThreatBoundary attach on `Orchestrator.createRun`
+- [ ] Additional host transports beyond MCP stdio (plugin SDK after this stack)
 
 ### Next (Board)
 
@@ -228,6 +229,6 @@ Update checkboxes here when work lands.
 ## Status stamp
 
 - **Last aligned:** 2026-09-03
-- **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning. Plugin SDK after that.
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, policy-gated writes (draft → approve → publish), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`
-- **Next:** fail-closed ThreatBoundary on `Orchestrator.createRun`
+- **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning → fail-closed ThreatBoundary. Plugin SDK after that.
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, policy-gated writes (draft → approve → publish), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`), fail-closed ThreatBoundary on createRun with per-tool `evaluateBoundaryAction`; Board decision-room imported at `apps/board`
+- **Next:** plugin SDK / additional host transports (after this Operator Zero stack)

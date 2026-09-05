@@ -269,7 +269,7 @@ bash scripts/run-icloud-map.sh
 
 ## Status
 
-Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent), shared runtime factory, MCP plugin tools, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
+Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent, model-proposed tools, fail-closed ThreatBoundary with per-tool `evaluateBoundaryAction`), shared runtime factory, MCP plugin tools, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
 
 Hermes/MCP (`@mstrmnd/intelligence-core`) and eve OS (`mstrmnd-os`) are two runtimes until a later adapter. CI typechecks `mstrmnd-os` on Node 24 via `pnpm --dir mstrmnd-os typecheck`; it is not part of the root pnpm workspace. Plugin SDK / onboarding template wait until after Operator Zero writes + model-proposed planning (both landed on this stack).
 

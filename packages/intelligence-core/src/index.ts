@@ -64,5 +64,12 @@ export {
   parseProposedTools,
 } from "./orchestrator";
 export type { OrchestratorDeps, ProposedTool } from "./orchestrator";
+export {
+  assertBoundary,
+  evaluateBoundaryAction,
+  operatorZeroBoundary,
+  MissingBoundaryError,
+  BoundaryViolationError,
+} from "./policy-boundary";
 export { createRuntime } from "./runtime";
 export type { RuntimeConfig, MstrmndRuntime } from "./runtime";
