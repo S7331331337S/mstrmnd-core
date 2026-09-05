@@ -14,6 +14,7 @@ import {
 import { Orchestrator } from "./orchestrator";
 import { loadIdentity, EMPTY_IDENTITY } from "./identity-loader";
 import type { IdentityModel } from "@mstrmnd/schemas";
+import type { WriteApprover } from "./write-approval";
 
 export interface RuntimeConfig {
   vaultPath?: string;
@@ -31,7 +32,10 @@ export interface MstrmndRuntime {
   context: ContextPack;
   identity: IdentityModel;
   provider: ModelProvider;
-  createOrchestrator: (opts?: { dryRun?: boolean }) => Orchestrator;
+  createOrchestrator: (opts?: {
+    dryRun?: boolean;
+    writeApprover?: WriteApprover;
+  }) => Orchestrator;
 }
 
 /**
@@ -103,6 +107,7 @@ export async function createRuntime(
         provider,
         repoRoot,
         dryRun: opts?.dryRun,
+        writeApprover: opts?.writeApprover,
       }),
   };
 }

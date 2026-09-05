@@ -66,10 +66,10 @@ What actually works today:
 
 - Obsidian vault → `MemoryEngine` + graph; scoped memory/identity/artifacts
 - `assembleContext()` → `ContextPack` (doctrine pin + company/operator + identity + memory hits)
-- `WorkspaceService` mounts with list/read/stat and path-escape denial
-- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (default `EchoProvider`; `openai` / `openai-compatible` when env is set)
+- `WorkspaceService` mounts with list/read/stat/write; writes stage under `.mstrmnd/drafts/` and publish only after human approval
+- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (default `EchoProvider`; `openai` / `openai-compatible` when env is set). Interactive writes prompt `y/yes`; non-interactive and `--dry-run` never publish.
 - Shared `createRuntime()` factory used by Hermes and MCP
-- MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`
+- MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `write_file` (draft), `approve_write`, `list_agents`, `run_agent`
 - Operator pack template + `pnpm operator:init`
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
@@ -79,7 +79,6 @@ What actually works today:
 
 What is still thin / next:
 
-- Policy-gated workspace writes (draft → human approval → publish; vault stays read-only until then)
 - Stronger policy enforcement on orchestrator runs
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
@@ -115,7 +114,7 @@ Full longer roadmap: [`modernization-roadmap.md`](./modernization-roadmap.md). P
 
 **Intelligence layer core — landed (context, workspace, orchestrator, plugin factory, operator pack).**
 
-Next hardening: policy-gated workspace writes, richer agent planning, broader harness adapters. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
+Next hardening: richer agent planning, `mstrmnd-os` typecheck in CI, broader harness adapters. Policy-gated workspace writes landed. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
 
 PRESS reference workflow remains deferred.
 
@@ -133,8 +132,8 @@ Update checkboxes here when work lands.
 - [x] Audit + policy schema contracts
 - [x] Define **operator / company / business context** schema
 - [x] Context assembler: doctrine + identity + memory → `ContextPack`
-- [x] **Workspace** model: mounts, list/read/stat with path guards
-- [x] MCP tools for workspace + context (`get_context`, `list_workspace`, `read_file`)
+- [x] **Workspace** model: mounts, list/read/stat/write with path guards; drafts under `.mstrmnd/drafts/`
+- [x] MCP tools for workspace + context (`get_context`, `list_workspace`, `read_file`, `write_file`, `approve_write`)
 - [x] Run state / agent specs + orchestrator + EchoProvider
 - [x] Hermes orchestrator shell (parent + workspace-scout sub-agent)
 - [x] Shared `createRuntime` factory (MCP + Hermes plugin boundary)
@@ -148,12 +147,12 @@ Update checkboxes here when work lands.
       WebGPU path plus a matching WebGL2 fallback (platinum / obsidian only).
 - [x] **Board import**: extract `apps/mstrmnd` from `S7331331337S/skills` into
       `apps/board` with history; keep isolated from the pnpm workspace
-- [x] **Bounded CI repair orchestration**: on CI failure, Codex proposes and
+- [x] Bounded CI repair orchestration: on CI failure, Codex proposes and
       verifies a minimal patch in a reviewable PR; stop after three failed rounds
+- [x] Policy-gated workspace writes (draft → human approval → publish; no env bypass)
 
 ### Next (Operator Zero)
 
-- [ ] Policy-gated workspace writes (draft → human approval → publish; no env bypass)
 - [ ] Richer parent loop: execute model-proposed allowlisted tools (still policy-checked)
 - [ ] CI typecheck for `mstrmnd-os` on Node 24 (keep it out of the root pnpm workspace)
 
@@ -172,7 +171,7 @@ Update checkboxes here when work lands.
 - Full multi-tenant managed deploy
 - Empty package scaffolding for optics
 - Plugin SDK / onboarding template (after Operator Zero can write + plan)
-- Un-gated / auto-publish workspace writes (policy-gated writes are Next, not deferred)
+- Un-gated / auto-publish workspace writes (policy-gated draft → approve → publish is landed)
 
 ---
 
@@ -230,5 +229,5 @@ Update checkboxes here when work lands.
 
 - **Last aligned:** 2026-09-03
 - **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning. Plugin SDK after that.
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts (read-only on main), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`
-- **Next:** Policy-gated workspace writes; richer agent planning; `mstrmnd-os` typecheck in CI
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, policy-gated writes (draft → approve → publish), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`
+- **Next:** Richer agent planning; `mstrmnd-os` typecheck in CI
