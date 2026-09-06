@@ -75,6 +75,7 @@ What actually works today:
 - Editorial worker exists but is **out of active focus**
 - vgpu stack tools on Maestro (`vgpu_docs` + `vgpu_examples`; URL via `MSTRMND_VGPU_MCP_URL`)
 - **Field** (`/field`) — public platinum raymarch: vgpu WebGPU with WebGL2 fallback
+- **vgpu app** (`apps/vgpu`) — Vite + React starter from `npx vgpu examples pull gradient`
 - **Board** (`apps/board`) — Expo decision-room: seven specialists + Chair, opening / crossfire / ruling. Live rooms stream through `mstrmnd-os` (`hosted`); offline demo stays for tests. Isolated from the pnpm workspace.
 
 What is still thin / next:
@@ -150,6 +151,8 @@ Update checkboxes here when work lands.
       `apps/board` with history; keep isolated from the pnpm workspace
 - [x] **Bounded CI repair orchestration**: on CI failure, Codex proposes and
       verifies a minimal patch in a reviewable PR; stop after three failed rounds
+- [x] **vgpu Vite starter**: `apps/vgpu` from `npx vgpu examples pull gradient`,
+      Vite WGSL loader, `resolveShader` test, optional `vgpu/node` render
 
 ### Next (Operator Zero)
 
@@ -223,12 +226,13 @@ Update checkboxes here when work lands.
 | Doctrine sync | [`doctrine-integration.md`](./doctrine-integration.md) |
 | Overview | [`../README.md`](../README.md) |
 | Board decision-room | [`../apps/board/README.md`](../apps/board/README.md) |
+| Official vgpu starter | [`../apps/vgpu/README.md`](../apps/vgpu/README.md) |
 
 ---
 
 ## Status stamp
 
-- **Last aligned:** 2026-09-03
+- **Last aligned:** 2026-09-06
 - **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning. Plugin SDK after that.
 - **Code maturity:** Operator Zero runtime with context pack, workspace mounts (read-only on main), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`
 - **Next:** Policy-gated workspace writes; richer agent planning; `mstrmnd-os` typecheck in CI

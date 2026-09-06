@@ -1,0 +1,31 @@
+{
+  "name": "@mstrmnd/vgpu-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "check": "vgpu check src/example/shader.wgsl",
+    "test": "tsx --test scripts/resolve-shader.test.ts",
+    "render": "tsx scripts/render-frame.ts"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "vgpu": "^0.4.0"
+  },
+  "devDependencies": {
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vgpu/wgsl": "^0.4.0",
+    "@vitejs/plugin-react": "^5.0.2",
+    "@webgpu/types": "^0.1.72",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.23.12",
+    "typescript": "^5",
+    "vite": "^6.3.6"
+  }
+}

@@ -49,6 +49,7 @@ Learning
 - Hermes agent runtime
 - MCP interface layer
 - **Board** — Expo decision-room (`apps/board`): specialist agents + Chair, extracted from the Expo skills fork
+- **vgpu app** — Vite + React WebGPU starter (`apps/vgpu`) from `npx vgpu examples pull gradient`
 - Obsidian-backed context and memory
 - identity profile loading
 - ranked memory search
@@ -222,6 +223,19 @@ pnpm board:web
 ```
 
 See [`apps/board/README.md`](apps/board/README.md). Live rooms sign in to `mstrmnd-os` and stream through `/api/board/complete`. No vendor API key lives on the device.
+
+### vgpu (WebGPU starter)
+
+Vite + React app from the official `npx vgpu examples pull gradient` gallery example.
+
+```bash
+pnpm vgpu
+pnpm vgpu:typecheck
+pnpm vgpu:test
+pnpm vgpu:build
+```
+
+See [`apps/vgpu/README.md`](apps/vgpu/README.md).
 
 ### Host integration
 

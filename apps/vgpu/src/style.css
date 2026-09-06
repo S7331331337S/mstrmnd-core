@@ -1,0 +1,41 @@
+:root {
+  color-scheme: dark;
+  background: #0a0a0b;
+  color: #e8e2d0;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: #0a0a0b;
+}
+
+.relative {
+  position: relative;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.bg-black {
+  background: #000;
+}
+
+.block {
+  display: block;
+}
+
+.touch-none {
+  touch-action: none;
+}

@@ -38,6 +38,7 @@ Do not invent empty platform packages before Operator Zero context + orchestrato
 - `pnpm --filter @mstrmnd/mcp-server start` — MCP plugin (`search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`)
 - `pnpm board` / `pnpm board:web` — isolated Expo Board app (`apps/board`)
 - `pnpm board:typecheck` / `pnpm board:test` — Board verify (npm lockfile + bun tests)
+- `pnpm vgpu` / `pnpm vgpu:typecheck` / `pnpm vgpu:test` — official vgpu Vite starter (`apps/vgpu`)
 - `pnpm operator:init --dir ../my-operator` — bootstrap operator pack from template
 - `pnpm verify` — typecheck + doctrine fixture gate
 
@@ -45,6 +46,7 @@ Do not invent empty platform packages before Operator Zero context + orchestrato
 
 - `apps/`, `packages/` — workspaces (`packages/connectors` is the connector package; no root `connectors/`)
 - `apps/board` — Expo mastermind Board (isolated; own npm lockfile; not in the pnpm workspace)
+- `apps/vgpu` — Vite + React WebGPU starter from `npx vgpu examples pull gradient`
 - `briefs/` — editorial input briefs · `kits/` — generated editorial kits (gitignored) · `templates/` — vault templates (e.g. `identity.md`)
 - `editorial_worker.py` — PRESS editorial HTTP worker
 - `docs/MASTER.md` — **shared agent master plan + backlog**
