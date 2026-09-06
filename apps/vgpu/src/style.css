@@ -39,3 +39,24 @@ body,
 .touch-none {
   touch-action: none;
 }
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  color: #e8e2d0;
+  font: 15px/1.5 ui-sans-serif, system-ui, sans-serif;
+}
+
+.fallback-detail {
+  color: rgba(232, 226, 208, 0.7);
+}
+
+.fallback code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}

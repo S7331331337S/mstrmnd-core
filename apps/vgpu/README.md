@@ -8,7 +8,7 @@ The shader and renderer are the verified **gradient** gallery example:
 npx vgpu examples pull gradient --out src/example
 ```
 
-Page chrome is platinum `#e8e2d0` over obsidian `#0a0a0b`. The pulled shader is unchanged.
+Page chrome is platinum `#e8e2d0` over obsidian `#0a0a0b`. The pulled shader is unchanged. If the browser has no WebGPU adapter, the canvas stays dark and the page explains the headless render path.
 
 ## Commands (from repo root)
 
