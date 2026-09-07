@@ -48,8 +48,8 @@ importers:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
       vgpu:
-        specifier: ^0.3.1
-        version: 0.3.1
+        specifier: ^0.4.0
+        version: 0.4.0
       workflow:
         specifier: ^4.8.3
         version: 4.8.3(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@swc/cli@0.8.1(@swc/core@1.15.3(@swc/helpers@0.5.23))(chokidar@5.0.0))(@swc/core@1.15.3(@swc/helpers@0.5.23))(@swc/helpers@0.5.23)(next@16.3.1(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(typescript@5.9.3)
@@ -73,8 +73,8 @@ importers:
         specifier: ^19
         version: 19.2.4(@types/react@19.2.18)
       '@vgpu/wgsl':
-        specifier: ^0.3.1
-        version: 0.3.1(@vgpu/adapter-node@0.3.1)
+        specifier: ^0.4.0
+        version: 0.4.0(@vgpu/adapter-node@0.4.0)
       '@webgpu/types':
         specifier: ^0.1.72
         version: 0.1.72
@@ -1462,20 +1462,20 @@ packages:
     resolution: {integrity: sha512-6pjdXyNfdCQnj1nyeB1rPtll/XUhmciyeZJD0rpIUUwmcIfR+utDl6+iFvlHvsBdqAVT8UC6ydObT0v+xldfUQ==}
     engines: {node: '>=20.0.0'}
 
-  '@vgpu/adapter-mock@0.3.1':
-    resolution: {integrity: sha512-uZxTFPHLYd1nOxGxluvni50tsjnUTQ2eOhjJ/YwWynO7k906AD0byJxN0V6BbYb1MK/xM/EF+/cA8tKCrvY0yA==}
+  '@vgpu/adapter-mock@0.4.0':
+    resolution: {integrity: sha512-fqOEHCZAt+mMyOpgAA5inFWSoB9siO1LQIq9t+i6iemLbp2VBEEWlhZXCh3Hf+UDqbkut8kQaDrMPLt2J9LpvA==}
 
-  '@vgpu/adapter-node@0.3.1':
-    resolution: {integrity: sha512-DtGxI8q3bAh3aN1JdT2EJhUEEbiuVC3U5nd3JLCbn+8zQlxmzs/+lsLo3TzD0gXr7fWHHdOiYYv0xIvAC/1UnQ==}
+  '@vgpu/adapter-node@0.4.0':
+    resolution: {integrity: sha512-A6Rj5Ge8Uw6BFrRBiJa8iRTI4fSxkz2JyR1rAhTl+kUNMeyAxrMlItqsUdVcaLe3fJPUh0sU6cr9zzHjHvuVUA==}
 
-  '@vgpu/core@0.3.1':
-    resolution: {integrity: sha512-HO0J2LplV+UiJNv1gp8k3Vog6hD/E84HEi5xHj0GxxJ8ZQT7a3kGlyMxGTrNuALXKNPziZzzZl8XHdiX1YNp8w==}
+  '@vgpu/core@0.4.0':
+    resolution: {integrity: sha512-yBkqlNzTRYaRRzOAsootOmppzsDZytL5Xe09rZfV60zJc4FTr5jWZmGCrm/zlWM/1wEKocDtKloVKfKD+2TNPw==}
 
-  '@vgpu/wgsl-std@0.3.1':
-    resolution: {integrity: sha512-9MuJ9/YfJLkCjusjPU81sHfnHZs2k4Yv66TKJEqYNXma5Z+GDPEq8GNksMeKxb9WiXfTjp1TjOR/8GhyEOeuFA==}
+  '@vgpu/wgsl-std@0.4.0':
+    resolution: {integrity: sha512-a0EkK1y5VeA1jCEjPxe7BW7zTebL1UKLIQlEdxqrb8T1Zr+xO7VBe5mTNsuJtKWxgF+lANUqLwScyN+Fs4ooFw==}
 
-  '@vgpu/wgsl@0.3.1':
-    resolution: {integrity: sha512-/D3l/+0Kw/Hnr79AvxsLUjp21/ZeTcbBmvltXkftyHBXqs0YZf+0AVOeMpMyWjV24lGPrPgIqDsGpmKS38y7Ow==}
+  '@vgpu/wgsl@0.4.0':
+    resolution: {integrity: sha512-19aESov4jNukukAlbE9VH34T/2VcIzmQPZ45WyphtrUMevFacAqTVU6qJVAP/YGX3rjQaL7Eq4jdvEhtOxNEPg==}
     peerDependencies:
       '@vgpu/adapter-node': '>=0.1.6 <1.0.0'
     peerDependenciesMeta:
@@ -4190,9 +4190,14 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vgpu@0.3.1:
-    resolution: {integrity: sha512-NeEETis2aCr0I9/8dy42lueNGNs3GZxL+0OmjLI82wlgPD/4WpW/XNX4xduc+ChxFqOJtjEYsz297VS9GmIuyA==}
+  vgpu@0.4.0:
+    resolution: {integrity: sha512-U8ofyb2FdiLpbkMJrGSu2PWu/fmiKsXYYpp3agFE3TjM5+6o7aZFD1PBl8XxxnSeN7br/Izmow7fcEmYJTpxSw==}
     hasBin: true
+    peerDependencies:
+      three: '>=0.180.0 <0.200.0'
+    peerDependenciesMeta:
+      three:
+        optional: true
 
   watchpack@2.5.1:
     resolution: {integrity: sha512-Zn5uXdcFNIA1+1Ei5McRd+iRzfhENPCe7LeABkJtNulSxjma+l7ltNx55BWZkRlwRnpOgHqxnjyaDgJnNXnqzg==}
@@ -5523,32 +5528,32 @@ snapshots:
       mixpart: 0.0.6
       picocolors: 1.1.1
 
-  '@vgpu/adapter-mock@0.3.1(@vgpu/adapter-node@0.3.1)':
+  '@vgpu/adapter-mock@0.4.0(@vgpu/adapter-node@0.4.0)':
     dependencies:
-      '@vgpu/core': 0.3.1(@vgpu/adapter-node@0.3.1)
+      '@vgpu/core': 0.4.0(@vgpu/adapter-node@0.4.0)
     transitivePeerDependencies:
       - '@vgpu/adapter-node'
 
-  '@vgpu/adapter-node@0.3.1':
+  '@vgpu/adapter-node@0.4.0':
     dependencies:
-      '@vgpu/core': 0.3.1(@vgpu/adapter-node@0.3.1)
+      '@vgpu/core': 0.4.0(@vgpu/adapter-node@0.4.0)
       webgpu: 0.4.0
     transitivePeerDependencies:
       - supports-color
 
-  '@vgpu/core@0.3.1(@vgpu/adapter-node@0.3.1)':
+  '@vgpu/core@0.4.0(@vgpu/adapter-node@0.4.0)':
     dependencies:
-      '@vgpu/wgsl': 0.3.1(@vgpu/adapter-node@0.3.1)
+      '@vgpu/wgsl': 0.4.0(@vgpu/adapter-node@0.4.0)
     transitivePeerDependencies:
       - '@vgpu/adapter-node'
 
-  '@vgpu/wgsl-std@0.3.1': {}
+  '@vgpu/wgsl-std@0.4.0': {}
 
-  '@vgpu/wgsl@0.3.1(@vgpu/adapter-node@0.3.1)':
+  '@vgpu/wgsl@0.4.0(@vgpu/adapter-node@0.4.0)':
     dependencies:
-      '@vgpu/wgsl-std': 0.3.1
+      '@vgpu/wgsl-std': 0.4.0
     optionalDependencies:
-      '@vgpu/adapter-node': 0.3.1
+      '@vgpu/adapter-node': 0.4.0
 
   '@webgpu/types@0.1.72': {}
 
@@ -8676,14 +8681,14 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vgpu@0.3.1:
+  vgpu@0.4.0:
     dependencies:
       '@modelcontextprotocol/server': 2.0.0
-      '@vgpu/adapter-mock': 0.3.1(@vgpu/adapter-node@0.3.1)
-      '@vgpu/adapter-node': 0.3.1
-      '@vgpu/core': 0.3.1(@vgpu/adapter-node@0.3.1)
-      '@vgpu/wgsl': 0.3.1(@vgpu/adapter-node@0.3.1)
-      '@vgpu/wgsl-std': 0.3.1
+      '@vgpu/adapter-mock': 0.4.0(@vgpu/adapter-node@0.4.0)
+      '@vgpu/adapter-node': 0.4.0
+      '@vgpu/core': 0.4.0(@vgpu/adapter-node@0.4.0)
+      '@vgpu/wgsl': 0.4.0(@vgpu/adapter-node@0.4.0)
+      '@vgpu/wgsl-std': 0.4.0
       '@webgpu/types': 0.1.72
       pixelmatch: 7.2.0
       pngjs: 7.0.0
