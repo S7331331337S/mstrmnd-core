@@ -64,9 +64,66 @@ export function listAgentSpecs(): AgentSpec[] {
 
 const MAX_PROPOSED_TOOLS = 12;
 
+/** Keys models commonly use instead of the canonical `agentId`. */
+export const SPAWN_SUBAGENT_ID_ALIASES = [
+  "agentId",
+  "id",
+  "subAgentId",
+  "subagent",
+  "agent",
+  "name",
+] as const;
+
 export interface ProposedTool {
   tool: string;
   args: Record<string, unknown>;
+}
+
+export function readSpawnAgentIdAlias(
+  args: Record<string, unknown>
+): string {
+  for (const key of SPAWN_SUBAGENT_ID_ALIASES) {
+    const raw = args[key];
+    if (typeof raw !== "string") continue;
+    const trimmed = raw.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}
+
+export function registeredAllowlistedSubAgents(parent: AgentSpec): string[] {
+  return (parent.subAgentsAllowlist ?? []).filter((id) => Boolean(getAgentSpec(id)));
+}
+
+export function spawnSubagentPlanHint(parent: AgentSpec): string {
+  const ids = registeredAllowlistedSubAgents(parent);
+  if (ids.length === 0) {
+    return "spawn_subagent is unavailable: no registered allowlisted sub-agents.";
+  }
+  return `spawn_subagent requires args.agentId set to one of: ${ids.join(", ")}.`;
+}
+
+/**
+ * Resolve a child agent for spawn_subagent.
+ * Explicit aliases win. If none are present and the parent has exactly one
+ * registered allowlisted sub-agent, default to that; otherwise deny.
+ */
+export function resolveSpawnSubagentId(
+  args: Record<string, unknown>,
+  parent: AgentSpec
+): { agentId: string } | { deny: string } {
+  const explicit = readSpawnAgentIdAlias(args);
+  if (explicit) return { agentId: explicit };
+
+  const candidates = registeredAllowlistedSubAgents(parent);
+  const only = candidates[0];
+  if (candidates.length === 1 && only) {
+    return { agentId: only };
+  }
+  if (candidates.length === 0) {
+    return { deny: "missing agentId (no registered allowlisted sub-agent)" };
+  }
+  return { deny: `missing agentId (ambiguous: ${candidates.join(", ")})` };
 }
 
 /**
@@ -177,7 +234,7 @@ export class Orchestrator {
         {
           role: "system",
           content:
-            "You are the MSTRMND operator agent. Reply with a JSON array of {\"tool\",\"args\"} using only allowlisted tools. Unknown tools are denied.",
+            "You are the MSTRMND operator agent. Reply with a JSON array of {\"tool\",\"args\"} using only allowlisted tools. Unknown tools are denied. spawn_subagent requires args.agentId (e.g. workspace-scout).",
         },
         { role: "user", content: planPrompt },
       ]);
@@ -263,6 +320,7 @@ export class Orchestrator {
       `Doctrine: ${ctx.doctrineRef ?? "unpinned"}`,
       `Tools: ${agent.toolsAllowlist.join(", ")}`,
       `Sub-agents: ${agent.subAgentsAllowlist?.join(", ") || "none"}`,
+      spawnSubagentPlanHint(agent),
       `Memory hits: ${ctx.memoryHits.length}`,
       `Workspace roots: ${ctx.workspaceRoots.join(", ") || "none"}`,
       "Reply with a JSON array of tool/args objects only.",
@@ -290,16 +348,17 @@ export class Orchestrator {
         });
         return;
       }
-      const childId = String(args.agentId ?? args.id ?? "");
-      if (!childId) {
+      const resolved = resolveSpawnSubagentId(args, agent);
+      if ("deny" in resolved) {
         this.pushStep(run, {
           type: "approval",
-          summary: "denied spawn_subagent: missing agentId",
+          summary: `denied spawn_subagent: ${resolved.deny}`,
           toolId,
           status: "error",
         });
         return;
       }
+      const childId = resolved.agentId;
       if (!agent.subAgentsAllowlist?.includes(childId) || !getAgentSpec(childId)) {
         this.pushStep(run, {
           type: "approval",

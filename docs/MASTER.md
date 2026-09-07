@@ -152,6 +152,7 @@ Update checkboxes here when work lands.
 - [x] CI typecheck for `mstrmnd-os` on Node 24 (kept out of the root pnpm workspace)
 - [x] Fail-closed ThreatBoundary attach on `Orchestrator.createRun`
 - [x] Per-tool `evaluateBoundaryAction` on orchestrator dispatch (deny / require-approval / allow)
+- [x] `spawn_subagent` accepts common `agentId` aliases and defaults to the sole allowlisted registered sub-agent when omitted
 
 ### Next (Operator Zero)
 

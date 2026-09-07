@@ -62,6 +62,11 @@ export {
   getAgentSpec,
   listAgentSpecs,
   parseProposedTools,
+  readSpawnAgentIdAlias,
+  registeredAllowlistedSubAgents,
+  resolveSpawnSubagentId,
+  spawnSubagentPlanHint,
+  SPAWN_SUBAGENT_ID_ALIASES,
 } from "./orchestrator";
 export type { OrchestratorDeps, ProposedTool } from "./orchestrator";
 export {
