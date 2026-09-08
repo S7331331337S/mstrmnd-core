@@ -234,7 +234,7 @@ export class Orchestrator {
         {
           role: "system",
           content:
-            "You are the MSTRMND operator agent. Reply with a JSON array of {\"tool\",\"args\"} using only allowlisted tools. Unknown tools are denied. spawn_subagent requires args.agentId (e.g. workspace-scout).",
+            "You are the MSTRMND operator agent. Reply with a JSON array of {\"tool\",\"args\"} using only allowlisted tools. Unknown tools are denied. spawn_subagent requires args.agentId.",
         },
         { role: "user", content: planPrompt },
       ]);

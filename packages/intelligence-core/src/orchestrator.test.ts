@@ -425,9 +425,11 @@ test("parent plan prompt tells the model spawn_subagent needs agentId", async ()
   const finished = await orch.dispatch(run);
   assert.equal(finished.status, "succeeded");
   const planMessages = provider.messages[0] ?? [];
-  const joined = planMessages.map((m) => m.content).join("\n");
-  assert.match(joined, /spawn_subagent requires args\.agentId/);
-  assert.match(joined, /workspace-scout/);
+  const system = planMessages.find((m) => m.role === "system")?.content ?? "";
+  const user = planMessages.find((m) => m.role === "user")?.content ?? "";
+  assert.match(system, /spawn_subagent requires args\.agentId/);
+  assert.doesNotMatch(system, /workspace-scout/);
+  assert.match(user, /workspace-scout/);
 });
 
 test("explicit unregistered agentId still denies after alias resolution", async () => {
