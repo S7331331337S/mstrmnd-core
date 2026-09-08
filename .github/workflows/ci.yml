@@ -28,9 +28,6 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Board policy tests
-        run: pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts
-
       - name: Doctrine pin + fixture self-test
         run: pnpm doctrine:ci
 
@@ -50,6 +47,41 @@ jobs:
 
       - name: Hermes orchestrator dry-run
         run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI dry-run"
+
+  os:
+    # mstrmnd-os is a nested pnpm workspace on Node 24; it is deliberately
+    # outside the root graph, so it gets its own install and its own job.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mstrmnd-os
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: mstrmnd-os/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Board policy tests
+        run: pnpm test:board-policy
 
   board:
     runs-on: ubuntu-latest

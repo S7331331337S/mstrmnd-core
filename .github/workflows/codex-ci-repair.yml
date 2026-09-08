@@ -131,11 +131,20 @@ jobs:
             failure using the repository's exact CI commands:
 
               pnpm typecheck
-              pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts
               pnpm doctrine:ci
               pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI repair verification"
               npm --prefix apps/board run typecheck
               npm --prefix apps/board test
+
+            The mstrmnd-os checks run in a separate CI job because that workspace is a
+            nested pnpm workspace requiring Node >= 24. To reproduce them you must first
+            switch to Node 24 and install inside that directory:
+
+              cd mstrmnd-os && pnpm install --frozen-lockfile
+              pnpm typecheck && pnpm lint && pnpm test:board-policy
+
+            If the Node 24 toolchain is unavailable in this runner, report that the failure
+            is in the mstrmnd-os job and stop rather than guessing at a patch.
 
             Diagnose the root cause, make the smallest source or test change that restores
             the intended behavior, and rerun the affected check plus the full command list.
