@@ -77,10 +77,23 @@ What actually works today:
 - **Field** (`/field`) — public platinum raymarch: vgpu WebGPU with WebGL2 fallback
 - **Board** (`apps/board`) — Expo decision-room: seven specialists + Chair, opening / crossfire / ruling. Live rooms stream through `mstrmnd-os` (`hosted`); offline demo stays for tests. Isolated from the pnpm workspace.
 
-What is still thin / next:
+What is still thin / next (sequenced in [`next-cycle-plan.md`](./next-cycle-plan.md)):
 
+- **The human-approval gate is not implemented.** `evaluateToolPolicy()` is a
+  regex over the tool id, and when it returns `require-approval` the orchestrator
+  records a step and drops the call — no queue, no approver, no resume, and the
+  run still reports `succeeded`. `RunStatus: "waiting"`, `AgentStep: "approval"`,
+  and `PolicyDecision.approval` already exist and are unused.
+- **No automated tests in the root workspace.** `pnpm verify` is typecheck plus
+  the doctrine fixture gate; `WorkspaceService.resolveSafe()` is a security
+  control with no test.
+- **MCP bypasses policy.** Only `run_agent` goes through the orchestrator; the
+  other seven tools touch memory and workspace directly, unaudited.
+- **Planning is decorative.** The model's proposed `{tool,args}` array is stored
+  as a step and never parsed; steps 2–4 are hardcoded.
 - Policy-gated workspace writes (draft → human approval → publish; vault stays read-only until then)
-- Stronger policy enforcement on orchestrator runs
+- Policy implemented twice (`orchestrator.evaluateToolPolicy` vs
+  `mstrmnd-os/lib/board-policy.ts`) with two audit sinks
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
 - Richer multi-step agent planning beyond the fixed four-step orchestrator loop
@@ -153,9 +166,27 @@ Update checkboxes here when work lands.
 
 ### Next (Operator Zero)
 
-- [ ] Policy-gated workspace writes (draft → human approval → publish; no env bypass)
-- [ ] Richer parent loop: execute model-proposed allowlisted tools (still policy-checked)
-- [ ] CI typecheck for `mstrmnd-os` on Node 24 (keep it out of the root pnpm workspace)
+Sequenced end to end in [`next-cycle-plan.md`](./next-cycle-plan.md) — **The
+Approval Gate**. Read that before starting any item below; the ordering there is
+deliberate (the gate and its tests come before the write path).
+
+- [x] CI typecheck for `mstrmnd-os` on Node 24 (keep it out of the root pnpm
+      workspace) — separate `os` CI job; `typecheck` now runs `next typegen`
+      first, without which the workspace did not compile at all
+- [ ] Test harness for `@mstrmnd/intelligence-core` (`tsx --test`, folded into
+      `pnpm verify`) — prerequisite for gating writes; starts with the
+      `resolveSafe()` path-escape guard, which has no test today
+- [ ] Extract `@mstrmnd/policy` — pure rule engine emitting `PolicyDecision`
+      with all four outcomes, replacing the regex heuristic in `orchestrator.ts`
+- [ ] Approval state machine: `require-approval` parks the run at `waiting`,
+      persists a pending approval, and resumes once — today the tool call is
+      silently dropped and the run still reports `succeeded`
+- [ ] Policy-gated workspace writes (draft → human approval → publish; no env
+      bypass) — staging mount only; the vault stays read-only
+- [ ] Transport parity: policy + audit on every MCP tool, approval queue
+      reachable from MCP and Hermes
+- [ ] Richer parent loop: execute model-proposed allowlisted tools (still
+      policy-checked) — sequenced last, behind the gate
 
 ### Next (Board)
 
@@ -217,6 +248,7 @@ Update checkboxes here when work lands.
 | Need | File |
 |---|---|
 | Agent tooling + brand invariants | [`../AGENTS.md`](../AGENTS.md) |
+| **Current cycle plan (end to end)** | [`next-cycle-plan.md`](./next-cycle-plan.md) |
 | Longer phased roadmap | [`modernization-roadmap.md`](./modernization-roadmap.md) |
 | Doctrine vs runtime | [`runtime-boundaries.md`](./runtime-boundaries.md) |
 | Hosting lock-in + exit plan | [`portability.md`](./portability.md) |
@@ -228,7 +260,10 @@ Update checkboxes here when work lands.
 
 ## Status stamp
 
-- **Last aligned:** 2026-09-03
-- **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning. Plugin SDK after that.
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts (read-only on main), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`
-- **Next:** Policy-gated workspace writes; richer agent planning; `mstrmnd-os` typecheck in CI
+- **Last aligned:** 2026-09-08
+- **Priority:** Operator Zero MVP — **the approval gate**, then policy-gated
+  workspace writes, then richer parent planning. Plugin SDK after that. Cycle
+  detail: [`next-cycle-plan.md`](./next-cycle-plan.md).
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts (read-only on main), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`. Policy and approval are **scaffold** — comprehensively typed in `@mstrmnd/schemas`, enforced only as a regex heuristic on the orchestrator tool path.
+- **Next:** Test harness → `@mstrmnd/policy` → approval state machine →
+  policy-gated writes (staging only) → MCP/Hermes parity → model-driven planning
