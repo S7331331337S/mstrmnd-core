@@ -28,6 +28,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Intelligence-core tests
+        run: pnpm test:core
+
       - name: Board policy tests
         run: pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts
 
@@ -81,3 +84,28 @@ jobs:
 
       - name: Test Board SSE decoder
         run: npm test
+
+  os-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mstrmnd-os
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: mstrmnd-os/pnpm-lock.yaml
+
+      - name: Install mstrmnd-os
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck mstrmnd-os
+        run: pnpm typecheck
