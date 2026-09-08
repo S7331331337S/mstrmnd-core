@@ -4,12 +4,19 @@ import { existsSync } from "node:fs";
 import { mkdtemp, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { ContextPack } from "@mstrmnd/schemas";
-import { EchoProvider, type ModelProvider } from "./model-provider";
+import type { AgentSpec, ContextPack } from "@mstrmnd/schemas";
+import {
+  EchoProvider,
+  type ModelMessage,
+  type ModelProvider,
+} from "./model-provider";
 import {
   Orchestrator,
   OPERATOR_AGENT,
+  WORKSPACE_SCOUT,
   parseProposedTools,
+  resolveSpawnSubagentId,
+  spawnSubagentPlanHint,
   type OrchestratorDeps,
 } from "./orchestrator";
 import { WorkspaceService } from "./workspace-service";
@@ -65,6 +72,20 @@ class ScriptedProvider implements ModelProvider {
   async complete(): Promise<string> {
     return this.replies.shift() ?? "[]";
   }
+}
+
+class CapturingProvider implements ModelProvider {
+  readonly id = "capturing";
+  readonly messages: ModelMessage[][] = [];
+  constructor(private readonly replies: string[]) {}
+  async complete(messages: ModelMessage[]): Promise<string> {
+    this.messages.push(messages);
+    return this.replies.shift() ?? "[]";
+  }
+}
+
+function parentWithAllowlist(ids: string[]): AgentSpec {
+  return { ...OPERATOR_AGENT, subAgentsAllowlist: ids };
 }
 
 function testBoundary() {
@@ -276,6 +297,163 @@ test("workspace-scout list is blocked when the mount is outside filesystemScope"
     (s.summary ?? "").includes("list_workspace")
   );
   assert.equal(blocked?.status, "error");
+});
+
+test("resolveSpawnSubagentId prefers explicit aliases then sole allowlisted scout", () => {
+  const parent = parentWithAllowlist(["workspace-scout"]);
+  assert.deepEqual(
+    resolveSpawnSubagentId({ agentId: "workspace-scout" }, parent),
+    { agentId: "workspace-scout" }
+  );
+  assert.deepEqual(
+    resolveSpawnSubagentId({ id: "workspace-scout" }, parent),
+    { agentId: "workspace-scout" }
+  );
+  assert.deepEqual(
+    resolveSpawnSubagentId({ agent: "workspace-scout" }, parent),
+    { agentId: "workspace-scout" }
+  );
+  assert.deepEqual(
+    resolveSpawnSubagentId({ name: "workspace-scout" }, parent),
+    { agentId: "workspace-scout" }
+  );
+  assert.deepEqual(
+    resolveSpawnSubagentId({ subagent: "workspace-scout" }, parent),
+    { agentId: "workspace-scout" }
+  );
+  assert.deepEqual(
+    resolveSpawnSubagentId({ subAgentId: "workspace-scout" }, parent),
+    { agentId: "workspace-scout" }
+  );
+  assert.deepEqual(resolveSpawnSubagentId({}, parent), {
+    agentId: "workspace-scout",
+  });
+  assert.deepEqual(
+    resolveSpawnSubagentId({ agentId: "  workspace-scout  " }, parent),
+    { agentId: "workspace-scout" }
+  );
+});
+
+test("resolveSpawnSubagentId denies missing agentId when zero or multiple options", () => {
+  const none = parentWithAllowlist([]);
+  const ghost = parentWithAllowlist(["not-a-real-agent"]);
+  const many = parentWithAllowlist(["workspace-scout", OPERATOR_AGENT.id]);
+  const missingNone = resolveSpawnSubagentId({}, none);
+  const missingGhost = resolveSpawnSubagentId({}, ghost);
+  const missingMany = resolveSpawnSubagentId({}, many);
+  assert.ok("deny" in missingNone);
+  assert.match(missingNone.deny, /missing agentId/);
+  assert.ok("deny" in missingGhost);
+  assert.match(missingGhost.deny, /missing agentId/);
+  assert.ok("deny" in missingMany);
+  assert.match(missingMany.deny, /ambiguous/);
+  assert.deepEqual(
+    resolveSpawnSubagentId(
+      { name: "campaign-intel" },
+      parentWithAllowlist(["workspace-scout"])
+    ),
+    { agentId: "campaign-intel" },
+    "explicit alias still wins even when not allowlisted"
+  );
+});
+
+test("spawnSubagentPlanHint names the required agentId", () => {
+  assert.match(
+    spawnSubagentPlanHint(OPERATOR_AGENT),
+    /args\.agentId.*workspace-scout/
+  );
+});
+
+test("spawn_subagent defaults to workspace-scout when agentId is omitted", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "mstrmnd-spawn-default-"));
+  const vault = path.join(root, "vault");
+  await mkdir(vault, { recursive: true });
+  const workspace = new WorkspaceService();
+  workspace.registerVaultMount(vault);
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    workspace,
+    provider: new ScriptedProvider([
+      `[{"tool":"spawn_subagent","args":{}}]`,
+      "synthesis",
+    ]),
+    dryRun: true,
+    boundary: testBoundary(),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  assert.ok(finished.steps.some((s) => s.summary === "spawn workspace-scout"));
+  assert.equal(finished.handoffs?.[0]?.childAgentId, WORKSPACE_SCOUT.id);
+});
+
+test("spawn_subagent accepts alias keys for the child id", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "mstrmnd-spawn-alias-"));
+  const vault = path.join(root, "vault");
+  await mkdir(vault, { recursive: true });
+  const workspace = new WorkspaceService();
+  workspace.registerVaultMount(vault);
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    workspace,
+    provider: new ScriptedProvider([
+      `[{"tool":"spawn_subagent","args":{"agent":"workspace-scout"}},{"tool":"spawn_subagent","args":{"name":"workspace-scout"}},{"tool":"spawn_subagent","args":{"subagent":"workspace-scout"}}]`,
+      "synthesis",
+    ]),
+    dryRun: true,
+    boundary: testBoundary(),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  const spawns = finished.steps.filter((s) => s.summary === "spawn workspace-scout");
+  assert.equal(spawns.length, 3);
+});
+
+test("parent plan prompt tells the model spawn_subagent needs agentId", async () => {
+  const provider = new CapturingProvider([
+    `[{"tool":"get_context","args":{}}]`,
+    "synthesis",
+  ]);
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    provider,
+    dryRun: true,
+    boundary: testBoundary(),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  const planMessages = provider.messages[0] ?? [];
+  const system = planMessages.find((m) => m.role === "system")?.content ?? "";
+  const user = planMessages.find((m) => m.role === "user")?.content ?? "";
+  assert.match(system, /spawn_subagent requires args\.agentId/);
+  assert.doesNotMatch(system, /workspace-scout/);
+  assert.match(user, /workspace-scout/);
+});
+
+test("explicit unregistered agentId still denies after alias resolution", async () => {
+  const orch = new Orchestrator({
+    context: fixtureContext(),
+    provider: new ScriptedProvider([
+      `[{"tool":"spawn_subagent","args":{"agent":"campaign-intel"}}]`,
+      "synthesis",
+    ]),
+    dryRun: true,
+    boundary: testBoundary(),
+  });
+  const run = orch.createRun(OPERATOR_AGENT.id, "goal");
+  const finished = await orch.dispatch(run);
+  assert.equal(finished.status, "succeeded");
+  const denied = finished.steps.find((s) =>
+    (s.summary ?? "").includes("campaign-intel")
+  );
+  assert.equal(denied?.status, "error");
+  assert.equal(
+    finished.steps.some((s) => s.summary === "spawn workspace-scout"),
+    false,
+    "must not fall back to the scout when an explicit id is present"
+  );
 });
 
 test("write_file stays require-approval and dry-run does not publish", async () => {
