@@ -22,6 +22,7 @@ export type {
   WorkspaceAdapterKind,
   WorkspaceNodeKind,
 } from "./workspace";
+export { DRAFTS_MOUNT_ID, STAGING_MOUNT_ID } from "./workspace";
 export type {
   AgentSpec,
   AgentStep,
@@ -29,4 +30,6 @@ export type {
   RunState,
   RunStatus,
   SubAgentHandoff,
+  RunPendingApproval,
+  RunApproval,
 } from "./run";

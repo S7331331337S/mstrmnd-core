@@ -3,6 +3,10 @@ import type { Provenance } from "./provenance";
 
 export type WorkspaceAdapterKind = "obsidian" | "filesystem";
 
+/** Managed mounts the runtime owns. Vault is never one of these. */
+export const DRAFTS_MOUNT_ID = "drafts";
+export const STAGING_MOUNT_ID = "staging";
+
 export interface WorkspaceMount {
   id: string;
   /** Absolute root path on disk */

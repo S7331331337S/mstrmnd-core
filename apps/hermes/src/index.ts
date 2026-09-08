@@ -10,6 +10,9 @@ function parseArgs(argv: string[]) {
     agent: string;
     dryRun: boolean;
     help: boolean;
+    approve?: string;
+    reject?: string;
+    show?: string;
   } = {
     goal: "Summarize Operator Zero context and workspace",
     agent: OPERATOR_AGENT.id,
@@ -23,6 +26,9 @@ function parseArgs(argv: string[]) {
     else if (a === "--dry-run") out.dryRun = true;
     else if (a === "--goal") out.goal = args[++i] ?? out.goal;
     else if (a === "--agent") out.agent = args[++i] ?? out.agent;
+    else if (a === "--approve") out.approve = args[++i];
+    else if (a === "--reject") out.reject = args[++i];
+    else if (a === "--show") out.show = args[++i];
   }
   return out;
 }
@@ -35,9 +41,15 @@ export class Hermes {
 
 Usage:
   pnpm hermes [--goal "..."] [--agent operator-agent] [--dry-run]
+  pnpm hermes -- --show <runId>
+  pnpm hermes -- --approve <runId>
+  pnpm hermes -- --reject <runId>
 
 Boots the shared runtime (context, memory, workspace), then dispatches
 the parent agent. Default model provider is echo (offline).
+
+Writes never touch the vault. draft_write lands under .mstrmnd/drafts;
+--approve copies them to .mstrmnd/staging. There is no env bypass.
 `);
       return;
     }
@@ -84,15 +96,41 @@ the parent agent. Default model provider is echo (offline).
         : "Identity profile: not found (add identity.md to vault or templates)"
     );
 
+    const orch = runtime.createOrchestrator({ dryRun: args.dryRun });
+    const actorId = context.operator.id || context.scope.userId;
+
+    if (args.show) {
+      const run = await orch.loadRun(args.show);
+      console.log(JSON.stringify(run, null, 2));
+      return;
+    }
+    if (args.approve) {
+      const run = await orch.approve(args.approve, actorId);
+      console.log(`Run ${run.runId}: ${run.status}`);
+      console.log(`Published: ${(run.publishedPaths ?? []).join(", ") || "(none)"}`);
+      return;
+    }
+    if (args.reject) {
+      const run = await orch.reject(args.reject, actorId);
+      console.log(`Run ${run.runId}: ${run.status}`);
+      return;
+    }
+
     console.log(`Dispatch: agent=${args.agent} dryRun=${args.dryRun}`);
     console.log(`Goal: ${args.goal}`);
 
-    const orch = runtime.createOrchestrator({ dryRun: args.dryRun });
     const run = orch.createRun(args.agent, args.goal);
     const finished = await orch.dispatch(run);
 
     console.log(`Run ${finished.runId}: ${finished.status}`);
     console.log(`Steps: ${finished.steps.length}`);
+    if (finished.status === "waiting") {
+      console.log(
+        `Awaiting approval to publish drafts: ${(finished.pendingApproval?.draftPaths ?? []).join(", ")}`
+      );
+      console.log(`Approve: pnpm hermes -- --approve ${finished.runId}`);
+      console.log(`Reject:  pnpm hermes -- --reject ${finished.runId}`);
+    }
     if (finished.resultSummary) {
       console.log("Result:");
       console.log(finished.resultSummary);

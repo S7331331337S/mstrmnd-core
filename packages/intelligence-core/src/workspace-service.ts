@@ -1,11 +1,12 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile, cp } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import type {
   RuntimeScope,
   WorkspaceMount,
   WorkspaceNode,
 } from "@mstrmnd/schemas";
+import { DRAFTS_MOUNT_ID, STAGING_MOUNT_ID } from "@mstrmnd/schemas";
 import { localProvenance, resolveScope } from "./operator-scope";
 
 const DEFAULT_READ_CAP = 256_000;
@@ -33,6 +34,44 @@ export class WorkspaceService {
       throw new WorkspacePathError(`mount root missing: ${mount.rootPath}`);
     }
     this.mounts.set(mount.id, mount);
+  }
+
+  /**
+   * Register runtime-owned drafts + staging mounts under `{repoRoot}/.mstrmnd`.
+   * Vault is never registered here and has no write path.
+   */
+  async registerManagedMounts(
+    repoRoot: string,
+    scope?: Partial<RuntimeScope>
+  ): Promise<void> {
+    const resolved = resolveScope(scope);
+    const home = join(resolve(repoRoot), ".mstrmnd");
+    const draftsRoot = join(home, "drafts");
+    const stagingRoot = join(home, "staging");
+    await mkdir(draftsRoot, { recursive: true });
+    await mkdir(stagingRoot, { recursive: true });
+    this.registerMount({
+      id: DRAFTS_MOUNT_ID,
+      rootPath: draftsRoot,
+      adapter: "filesystem",
+      label: "Run drafts (unapproved)",
+      scope: resolved,
+      provenance: localProvenance("filesystem", {
+        adapter: "workspace-service",
+        sourcePath: draftsRoot,
+      }),
+    });
+    this.registerMount({
+      id: STAGING_MOUNT_ID,
+      rootPath: stagingRoot,
+      adapter: "filesystem",
+      label: "Approved staging (not vault)",
+      scope: resolved,
+      provenance: localProvenance("filesystem", {
+        adapter: "workspace-service",
+        sourcePath: stagingRoot,
+      }),
+    });
   }
 
   /** Register the Obsidian/vault path as the primary mount. */
@@ -144,6 +183,58 @@ export class WorkspaceService {
     };
   }
 
+  /**
+   * Write a text file under the drafts mount at `{runId}/{relPath}`.
+   * Never writes the vault or staging. No env bypass.
+   */
+  async draftWrite(
+    runId: string,
+    relPath: string,
+    content: string
+  ): Promise<{ path: string; bytes: number }> {
+    const run = sanitizeRunId(runId);
+    const cleaned = sanitizeRelPath(relPath);
+    const buf = Buffer.from(content, "utf8");
+    if (buf.length > DEFAULT_READ_CAP) {
+      throw new WorkspacePathError(
+        `draft too large (${buf.length} bytes, cap ${DEFAULT_READ_CAP})`
+      );
+    }
+    const { abs } = this.resolveSafe(DRAFTS_MOUNT_ID, `${run}/${cleaned}`);
+    await mkdir(dirname(abs), { recursive: true });
+    await writeFile(abs, buf);
+    return { path: cleaned, bytes: buf.length };
+  }
+
+  async listDrafts(runId: string): Promise<string[]> {
+    const run = sanitizeRunId(runId);
+    if (!this.getMount(DRAFTS_MOUNT_ID)) return [];
+    const { abs } = this.resolveSafe(DRAFTS_MOUNT_ID, run);
+    if (!existsSync(abs)) return [];
+    const st = await stat(abs);
+    if (!st.isDirectory()) return [];
+    return collectFiles(abs, abs);
+  }
+
+  /**
+   * Copy `{drafts}/{runId}/**` to `{staging}/{runId}/**`.
+   * Idempotent. Never copies into the vault.
+   */
+  async publishDrafts(runId: string): Promise<string[]> {
+    const run = sanitizeRunId(runId);
+    const drafts = this.getMount(DRAFTS_MOUNT_ID);
+    const staging = this.getMount(STAGING_MOUNT_ID);
+    if (!drafts || !staging) {
+      throw new WorkspacePathError("managed drafts/staging mounts are not registered");
+    }
+    const { abs: src } = this.resolveSafe(DRAFTS_MOUNT_ID, run);
+    if (!existsSync(src)) return [];
+    const { abs: dest } = this.resolveSafe(STAGING_MOUNT_ID, run);
+    await mkdir(dest, { recursive: true });
+    await cp(src, dest, { recursive: true });
+    return collectFiles(dest, dest);
+  }
+
   async stat(mountId: string, relPath = ""): Promise<WorkspaceNode> {
     const { mount, abs } = this.resolveSafe(mountId, relPath);
     if (!existsSync(abs)) {
@@ -165,4 +256,34 @@ export class WorkspaceService {
       mountId: mount.id,
     };
   }
+}
+
+function sanitizeRunId(runId: string): string {
+  const cleaned = runId.trim();
+  if (!cleaned || cleaned.includes("..") || cleaned.includes("/") || cleaned.includes("\\")) {
+    throw new WorkspacePathError("invalid runId");
+  }
+  return cleaned;
+}
+
+function sanitizeRelPath(relPath: string): string {
+  const cleaned = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!cleaned || cleaned.split("/").includes("..")) {
+    throw new WorkspacePathError("path escape denied");
+  }
+  return cleaned;
+}
+
+async function collectFiles(absDir: string, root: string): Promise<string[]> {
+  const out: string[] = [];
+  const entries = await readdir(absDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const child = join(absDir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...(await collectFiles(child, root)));
+    } else if (entry.isFile()) {
+      out.push(relative(root, child).split(sep).join("/"));
+    }
+  }
+  return out.sort();
 }

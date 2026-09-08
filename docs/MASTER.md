@@ -66,10 +66,10 @@ What actually works today:
 
 - Obsidian vault → `MemoryEngine` + graph; scoped memory/identity/artifacts
 - `assembleContext()` → `ContextPack` (doctrine pin + company/operator + identity + memory hits)
-- `WorkspaceService` mounts with list/read/stat and path-escape denial
-- Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (default `EchoProvider`; `openai` / `openai-compatible` when env is set)
+- `WorkspaceService` mounts with list/read/stat, path-escape denial, and **policy-gated `draft_write`** (vault stays read-only; approve copies drafts → staging)
+- Hermes orchestrator: parent `operator-agent` + `workspace-scout`; executes model-proposed allowlisted tools (fallback loop when the plan is not JSON); `--approve` / `--reject` / `--show`
 - Shared `createRuntime()` factory used by Hermes and MCP
-- MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`
+- MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `list_agents`, `run_agent`, `get_run`, `approve_run`, `reject_run`
 - Operator pack template + `pnpm operator:init`
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
@@ -79,11 +79,10 @@ What actually works today:
 
 What is still thin / next:
 
-- Policy-gated workspace writes (draft → human approval → publish; vault stays read-only until then)
-- Stronger policy enforcement on orchestrator runs
+- Stronger policy enforcement (rule registry, modify outcomes) on orchestrator runs
+- Shared audit/run schema usage inside `mstrmnd-os` (Board file ledger is a separate shape today)
 - Additional host transports beyond MCP stdio
 - Multi-operator managed deploy
-- Richer multi-step agent planning beyond the fixed four-step orchestrator loop
 - Extract Board packages only after the app runs intact (`deliberation`, `agent-roster`, `model-router`, `design-tokens`)
 
 **Two runtimes (until a later adapter):** Hermes/MCP boot `@mstrmnd/intelligence-core`. Board live path and Field boot eve inside `mstrmnd-os`. They do not share packages today. `mstrmnd-os` is a nested pnpm workspace (Node 24), not part of the root graph.
@@ -115,7 +114,7 @@ Full longer roadmap: [`modernization-roadmap.md`](./modernization-roadmap.md). P
 
 **Intelligence layer core — landed (context, workspace, orchestrator, plugin factory, operator pack).**
 
-Next hardening: policy-gated workspace writes, richer agent planning, broader harness adapters. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
+Next hardening: bind Hermes/MCP and `mstrmnd-os` to the same run/audit/policy contracts, then plugin auth. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
 
 PRESS reference workflow remains deferred.
 
@@ -153,9 +152,11 @@ Update checkboxes here when work lands.
 
 ### Next (Operator Zero)
 
-- [ ] Policy-gated workspace writes (draft → human approval → publish; no env bypass)
-- [ ] Richer parent loop: execute model-proposed allowlisted tools (still policy-checked)
-- [ ] CI typecheck for `mstrmnd-os` on Node 24 (keep it out of the root pnpm workspace)
+- [x] Policy-gated workspace writes (draft → human approval → publish; no env bypass)
+- [x] Richer parent loop: execute model-proposed allowlisted tools (still policy-checked)
+- [x] CI typecheck for `mstrmnd-os` on Node 24 (keep it out of the root pnpm workspace)
+- [ ] Shared run/audit/policy records in `mstrmnd-os` (Board + Maestro)
+- [ ] MCP auth/scope for the plugin host
 
 ### Next (Board)
 
@@ -228,7 +229,7 @@ Update checkboxes here when work lands.
 
 ## Status stamp
 
-- **Last aligned:** 2026-09-03
-- **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning. Plugin SDK after that.
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts (read-only on main), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`); Board decision-room imported at `apps/board`
-- **Next:** Policy-gated workspace writes; richer agent planning; `mstrmnd-os` typecheck in CI
+- **Last aligned:** 2026-09-08
+- **Priority:** Operator Zero dogfood — approved drafts in daily use, then shared contracts with `mstrmnd-os`, then plugin auth. Plugin SDK after that.
+- **Code maturity:** Operator Zero runtime with context pack, policy-gated draft writes (vault read-only; staging on approve), Hermes plan-execute loop + fallback, MCP approve/reject, openai-compatible provider (CI default `echo`); Board decision-room at `apps/board`; `mstrmnd-os` typecheck on Node 24 in CI
+- **Next:** Shared run/audit/policy with `mstrmnd-os`; MCP auth/scope; dogfood the write loop

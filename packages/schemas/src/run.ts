@@ -43,6 +43,20 @@ export interface SubAgentHandoff {
   result?: unknown;
 }
 
+/** Set when a run produced drafts and is blocked on a human. */
+export interface RunPendingApproval {
+  policyDecisionId: string;
+  action: string;
+  draftPaths: string[];
+}
+
+export interface RunApproval {
+  outcome: "approved" | "rejected";
+  actorId: string;
+  at: string;
+  policyDecisionId?: string;
+}
+
 export interface RunState {
   runId: string;
   status: RunStatus;
@@ -57,4 +71,8 @@ export interface RunState {
   resultSummary?: string;
   provenance: Provenance;
   handoffs?: SubAgentHandoff[];
+  pendingApproval?: RunPendingApproval;
+  approval?: RunApproval;
+  /** Staging-relative paths written on approve (never the vault). */
+  publishedPaths?: string[];
 }

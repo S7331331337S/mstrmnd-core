@@ -296,7 +296,7 @@ server.registerTool(
   "run_agent",
   {
     description:
-      "Create and dispatch an orchestrator run (default operator-agent). Uses EchoProvider unless MSTRMND_MODEL_PROVIDER is set.",
+      "Create and dispatch an orchestrator run (default operator-agent). Uses EchoProvider unless MSTRMND_MODEL_PROVIDER is set. Draft writes wait for approve_run before staging; the vault is never written.",
     inputSchema: {
       goal: z.string().describe("Run goal"),
       agentId: z
@@ -325,7 +325,109 @@ server.registerTool(
                 doctrineRef: finished.doctrineRef,
                 resultSummary: finished.resultSummary,
                 steps: finished.steps.length,
+                pendingApproval: finished.pendingApproval,
                 error: finished.error,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (err) {
+      return toolError(err);
+    }
+  }
+);
+
+server.registerTool(
+  "get_run",
+  {
+    description: "Load a persisted orchestrator run by id.",
+    inputSchema: {
+      runId: z.string().describe("Run id"),
+    },
+  },
+  async ({ runId }) => {
+    try {
+      const orch = runtime.createOrchestrator();
+      const run = await orch.loadRun(runId);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(run, null, 2),
+          },
+        ],
+      };
+    } catch (err) {
+      return toolError(err);
+    }
+  }
+);
+
+server.registerTool(
+  "approve_run",
+  {
+    description:
+      "Human approval: copy the run's drafts to staging. Never writes the vault. Idempotent if already approved.",
+    inputSchema: {
+      runId: z.string().describe("Run id waiting for approval"),
+    },
+  },
+  async ({ runId }) => {
+    try {
+      const orch = runtime.createOrchestrator();
+      const actorId =
+        runtime.context.operator.id || runtime.context.scope.userId;
+      const run = await orch.approve(runId, actorId);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                runId: run.runId,
+                status: run.status,
+                publishedPaths: run.publishedPaths,
+                approval: run.approval,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (err) {
+      return toolError(err);
+    }
+  }
+);
+
+server.registerTool(
+  "reject_run",
+  {
+    description:
+      "Human rejection: cancel a waiting run. Drafts are kept; staging is unchanged.",
+    inputSchema: {
+      runId: z.string().describe("Run id waiting for approval"),
+    },
+  },
+  async ({ runId }) => {
+    try {
+      const orch = runtime.createOrchestrator();
+      const actorId =
+        runtime.context.operator.id || runtime.context.scope.userId;
+      const run = await orch.reject(runId, actorId);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                runId: run.runId,
+                status: run.status,
+                approval: run.approval,
               },
               null,
               2

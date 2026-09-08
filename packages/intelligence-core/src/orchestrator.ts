@@ -1,4 +1,4 @@
-import { appendFile, mkdir, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -7,18 +7,18 @@ import type {
   AgentStep,
   AuditEvent,
   ContextPack,
-  PolicyDecision,
-  PolicyOutcome,
   RunState,
   SubAgentHandoff,
 } from "@mstrmnd/schemas";
-import { CONSEQUENTIAL_ACTIONS } from "@mstrmnd/schemas";
 import type { ModelProvider } from "./model-provider";
 import { EchoProvider } from "./model-provider";
 import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
 import { localProvenance, nowIso } from "./operator-scope";
 import { resolveRepoRoot } from "./doctrine-loader";
+import { evaluateToolPolicy, TOOL_DRAFT_WRITE, TOOL_PUBLISH_DRAFTS } from "./policy";
+import { MAX_PLAN_TOOLS, parseToolPlan, type ProposedToolCall } from "./plan-parser";
+import { graphIncludes, loadAgentGraph, type AgentGraph } from "./agent-graph";
 
 export const OPERATOR_AGENT: AgentSpec = {
   id: "operator-agent",
@@ -30,6 +30,7 @@ export const OPERATOR_AGENT: AgentSpec = {
     "read_file",
     "get_context",
     "spawn_subagent",
+    TOOL_DRAFT_WRITE,
   ],
   modelHint: "general",
   subAgentsAllowlist: ["workspace-scout"],
@@ -56,30 +57,6 @@ export function listAgentSpecs(): AgentSpec[] {
   return Object.values(SPECS);
 }
 
-function evaluateToolPolicy(
-  toolId: string,
-  scope: RunState["scope"]
-): PolicyDecision {
-  const consequential = (CONSEQUENTIAL_ACTIONS as readonly string[]).some((a) =>
-    toolId.includes(a.split(".").pop() ?? a)
-  );
-  const writeLike = /write|delete|publish|stage|send/i.test(toolId);
-  let outcome: PolicyOutcome = "allow";
-  let reason = "read/search tools are allowed for Operator Zero";
-  if (writeLike || consequential) {
-    outcome = "require-approval";
-    reason = "consequential or write tool requires approval";
-  }
-  return {
-    id: randomUUID(),
-    at: nowIso(),
-    outcome,
-    action: toolId,
-    scope,
-    reason,
-  };
-}
-
 export interface OrchestratorDeps {
   context: ContextPack;
   memory?: MemoryEngine;
@@ -93,6 +70,7 @@ export class Orchestrator {
   private deps: OrchestratorDeps;
   private runsDir: string;
   private auditPath: string;
+  private graph: AgentGraph | null;
 
   constructor(deps: OrchestratorDeps) {
     this.deps = {
@@ -102,11 +80,15 @@ export class Orchestrator {
     const root = resolveRepoRoot(deps.repoRoot);
     this.runsDir = join(root, ".mstrmnd", "runs");
     this.auditPath = join(root, ".mstrmnd", "audit.jsonl");
+    this.graph = loadAgentGraph(root);
   }
 
   createRun(agentId: string, goal: string): RunState {
     const spec = getAgentSpec(agentId);
     if (!spec) throw new Error(`unknown agent: ${agentId}`);
+    if (!graphIncludes(this.graph, agentId)) {
+      throw new Error(`agent ${agentId} is not in operator agent-graph.json`);
+    }
     const now = nowIso();
     return {
       runId: randomUUID(),
@@ -133,13 +115,12 @@ export class Orchestrator {
     const parent = getAgentSpec(run.parentAgentId)!;
 
     try {
-      // Step 1: model plans from context
       const planPrompt = this.buildPlanPrompt(run, parent);
       const plan = await this.deps.provider!.complete([
         {
           role: "system",
           content:
-            "You are the MSTRMND operator agent. Propose brief next tools as JSON array of {tool,args}.",
+            "You are the MSTRMND operator agent. Propose brief next tools as JSON array of {tool,args}. Use only allowlisted tools. draft_write is the only write tool; never write the vault.",
         },
         { role: "user", content: planPrompt },
       ]);
@@ -150,59 +131,42 @@ export class Orchestrator {
         status: "ok",
       });
 
-      // Step 2: memory search if available
-      if (
-        parent.toolsAllowlist.includes("search_memory") &&
-        this.deps.memory
-      ) {
-        await this.runTool(run, parent, "search_memory", {
-          query: run.goal,
-          limit: 5,
-        });
+      const proposed = parseToolPlan(plan);
+      if (proposed) {
+        await this.executeProposed(run, parent, proposed);
+      } else {
+        await this.executeFallback(run, parent);
       }
 
-      // Step 3: spawn workspace-scout sub-agent once
-      if (
-        parent.subAgentsAllowlist?.includes("workspace-scout") &&
-        this.deps.workspace
-      ) {
-        await this.runSubAgent(run, "workspace-scout", `Scout workspace for: ${run.goal}`);
+      if (run.pendingApproval) {
+        const waitingNote = await this.synthesize(
+          run,
+          "waiting for human approval"
+        );
+        run.resultSummary = waitingNote.slice(0, 2000);
+        run.status = "waiting";
+        await this.persistRun(run);
+        return run;
       }
 
-      // Step 4: final model synthesis
-      const synthesis = await this.deps.provider!.complete([
-        {
-          role: "system",
-          content: "Summarize operator run results for the human.",
-        },
-        {
-          role: "user",
-          content: JSON.stringify(
-            {
-              goal: run.goal,
-              steps: run.steps.map((s) => ({
-                type: s.type,
-                summary: s.summary,
-                output: s.outputSummary,
-              })),
-              context: {
-                company: this.deps.context.company.name,
-                operator: this.deps.context.operator.displayName,
-                doctrineRef: this.deps.context.doctrineRef,
-              },
-            },
-            null,
-            2
-          ),
-        },
-      ]);
+      const draftPaths = this.deps.workspace
+        ? await this.deps.workspace.listDrafts(run.runId)
+        : [];
+      if (draftPaths.length > 0) {
+        await this.requestPublishApproval(run, draftPaths);
+        const waitingNote = await this.synthesize(run, "waiting for human approval to publish drafts to staging");
+        run.resultSummary = waitingNote.slice(0, 2000);
+        await this.persistRun(run);
+        return run;
+      }
+
+      const synthesis = await this.synthesize(run, "final synthesis for the human");
       this.pushStep(run, {
         type: "model",
         summary: "final synthesis",
         outputSummary: synthesis.slice(0, 1000),
         status: "ok",
       });
-
       run.status = "succeeded";
       run.resultSummary = synthesis.slice(0, 2000);
     } catch (err) {
@@ -217,10 +181,204 @@ export class Orchestrator {
     }
 
     run.updatedAt = nowIso();
-    if (!this.deps.dryRun) {
-      await this.persistRun(run);
-    }
+    await this.persistRun(run);
     return run;
+  }
+
+  async loadRun(runId: string): Promise<RunState> {
+    const path = join(this.runsDir, `${runId}.json`);
+    if (!existsSync(path)) {
+      throw new Error(`run not found: ${runId}`);
+    }
+    const raw = await readFile(path, "utf8");
+    return JSON.parse(raw) as RunState;
+  }
+
+  async listRuns(): Promise<string[]> {
+    if (!existsSync(this.runsDir)) return [];
+    const names = await readdir(this.runsDir);
+    return names
+      .filter((n) => n.endsWith(".json"))
+      .map((n) => n.slice(0, -".json".length))
+      .sort();
+  }
+
+  /** Publish drafts to staging. Idempotent for an already-approved run. */
+  async approve(runId: string, actorId: string): Promise<RunState> {
+    const run = await this.loadRun(runId);
+    if (run.approval?.outcome === "approved" && run.status === "succeeded") {
+      return run;
+    }
+    if (run.status !== "waiting") {
+      throw new Error(`cannot approve run in status ${run.status}`);
+    }
+
+    const decision = evaluateToolPolicy(TOOL_PUBLISH_DRAFTS, run.scope);
+    await this.audit({
+      kind: "approval.granted",
+      summary: `Human approved publish_drafts for ${runId}`,
+      data: { runId, actorId, decision },
+      policyDecisionId: decision.id,
+      outcome: "success",
+    });
+
+    let published: string[] = run.publishedPaths ?? [];
+    if (this.deps.workspace) {
+      published = await this.deps.workspace.publishDrafts(run.runId);
+    }
+
+    run.publishedPaths = published;
+    run.approval = {
+      outcome: "approved",
+      actorId,
+      at: nowIso(),
+      policyDecisionId: run.pendingApproval?.policyDecisionId ?? decision.id,
+    };
+    run.pendingApproval = undefined;
+    this.pushStep(run, {
+      type: "approval",
+      summary: `approved publish to staging (${published.length} files)`,
+      toolId: TOOL_PUBLISH_DRAFTS,
+      outputSummary: JSON.stringify(published).slice(0, 800),
+      status: "ok",
+    });
+    run.status = "succeeded";
+    run.updatedAt = nowIso();
+    if (!run.resultSummary) {
+      run.resultSummary = `Approved. Published ${published.length} file(s) to staging (vault unchanged).`;
+    }
+    await this.persistRun(run);
+    return run;
+  }
+
+  async reject(runId: string, actorId: string): Promise<RunState> {
+    const run = await this.loadRun(runId);
+    if (run.approval?.outcome === "rejected" && run.status === "cancelled") {
+      return run;
+    }
+    if (run.status !== "waiting") {
+      throw new Error(`cannot reject run in status ${run.status}`);
+    }
+    run.approval = {
+      outcome: "rejected",
+      actorId,
+      at: nowIso(),
+      policyDecisionId: run.pendingApproval?.policyDecisionId,
+    };
+    run.pendingApproval = undefined;
+    run.status = "cancelled";
+    run.updatedAt = nowIso();
+    this.pushStep(run, {
+      type: "approval",
+      summary: "rejected — drafts kept, staging unchanged",
+      status: "ok",
+    });
+    await this.audit({
+      kind: "approval.rejected",
+      summary: `Human rejected publish_drafts for ${runId}`,
+      data: { runId, actorId },
+      outcome: "cancelled",
+    });
+    await this.persistRun(run);
+    return run;
+  }
+
+  private async executeProposed(
+    run: RunState,
+    parent: AgentSpec,
+    proposed: ProposedToolCall[]
+  ): Promise<void> {
+    for (const call of proposed.slice(0, MAX_PLAN_TOOLS)) {
+      if (call.tool === "spawn_subagent") {
+        const childId = String(call.args.agentId ?? "workspace-scout");
+        const goal = String(call.args.goal ?? run.goal);
+        if (!parent.subAgentsAllowlist?.includes(childId) || !graphIncludes(this.graph, childId)) {
+          this.pushStep(run, {
+            type: "subagent",
+            summary: `skipped spawn ${childId}: not allowlisted`,
+            agentId: childId,
+            status: "error",
+          });
+          continue;
+        }
+        await this.runSubAgent(run, childId, goal);
+        continue;
+      }
+      const signal = await this.runTool(run, parent, call.tool, call.args);
+      if (signal === "pause") return;
+    }
+  }
+
+  private async executeFallback(run: RunState, parent: AgentSpec): Promise<void> {
+    if (parent.toolsAllowlist.includes("search_memory") && this.deps.memory) {
+      await this.runTool(run, parent, "search_memory", {
+        query: run.goal,
+        limit: 5,
+      });
+    }
+    if (
+      parent.subAgentsAllowlist?.includes("workspace-scout") &&
+      graphIncludes(this.graph, "workspace-scout") &&
+      this.deps.workspace
+    ) {
+      await this.runSubAgent(run, "workspace-scout", `Scout workspace for: ${run.goal}`);
+    }
+  }
+
+  private async requestPublishApproval(run: RunState, draftPaths: string[]): Promise<void> {
+    const decision = evaluateToolPolicy(TOOL_PUBLISH_DRAFTS, run.scope);
+    run.pendingApproval = {
+      policyDecisionId: decision.id,
+      action: TOOL_PUBLISH_DRAFTS,
+      draftPaths,
+    };
+    run.status = "waiting";
+    run.updatedAt = nowIso();
+    this.pushStep(run, {
+      type: "approval",
+      summary: `waiting: publish ${draftPaths.length} draft(s) to staging`,
+      toolId: TOOL_PUBLISH_DRAFTS,
+      outputSummary: JSON.stringify(draftPaths).slice(0, 800),
+      status: "pending",
+    });
+    await this.audit({
+      kind: "approval.requested",
+      summary: `Publish of ${draftPaths.length} draft(s) requires approval`,
+      data: { runId: run.runId, draftPaths, decision },
+      policyDecisionId: decision.id,
+      outcome: "pending_approval",
+    });
+  }
+
+  private async synthesize(run: RunState, purpose: string): Promise<string> {
+    return this.deps.provider!.complete([
+      {
+        role: "system",
+        content: `Summarize operator run results for the human (${purpose}).`,
+      },
+      {
+        role: "user",
+        content: JSON.stringify(
+          {
+            goal: run.goal,
+            status: run.status,
+            pendingApproval: run.pendingApproval,
+            steps: run.steps.map((s) => ({
+              type: s.type,
+              summary: s.summary,
+              output: s.outputSummary,
+            })),
+            context: {
+              company: this.deps.context.company.name,
+              operator: this.deps.context.operator.displayName,
+              doctrineRef: this.deps.context.doctrineRef,
+            },
+          },
+          null,
+          2
+        ),
+      },
+    ]);
   }
 
   private buildPlanPrompt(run: RunState, agent: AgentSpec): string {
@@ -265,13 +423,13 @@ export class Orchestrator {
       outcome: "success",
     });
 
-    // Sub-agent: list workspace root
     if (this.deps.workspace && child.toolsAllowlist.includes("list_workspace")) {
       const mounts = this.deps.workspace.listMounts();
-      if (mounts[0]) {
-        const listing = await this.deps.workspace.list(mounts[0].id, "");
+      const mount = mounts.find((m) => m.id === "vault") ?? mounts[0];
+      if (mount) {
+        const listing = await this.deps.workspace.list(mount.id, "");
         handoff.result = {
-          mountId: mounts[0].id,
+          mountId: mount.id,
           entries: listing.slice(0, 30).map((n) => ({
             path: n.path,
             kind: n.kind,
@@ -296,9 +454,15 @@ export class Orchestrator {
     agent: AgentSpec,
     toolId: string,
     args: Record<string, unknown>
-  ): Promise<void> {
+  ): Promise<"continue" | "pause"> {
     if (!agent.toolsAllowlist.includes(toolId)) {
-      throw new Error(`tool ${toolId} not allowed for ${agent.id}`);
+      this.pushStep(run, {
+        type: "tool",
+        summary: `skipped ${toolId}: not allowlisted`,
+        toolId,
+        status: "error",
+      });
+      return "continue";
     }
     const decision = evaluateToolPolicy(toolId, run.scope);
     await this.audit({
@@ -314,14 +478,33 @@ export class Orchestrator {
             : "pending_approval",
     });
 
+    if (decision.outcome === "deny") {
+      this.pushStep(run, {
+        type: "tool",
+        summary: `denied ${toolId}: ${decision.reason}`,
+        toolId,
+        status: "error",
+      });
+      return "continue";
+    }
+
     if (decision.outcome !== "allow") {
       this.pushStep(run, {
         type: "approval",
         summary: `blocked ${toolId}: ${decision.reason}`,
         toolId,
-        status: "error",
+        status: "pending",
       });
-      return;
+      run.pendingApproval = {
+        policyDecisionId: decision.id,
+        action: toolId,
+        draftPaths: this.deps.workspace
+          ? await this.deps.workspace.listDrafts(run.runId)
+          : [],
+      };
+      run.status = "waiting";
+      run.updatedAt = nowIso();
+      return "pause";
     }
 
     let output = "";
@@ -359,6 +542,24 @@ export class Orchestrator {
         operator: this.deps.context.operator.displayName,
         doctrineRef: this.deps.context.doctrineRef,
       });
+    } else if (toolId === TOOL_DRAFT_WRITE && this.deps.workspace) {
+      const path = String(args.path ?? "");
+      const content = String(args.content ?? "");
+      if (!path || !content) {
+        this.pushStep(run, {
+          type: "tool",
+          summary: "draft_write missing path or content",
+          toolId,
+          status: "error",
+        });
+        return "continue";
+      }
+      if (this.deps.dryRun) {
+        output = JSON.stringify({ dryRun: true, path, bytes: content.length });
+      } else {
+        const written = await this.deps.workspace.draftWrite(run.runId, path, content);
+        output = JSON.stringify({ ...written, mountId: "drafts" });
+      }
     } else {
       output = JSON.stringify({ skipped: true, toolId });
     }
@@ -377,6 +578,7 @@ export class Orchestrator {
       data: { toolId, args, preview: output.slice(0, 200) },
       outcome: "success",
     });
+    return "continue";
   }
 
   private pushStep(
@@ -392,6 +594,7 @@ export class Orchestrator {
   }
 
   private async persistRun(run: RunState): Promise<void> {
+    if (this.deps.dryRun) return;
     if (!existsSync(this.runsDir)) {
       await mkdir(this.runsDir, { recursive: true });
     }

@@ -86,6 +86,8 @@ export async function createRuntime(
   // Prefer assembled identity (includes templates fallback)
   identity = context.identity;
 
+  await workspace.registerManagedMounts(repoRoot, context.scope);
+
   const provider = resolveModelProvider(config.modelProvider);
 
   return {

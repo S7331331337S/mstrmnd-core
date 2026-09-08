@@ -49,5 +49,10 @@ export {
   listAgentSpecs,
 } from "./orchestrator";
 export type { OrchestratorDeps } from "./orchestrator";
+export { evaluateToolPolicy, TOOL_DRAFT_WRITE, TOOL_PUBLISH_DRAFTS } from "./policy";
+export { parseToolPlan, MAX_PLAN_TOOLS } from "./plan-parser";
+export type { ProposedToolCall } from "./plan-parser";
+export { loadAgentGraph, graphIncludes } from "./agent-graph";
+export type { AgentGraph, AgentGraphEntry } from "./agent-graph";
 export { createRuntime } from "./runtime";
 export type { RuntimeConfig, MstrmndRuntime } from "./runtime";
