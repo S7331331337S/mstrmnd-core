@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto max-w-6xl w-full px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-accent pulse" />
-            <span className="mono text-sm tracking-[0.35em] text-foreground">
+            <span className="font-pixel-square text-sm tracking-[0.35em] text-foreground">
               MSTRMND
             </span>
             <span className="label hidden sm:inline">/ OS</span>

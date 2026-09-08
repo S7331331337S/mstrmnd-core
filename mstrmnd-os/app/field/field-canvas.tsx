@@ -74,7 +74,10 @@ export function FieldCanvas() {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,10,11,0.22),transparent_18%,transparent_78%,rgba(10,10,11,0.45))]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-6 font-mono text-[11px] tracking-[0.28em] text-[#e8e2d0]/80">
         <div>
-          <Link href="/" className="pointer-events-auto text-[#e8e2d0] hover:text-[#e8e2d0]">
+          <Link
+            href="/"
+            className="pointer-events-auto font-pixel-square text-[#e8e2d0] hover:text-[#e8e2d0]"
+          >
             MSTRMND
           </Link>
           <div className="mt-1 text-[#e8e2d0]/45">FIELD</div>
