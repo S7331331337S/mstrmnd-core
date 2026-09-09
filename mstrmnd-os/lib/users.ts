@@ -190,7 +190,18 @@ function rowToPublic(r: PgUserRow): PublicUser {
 
 let store: UserStore | null = null;
 function userStore(): UserStore {
-  if (!store) store = hasDatabase() ? new PostgresUserStore() : new FileUserStore();
+  if (!store) {
+    if (hasDatabase()) {
+      store = new PostgresUserStore();
+    } else if (process.env.VERCEL) {
+      // Serverless has no writable disk; file store only works locally.
+      throw new Error(
+        "DATABASE_URL is not set. Connect Neon/Postgres to this Vercel project before auth can work.",
+      );
+    } else {
+      store = new FileUserStore();
+    }
+  }
   return store;
 }
 

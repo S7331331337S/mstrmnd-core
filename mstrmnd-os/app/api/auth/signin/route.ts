@@ -16,7 +16,16 @@ export async function POST(req: NextRequest) {
   } catch {
     return withCors(NextResponse.json({ error: "invalid JSON body" }, { status: 400 }));
   }
-  const user = await authenticate(body.email ?? "", body.password ?? "");
+  let user;
+  try {
+    user = await authenticate(body.email ?? "", body.password ?? "");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "sign in failed";
+    const missingDb = /DATABASE_URL/i.test(message);
+    return withCors(
+      NextResponse.json({ error: message }, { status: missingDb ? 503 : 500 }),
+    );
+  }
   if (!user) {
     return withCors(
       NextResponse.json({ error: "Invalid email or password." }, { status: 401 }),
