@@ -30,3 +30,10 @@ export type {
   RunStatus,
   SubAgentHandoff,
 } from "./run";
+export type {
+  BoardChairWritebackDraft,
+  WritebackSource,
+  WritebackStatus,
+} from "./writeback";
+export { WRITEBACK_DRAFT_EXAMPLE } from "./writeback";
+

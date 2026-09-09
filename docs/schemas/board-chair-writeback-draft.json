@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mstrmnd.local/schemas/board-chair-writeback-draft.json",
+  "title": "BoardChairWritebackDraft",
+  "description": "JSON Schema for a Board Chair ruling captured as a Chief of Staff (CoS) writeback draft. Board never posts to Slack; CoS owns draft → approve → post.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision",
+    "owners",
+    "thisWeek",
+    "sessionId",
+    "repoHints",
+    "source",
+    "status",
+    "silentSendForbidden"
+  ],
+  "properties": {
+    "decision": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Board Chair ruling in plain language — the binding decision text to write back."
+    },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "People or roles accountable for executing the decision (e.g. CoS, Board eng lead, Alliance PM)."
+    },
+    "thisWeek": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Exactly three concrete actions for the current week derived from the ruling."
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Id of the Board/Mastermind session that produced the ruling (traceability)."
+    },
+    "repoHints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "description": "Optional repo paths or org/name hints agents should touch when executing thisWeek (e.g. Board Expo app, mstrmnd-os)."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["board", "mastermind"],
+      "description": "Origin of the ruling: Board Chair session or Mastermind session."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "approved", "posted"],
+      "description": "Lifecycle: CoS starts draft; human/CoS marks approved; only then posted to Slack by CoS."
+    },
+    "silentSendForbidden": {
+      "type": "boolean",
+      "const": true,
+      "description": "Always true. Agents must not silently post; Board never posts to Slack — CoS does after approval."
+    }
+  },
+  "examples": [
+    {
+      "decision": "Board Expo moves to New Architecture this week; EAS production profile gated behind TestFlight.",
+      "owners": ["CoS", "Board eng"],
+      "thisWeek": [
+        "Install expo-upgrade + expo-dev-client skills and run New Arch checklist",
+        "Add eas-workflows PR preview build for Board",
+        "Draft TestFlight submit path via eas-app-stores (no silent Slack)"
+      ],
+      "sessionId": "board-2026-09-05-a",
+      "repoHints": ["Board", "S7331331337S/skills"],
+      "source": "board",
+      "status": "draft",
+      "silentSendForbidden": true
+    }
+  ]
+}
