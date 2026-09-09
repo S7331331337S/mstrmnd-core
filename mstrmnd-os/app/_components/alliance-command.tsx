@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useEveAgent } from "eve/react";
+import { AsciiMark } from "@/app/_components/ascii-mark";
 
 function textOf(message: {
   parts: readonly { type: string; text?: string }[];
@@ -47,6 +48,7 @@ export function AllianceCommand() {
       >
         {agent.data.messages.length === 0 ? (
           <div className="text-muted text-sm leading-relaxed">
+            <AsciiMark className="mb-4 opacity-90" tagline="alliance standing by" />
             <p className="display-pixel text-foreground mb-2">The alliance is standing by.</p>
             <p>
               Give Maestro a goal. It assembles context from the Third-Mind,

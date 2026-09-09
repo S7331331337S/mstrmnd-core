@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PixelWordmark } from "@/app/_components/pixel-wordmark";
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
@@ -7,9 +8,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto max-w-6xl w-full px-6 h-14 flex items-center">
           <Link href="/" className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-accent pulse" />
-            <span className="font-pixel-square text-sm tracking-[0.35em] text-foreground">
-              MSTRMND
-            </span>
+            <PixelWordmark />
             <span className="label hidden sm:inline">/ OS</span>
           </Link>
         </div>

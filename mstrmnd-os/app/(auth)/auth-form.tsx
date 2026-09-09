@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AsciiMark } from "@/app/_components/ascii-mark";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -21,6 +22,7 @@ export function AuthForm({
 
   return (
     <div className="flex flex-col gap-6">
+      <AsciiMark className="hidden sm:block -mx-1" />
       <div className="flex flex-col gap-1">
         <span className="label">{isSignUp ? "Create account" : "Sign in"}</span>
         <h1 className="display-pixel text-xl font-medium tracking-tight text-foreground">
