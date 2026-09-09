@@ -7,9 +7,9 @@ work happens HERE, in a normal OS process.
 
 Every render and every stage runs the brand guard (platinum present, no
 cyan/teal/blue second hue) via verify_issue_kit.brand_qa, reporting the result
-as `brand_qa`. Results are advisory by default because the engine does not
-currently pass; set EDITORIAL_BRAND_ENFORCE=1 to make a violation fail the
-render and block staging (overridable per call with force:true). A kit that
+as `brand_qa`. Enforcement is enabled by default: a violation fails the
+render and blocks staging (overridable per stage call with force:true).
+Set EDITORIAL_BRAND_ENFORCE=0 for diagnostic report-only runs. A kit that
 fails is always left on disk for inspection.
 
 Endpoints (loopback 127.0.0.1:5055, auth header X-Editorial-Key):
@@ -45,12 +45,8 @@ ENGINE = Path(
 VERIFIER = Path(
     os.environ.get("EDITORIAL_VERIFIER", ENGINE.parent / "verify_issue_kit.py")
 )
-# AGENTS.md treats platinum-only as a hard invariant, but the engine currently
-# fails it (a fresh sample_brief render trips ~9950 cyan hits against a max of
-# 27), so enforcing by default would block every render. Report by default,
-# enforce once the engine is actually platinum-only:
-#   EDITORIAL_BRAND_ENFORCE=1
-ENFORCE_BRAND = os.environ.get("EDITORIAL_BRAND_ENFORCE", "0") == "1"
+# Fail closed by default; report-only mode requires an explicit diagnostic opt-out.
+ENFORCE_BRAND = os.environ.get("EDITORIAL_BRAND_ENFORCE", "1") != "0"
 BRIEFS = BASE / "briefs"
 KITS = BASE / "kits"
 PUBLISHED = BASE / "published"

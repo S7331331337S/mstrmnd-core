@@ -33,17 +33,17 @@ Personal Intelligence Infrastructure. Models change; the intelligence layer pers
   obsidian `#0a0a0b`. No second hue. Electric Cyan `(0,200,225)` was a P0 brand reject —
   do not reintroduce cyan/teal/blue as an accent. Regression guard: `verify_issue_kit.py`
   asserts platinum present and cyan/teal/blue pixel windows ≈ 0 on every kit.
-  - ⚠️ **The engine does NOT currently pass this guard.** A fresh `sample_brief.json`
-    render trips ~9950 cyan hits against a max of 27, and the cyan-heavy assets
-    (quote cards, carousels, cover, linkedin/x) carry ~0 platinum while the
-    schematic assets (architecture, timeline, comparison) are clean at 0% cyan.
-    So `generate_issue_kit.py` is **not** yet fixed to Platinum-only, despite
-    earlier notes here saying so. Fixing it lives in the Hermes skill, outside
-    this repo: `~/.hermes/skills/creative/editorial-brand-system/scripts/`.
+  - Verified 2026-09-09: the generator converts photographic backgrounds to
+    monochrome before compositing platinum typography. The previous cyan hits
+    came from full-color backgrounds; the palette itself was already platinum.
+    Fresh sample-brief (23 assets) and default-brief (22 assets) runs both pass
+    the guard with zero cyan hits. The generator fix lives outside this repo:
+    `~/.hermes/skills/creative/editorial-brand-system/scripts/generate_issue_kit.py`.
   - `editorial_worker.py` runs the guard on every `/render` and `/stage` and returns
-    it as `brand_qa`. It is **advisory by default** so the pipeline still runs;
-    set `EDITORIAL_BRAND_ENFORCE=1` to make a violation fail the render and block
-    staging (per-call override: `force:true`). Flip it on once the engine is fixed.
+    it as `brand_qa`. Enforcement is **enabled by default**: violations fail
+    rendering and block staging. `EDITORIAL_BRAND_ENFORCE=0` explicitly enables
+    diagnostic report-only mode; `force:true` remains a per-stage override.
+    Brand QA does not replace the human approval required before publishing.
 - Visual identity source of truth: `~/Downloads/mstrmnd-marketing-dashboard/BRAND.md`
   (Platinum-only, no rockets, real-world monochrome industrial photo, Stripe/Linear
   schematics). Cross-check generated assets there.
