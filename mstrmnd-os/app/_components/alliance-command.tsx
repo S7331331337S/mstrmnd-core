@@ -29,7 +29,7 @@ export function AllianceCommand() {
   return (
     <section className="flex flex-col border border-line bg-surface">
       <div className="flex items-center justify-between border-b border-line px-4 h-10">
-        <span className="label">Command · Maestro</span>
+        <span className="label-grid">Command · Maestro</span>
         <span className="label flex items-center gap-2">
           <span
             className={`h-1.5 w-1.5 rounded-full ${
@@ -47,7 +47,7 @@ export function AllianceCommand() {
       >
         {agent.data.messages.length === 0 ? (
           <div className="text-muted text-sm leading-relaxed">
-            <p className="text-foreground mb-2">The alliance is standing by.</p>
+            <p className="display-pixel text-foreground mb-2">The alliance is standing by.</p>
             <p>
               Give Maestro a goal. It assembles context from the Third-Mind,
               coordinates specialists, and executes. Try:
@@ -110,7 +110,7 @@ export function AllianceCommand() {
           <button
             type="button"
             onClick={() => void agent.cancel()}
-            className="label border border-line-strong px-3 py-1.5 hover:text-foreground"
+            className="label-grid border border-line-strong px-3 py-1.5 hover:text-foreground"
           >
             Stop
           </button>
@@ -118,7 +118,7 @@ export function AllianceCommand() {
           <button
             type="submit"
             disabled={input.trim().length === 0}
-            className="label border border-line-strong px-3 py-1.5 text-foreground hover:bg-surface-2 disabled:opacity-40"
+            className="label-grid border border-line-strong px-3 py-1.5 text-foreground hover:bg-surface-2 disabled:opacity-40"
           >
             Send
           </button>

@@ -46,13 +46,41 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Swiss micro-typography helpers */
+/* Swiss micro-typography helpers — Geist pixel + mono */
 .label {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-pixel-line), var(--font-mono), ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.label-grid {
+  font-family: var(--font-pixel-grid), var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.display-pixel {
+  font-family: var(--font-pixel-square), var(--font-sans), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.display-pixel-grid {
+  font-family: var(--font-pixel-grid), var(--font-sans), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.display-pixel-circle {
+  font-family: var(--font-pixel-circle), var(--font-sans), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.display-pixel-triangle {
+  font-family: var(--font-pixel-triangle), var(--font-sans), sans-serif;
+  letter-spacing: 0.04em;
 }
 
 .mono {

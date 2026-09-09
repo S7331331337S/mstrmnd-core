@@ -23,7 +23,7 @@ export function AuthForm({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <span className="label">{isSignUp ? "Create account" : "Sign in"}</span>
-        <h1 className="text-xl font-medium tracking-tight text-foreground">
+        <h1 className="display-pixel text-xl font-medium tracking-tight text-foreground">
           {isSignUp ? "Assemble your alliance" : "Welcome back"}
         </h1>
         <p className="text-sm text-muted">
@@ -101,7 +101,7 @@ export function AuthForm({
         <button
           type="submit"
           disabled={busy}
-          className="mt-1 border border-line-strong bg-surface-2 px-3 py-2 text-sm text-foreground hover:bg-surface disabled:opacity-40"
+          className="mt-1 display-pixel-grid border border-line-strong bg-surface-2 px-3 py-2 text-sm text-foreground hover:bg-surface disabled:opacity-40"
         >
           {busy
             ? isSignUp

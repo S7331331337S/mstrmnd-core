@@ -25,7 +25,7 @@ export default async function MemoryPage() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-2">
         <span className="label">Shared observation layer</span>
-        <h1 className="text-2xl font-medium tracking-tight text-foreground">
+        <h1 className="display-pixel-circle text-2xl font-medium tracking-tight text-foreground">
           Third-Mind
         </h1>
         <p className="text-muted max-w-2xl leading-relaxed">
