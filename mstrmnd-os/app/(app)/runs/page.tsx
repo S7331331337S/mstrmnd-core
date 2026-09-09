@@ -19,7 +19,7 @@ export default function RunsPage() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-2">
         <span className="label">Agent status</span>
-        <h1 className="text-2xl font-medium tracking-tight text-foreground">
+        <h1 className="display-pixel text-2xl font-medium tracking-tight text-foreground">
           Alliance
         </h1>
         <p className="text-muted max-w-2xl leading-relaxed">
@@ -40,7 +40,7 @@ export default function RunsPage() {
 
       <section className="border border-line bg-surface">
         <div className="flex items-center justify-between border-b border-line px-4 h-10">
-          <span className="label">Minds</span>
+          <span className="label-grid">Minds</span>
           <span className="label">
             provider: <span className="text-foreground">{provider}</span>
           </span>
@@ -54,7 +54,7 @@ export default function RunsPage() {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                  <span className="text-sm text-foreground">{member.title}</span>
+                  <span className="display-pixel-triangle text-sm text-foreground">{member.title}</span>
                   <span className="label">
                     {member.role === "root" ? "root" : "subagent"}
                   </span>

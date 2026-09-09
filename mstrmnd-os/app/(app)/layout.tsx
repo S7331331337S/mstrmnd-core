@@ -30,7 +30,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="label hover:text-foreground transition-colors"
+                className="label-grid hover:text-foreground transition-colors"
               >
                 {item.label}
               </Link>

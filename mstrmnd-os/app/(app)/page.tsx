@@ -14,7 +14,7 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <span className="label">Multi-Agent Mastermind OS</span>
-        <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-foreground max-w-2xl">
+        <h1 className="display-pixel text-3xl sm:text-4xl font-medium tracking-tight text-foreground max-w-2xl">
           A private alliance of specialized minds — continuous, coordinated,
           built to execute.
         </h1>
@@ -38,14 +38,14 @@ export default async function Page() {
 
         <aside className="border border-line bg-surface">
           <div className="flex items-center justify-between border-b border-line px-4 h-10">
-            <span className="label">Alliance roster</span>
+            <span className="label-grid">Alliance roster</span>
             <span className="label">{ROSTER.length} minds</span>
           </div>
           <ul className="divide-y divide-line">
             {ROSTER.map((member) => (
               <li key={member.id} className="px-4 py-3 flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-foreground">{member.title}</span>
+                  <span className="display-pixel-triangle text-sm text-foreground">{member.title}</span>
                   <span className="label">
                     {member.role === "root" ? "root" : "subagent"}
                   </span>
