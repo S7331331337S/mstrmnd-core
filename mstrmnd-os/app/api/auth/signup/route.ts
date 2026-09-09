@@ -34,9 +34,11 @@ export async function POST(req: NextRequest) {
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
     return res;
   } catch (err) {
+    const message = err instanceof Error ? err.message : "sign up failed";
+    const missingDb = /DATABASE_URL/i.test(message);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "sign up failed" },
-      { status: 409 },
+      { error: message },
+      { status: missingDb ? 503 : 409 },
     );
   }
 }
