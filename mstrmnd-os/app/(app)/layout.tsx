@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { UserMenu } from "@/app/_components/user-menu";
+import { PixelWordmark } from "@/app/_components/pixel-wordmark";
 
 const NAV = [
   { href: "/", label: "Alliance" },
@@ -20,9 +21,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto max-w-6xl w-full px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-accent pulse" />
-            <span className="font-pixel-square text-sm tracking-[0.35em] text-foreground">
-              MSTRMND
-            </span>
+            <PixelWordmark />
             <span className="label hidden sm:inline">/ OS</span>
           </Link>
           <nav className="flex items-center gap-6">

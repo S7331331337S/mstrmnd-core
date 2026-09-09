@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createWebGlField } from "./field-webgl";
 import type { FieldBackend, FieldPointer } from "./field-types";
+import { PixelWordmark } from "@/app/_components/pixel-wordmark";
 
 function trackPointer(canvas: HTMLCanvasElement, dest: FieldPointer) {
   const update = (clientX: number, clientY: number) => {
@@ -76,9 +77,9 @@ export function FieldCanvas() {
         <div>
           <Link
             href="/"
-            className="pointer-events-auto font-pixel-square text-[#e8e2d0] hover:text-[#e8e2d0]"
+            className="pointer-events-auto"
           >
-            MSTRMND
+            <PixelWordmark className="text-sm tracking-[0.35em] text-[#e8e2d0]" />
           </Link>
           <div className="mt-1 text-[#e8e2d0]/45">FIELD</div>
         </div>
