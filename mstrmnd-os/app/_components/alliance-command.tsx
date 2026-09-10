@@ -29,7 +29,7 @@ export function AllianceCommand() {
 
   return (
     <section className="flex flex-col border border-line bg-surface">
-      <div className="flex items-center justify-between border-b border-line px-4 h-10">
+      <div className="flex min-h-10 flex-col justify-center gap-1 border-b border-line px-4 py-2 sm:h-10 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-0">
         <span className="label-grid">Command · Maestro</span>
         <span className="label flex items-center gap-2">
           <span
@@ -44,7 +44,7 @@ export function AllianceCommand() {
 
       <div
         ref={scrollRef}
-        className="h-[420px] overflow-y-auto px-4 py-4 flex flex-col gap-4"
+        className="flex h-[min(420px,55dvh)] flex-col gap-4 overflow-y-auto px-4 py-4 sm:h-[420px]"
       >
         {agent.data.messages.length === 0 ? (
           <div className="text-muted text-sm leading-relaxed">
@@ -106,13 +106,13 @@ export function AllianceCommand() {
           onChange={(event) => setInput(event.target.value)}
           disabled={isBusy}
           placeholder="Direct the alliance…"
-          className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-faint disabled:opacity-50"
+          className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-faint disabled:opacity-50 sm:text-sm"
         />
         {isBusy ? (
           <button
             type="button"
             onClick={() => void agent.cancel()}
-            className="label-grid border border-line-strong px-3 py-1.5 hover:text-foreground"
+            className="label-grid min-h-10 border border-line-strong px-3 py-1.5 hover:text-foreground"
           >
             Stop
           </button>
@@ -120,7 +120,7 @@ export function AllianceCommand() {
           <button
             type="submit"
             disabled={input.trim().length === 0}
-            className="label-grid border border-line-strong px-3 py-1.5 text-foreground hover:bg-surface-2 disabled:opacity-40"
+            className="label-grid min-h-10 border border-line-strong px-3 py-1.5 text-foreground hover:bg-surface-2 disabled:opacity-40"
           >
             Send
           </button>

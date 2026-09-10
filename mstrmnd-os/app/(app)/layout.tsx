@@ -18,13 +18,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <header className="border-b border-line">
-        <div className="mx-auto max-w-6xl w-full px-6 h-14 flex items-center justify-between">
+        <div className="mx-auto flex min-h-14 w-full max-w-6xl flex-col items-start gap-3 px-4 py-3 sm:h-14 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-0">
           <Link href="/" className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-accent pulse" />
             <PixelWordmark />
             <span className="label hidden sm:inline">/ OS</span>
           </Link>
-          <nav className="flex items-center gap-6">
+          <nav className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end sm:gap-6">
             {NAV.map((item) => (
               <Link
                 key={item.href}
@@ -38,9 +38,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </nav>
         </div>
       </header>
-      <main className="flex-1 mx-auto max-w-6xl w-full px-6 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
       <footer className="border-t border-line">
-        <div className="mx-auto max-w-6xl w-full px-6 h-12 flex items-center justify-between">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-1 px-4 py-3 sm:h-12 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-0">
           <span className="label">Intelligence layer · not the model</span>
           <span className="label">Human approval is a hard stop</span>
         </div>
