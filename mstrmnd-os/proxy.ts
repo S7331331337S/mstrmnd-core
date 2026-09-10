@@ -10,7 +10,7 @@ import { readSessionCookie, verifySession } from "@/lib/session";
  * Eve copies host middleware into its Vercel service; Edge runtime is rejected
  * there ("Edge Runtime is not supported in services"), so stay on Node proxy.
  */
-const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth", "/api/board", "/eve", "/field"];
+const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth", "/api/board", "/eve", "/field", "/lab"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
