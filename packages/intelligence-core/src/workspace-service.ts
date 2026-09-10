@@ -1,12 +1,13 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import { randomUUID } from "node:crypto";
 import type {
   RuntimeScope,
   WorkspaceMount,
   WorkspaceNode,
 } from "@mstrmnd/schemas";
-import { localProvenance, resolveScope } from "./operator-scope";
+import { localProvenance, nowIso, resolveScope } from "./operator-scope";
 
 const DEFAULT_READ_CAP = 256_000;
 const SKIP_DIRS = new Set([
@@ -18,6 +19,9 @@ const SKIP_DIRS = new Set([
   ".venv",
 ]);
 
+/** Mount-relative directory where unpublished writes are staged. */
+export const DRAFT_DIR = ".mstrmnd/drafts";
+
 export class WorkspacePathError extends Error {
   constructor(message: string) {
     super(message);
@@ -25,8 +29,36 @@ export class WorkspacePathError extends Error {
   }
 }
 
+export interface WorkspaceDraft {
+  id: string;
+  mountId: string;
+  /** Mount-relative publish target. */
+  targetPath: string;
+  /** Mount-relative staged file. */
+  draftPath: string;
+  createdAt: string;
+  bytes: number;
+}
+
+interface DraftRecord extends WorkspaceDraft {
+  content: string;
+}
+
+/**
+ * True when `abs` is the root or a descendant, compared component-wise.
+ * A textual `startsWith` on the raw prefix would also accept siblings
+ * (`/data/vault-backup` vs `/data/vault`).
+ */
+export function isInsideRoot(abs: string, root: string): boolean {
+  const absParts = resolve(abs).split(sep);
+  const rootParts = resolve(root).split(sep);
+  if (absParts.length < rootParts.length) return false;
+  return rootParts.every((part, i) => absParts[i] === part);
+}
+
 export class WorkspaceService {
   private mounts = new Map<string, WorkspaceMount>();
+  private drafts = new Map<string, DraftRecord>();
 
   registerMount(mount: WorkspaceMount): void {
     if (!existsSync(mount.rootPath)) {
@@ -73,9 +105,9 @@ export class WorkspaceService {
     if (cleaned.split("/").includes("..")) {
       throw new WorkspacePathError("path escape denied");
     }
-    const abs = resolve(mount.rootPath, cleaned);
     const root = resolve(mount.rootPath);
-    if (abs !== root && !abs.startsWith(root + sep)) {
+    const abs = resolve(root, cleaned);
+    if (!isInsideRoot(abs, root)) {
       throw new WorkspacePathError("path escape denied");
     }
     return { mount, abs };
@@ -164,5 +196,117 @@ export class WorkspaceService {
       }),
       mountId: mount.id,
     };
+  }
+
+  /**
+   * Write `content` to a mount-relative path. Callers must have already
+   * passed the human-approval gate — this method only enforces the mount
+   * boundary.
+   */
+  async write(
+    mountId: string,
+    relPath: string,
+    content: string
+  ): Promise<{ path: string; bytes: number }> {
+    const { mount, abs } = this.resolveSafe(mountId, relPath);
+    await mkdir(dirname(abs), { recursive: true });
+    const buf = Buffer.from(content, "utf8");
+    await writeFile(abs, buf);
+    return {
+      path: relative(mount.rootPath, abs).split(sep).join("/"),
+      bytes: buf.length,
+    };
+  }
+
+  /**
+   * Stage a proposed write under `.mstrmnd/drafts/`. Does not touch the
+   * publish target. Out-of-mount targets throw before anything is staged.
+   */
+  async stageDraft(
+    mountId: string,
+    targetPath: string,
+    content: string
+  ): Promise<WorkspaceDraft> {
+    this.resolveSafe(mountId, targetPath);
+    const id = randomUUID();
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const base = targetPath.replace(/\\/g, "/").split("/").filter(Boolean).pop()
+      ?? `draft-${id.slice(0, 8)}`;
+    const draftPath = `${DRAFT_DIR}/${stamp}-${id.slice(0, 8)}-${base}`;
+    const written = await this.write(mountId, draftPath, content);
+    const record: DraftRecord = {
+      id,
+      mountId,
+      targetPath,
+      draftPath: written.path,
+      createdAt: nowIso(),
+      bytes: written.bytes,
+      content,
+    };
+    this.drafts.set(id, record);
+    await this.write(
+      mountId,
+      `${written.path}.meta.json`,
+      JSON.stringify(
+        {
+          id: record.id,
+          mountId: record.mountId,
+          targetPath: record.targetPath,
+          draftPath: record.draftPath,
+          createdAt: record.createdAt,
+          bytes: record.bytes,
+        },
+        null,
+        2
+      )
+    );
+    return this.toPublicDraft(record);
+  }
+
+  getDraft(draftId: string): WorkspaceDraft | undefined {
+    const record = this.drafts.get(draftId);
+    return record ? this.toPublicDraft(record) : undefined;
+  }
+
+  private toPublicDraft(record: DraftRecord): WorkspaceDraft {
+    return {
+      id: record.id,
+      mountId: record.mountId,
+      targetPath: record.targetPath,
+      draftPath: record.draftPath,
+      createdAt: record.createdAt,
+      bytes: record.bytes,
+    };
+  }
+
+  private async loadDraftRecord(draftId: string): Promise<DraftRecord> {
+    const cached = this.drafts.get(draftId);
+    if (cached) return cached;
+    for (const mount of this.mounts.values()) {
+      const draftRoot = join(mount.rootPath, ".mstrmnd", "drafts");
+      if (!existsSync(draftRoot)) continue;
+      const entries = await readdir(draftRoot);
+      for (const name of entries) {
+        if (!name.endsWith(".meta.json")) continue;
+        const abs = join(draftRoot, name);
+        const raw = await readFile(abs, "utf8");
+        const meta = JSON.parse(raw) as WorkspaceDraft;
+        if (meta.id !== draftId) continue;
+        const body = await this.read(mount.id, meta.draftPath);
+        const record: DraftRecord = { ...meta, mountId: mount.id, content: body.content };
+        this.drafts.set(draftId, record);
+        return record;
+      }
+    }
+    throw new WorkspacePathError(`unknown draft: ${draftId}`);
+  }
+
+  /**
+   * Publish a previously staged draft to its target path. The target is
+   * re-checked against the mount boundary.
+   */
+  async publishDraft(draftId: string): Promise<{ path: string; bytes: number }> {
+    const record = await this.loadDraftRecord(draftId);
+    return this.write(record.mountId, record.targetPath, record.content);
   }
 }

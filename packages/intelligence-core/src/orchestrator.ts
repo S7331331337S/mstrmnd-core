@@ -17,6 +17,11 @@ import type { ModelProvider } from "./model-provider";
 import { EchoProvider } from "./model-provider";
 import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
+import {
+  denyApprover,
+  stageAndMaybePublish,
+  type WriteApprover,
+} from "./write-approval";
 import { localProvenance, nowIso } from "./operator-scope";
 import { resolveRepoRoot } from "./doctrine-loader";
 
@@ -28,6 +33,7 @@ export const OPERATOR_AGENT: AgentSpec = {
     "search_memory",
     "list_workspace",
     "read_file",
+    "write_file",
     "get_context",
     "spawn_subagent",
   ],
@@ -87,6 +93,8 @@ export interface OrchestratorDeps {
   provider?: ModelProvider;
   repoRoot?: string;
   dryRun?: boolean;
+  /** Human-approval callback for write_file. Defaults to deny (never auto-publish). */
+  writeApprover?: WriteApprover;
 }
 
 export class Orchestrator {
@@ -314,7 +322,20 @@ export class Orchestrator {
             : "pending_approval",
     });
 
-    if (decision.outcome !== "allow") {
+    if (decision.outcome === "deny") {
+      this.pushStep(run, {
+        type: "approval",
+        summary: `denied ${toolId}: ${decision.reason}`,
+        toolId,
+        status: "error",
+      });
+      return;
+    }
+
+    if (
+      decision.outcome === "require-approval" &&
+      toolId !== "write_file"
+    ) {
       this.pushStep(run, {
         type: "approval",
         summary: `blocked ${toolId}: ${decision.reason}`,
@@ -359,6 +380,42 @@ export class Orchestrator {
         operator: this.deps.context.operator.displayName,
         doctrineRef: this.deps.context.doctrineRef,
       });
+    } else if (toolId === "write_file" && this.deps.workspace) {
+      const mountId = String(args.mountId ?? "vault");
+      const targetPath = String(args.path ?? "");
+      const content = String(args.content ?? "");
+      const outcome = await stageAndMaybePublish(
+        this.deps.workspace,
+        this.deps.writeApprover ?? denyApprover,
+        mountId,
+        targetPath,
+        content,
+        { dryRun: this.deps.dryRun }
+      );
+      output = JSON.stringify({
+        published: outcome.published,
+        draftId: outcome.draft?.id,
+        draftPath: outcome.draft?.draftPath,
+        message: outcome.message,
+      });
+      this.pushStep(run, {
+        type: outcome.published ? "tool" : "approval",
+        summary: outcome.message,
+        toolId,
+        inputSummary: JSON.stringify({
+          mountId,
+          path: targetPath,
+        }).slice(0, 300),
+        outputSummary: output.slice(0, 800),
+        status: outcome.published || this.deps.dryRun ? "ok" : "pending",
+      });
+      await this.audit({
+        kind: outcome.published ? "tool.call" : "approval.requested",
+        summary: outcome.message,
+        data: { toolId, args: { mountId, path: targetPath }, preview: output.slice(0, 200) },
+        outcome: outcome.published ? "success" : "pending_approval",
+      });
+      return;
     } else {
       output = JSON.stringify({ skipped: true, toolId });
     }

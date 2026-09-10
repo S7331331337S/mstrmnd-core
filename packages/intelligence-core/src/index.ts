@@ -29,7 +29,21 @@ export { loadOperatorProfile, loadCompanyProfile } from "./profile-loader";
 export {
   WorkspaceService,
   WorkspacePathError,
+  isInsideRoot,
+  DRAFT_DIR,
 } from "./workspace-service";
+export type { WorkspaceDraft } from "./workspace-service";
+export {
+  denyApprover,
+  isInteractiveSession,
+  stageAndMaybePublish,
+} from "./write-approval";
+export type {
+  PendingWrite,
+  ApprovalDecision,
+  WriteApprover,
+  PublishOutcome,
+} from "./write-approval";
 export {
   EchoProvider,
   OpenAICompatibleProvider,

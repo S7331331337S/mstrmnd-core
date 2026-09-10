@@ -200,6 +200,8 @@ Tools:
 | `get_context` | Assembled ContextPack (company, operator, doctrine, memory) |
 | `list_workspace` | List files/folders under a mount |
 | `read_file` | Read a mount-relative file (size-capped) |
+| `write_file` | Stage a draft under `.mstrmnd/drafts/`; does not publish until `approve_write` |
+| `approve_write` | Publish a staged draft to its target (human-approval step) |
 | `list_agents` | Registered agent specs |
 | `run_agent` | Dispatch an orchestrator run |
 
@@ -267,9 +269,9 @@ bash scripts/run-icloud-map.sh
 
 ## Status
 
-Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat; writes are next, behind human approval), Hermes orchestrator (parent + `workspace-scout` sub-agent), shared runtime factory, MCP plugin tools, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
+Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent), shared runtime factory, MCP plugin tools, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
 
-Hermes/MCP (`@mstrmnd/intelligence-core`) and eve OS (`mstrmnd-os`) are two runtimes until a later adapter. Plugin SDK / onboarding template wait until Operator Zero can write workspace files behind approval and run a model-proposed parent loop.
+Hermes/MCP (`@mstrmnd/intelligence-core`) and eve OS (`mstrmnd-os`) are two runtimes until a later adapter. Plugin SDK / onboarding template wait until Operator Zero can run a model-proposed parent loop (writes behind approval are landed).
 
 **Deferred:** PRESS / editorial governance; un-gated workspace writes; plugin SDK before writes + plan.
 

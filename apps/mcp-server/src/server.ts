@@ -274,6 +274,83 @@ server.registerTool(
 );
 
 server.registerTool(
+  "write_file",
+  {
+    description:
+      "Stage a workspace write as a draft under .mstrmnd/drafts/. Returns a draft id. Does not publish to the target path — call approve_write after the operator reviews the draft. Path escapes are denied.",
+    inputSchema: {
+      path: z.string().describe("Mount-relative publish target"),
+      content: z.string().describe("Proposed file contents"),
+      mountId: z.string().optional().describe("Mount id (default: vault)"),
+    },
+  },
+  async ({ path, content, mountId }) => {
+    try {
+      const id = mountId ?? "vault";
+      const draft = await runtime.workspace.stageDraft(id, path, content);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                status: "awaiting_approval",
+                draftId: draft.id,
+                mountId: draft.mountId,
+                targetPath: draft.targetPath,
+                draftPath: draft.draftPath,
+                bytes: draft.bytes,
+                message:
+                  "Draft staged. Target not written. Call approve_write with this draftId after human review.",
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (err) {
+      return toolError(err);
+    }
+  }
+);
+
+server.registerTool(
+  "approve_write",
+  {
+    description:
+      "Publish a staged workspace draft to its target path. This is the human-approval step — the vault target is not mutated until this tool runs.",
+    inputSchema: {
+      draftId: z.string().describe("Draft id returned by write_file"),
+    },
+  },
+  async ({ draftId }) => {
+    try {
+      const published = await runtime.workspace.publishDraft(draftId);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                status: "published",
+                draftId,
+                path: published.path,
+                bytes: published.bytes,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (err) {
+      return toolError(err);
+    }
+  }
+);
+
+server.registerTool(
   "list_agents",
   {
     description: "List registered agent specs (parent and sub-agents).",
