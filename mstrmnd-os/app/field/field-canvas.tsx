@@ -73,7 +73,7 @@ export function FieldCanvas() {
     <div className="relative h-dvh w-screen overflow-hidden bg-[#0a0a0b]">
       <canvas ref={canvasRef} className="block h-full w-full touch-none" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,10,11,0.22),transparent_18%,transparent_78%,rgba(10,10,11,0.45))]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-6 font-mono text-[11px] tracking-[0.28em] text-[#e8e2d0]/80">
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4 font-mono text-[10px] tracking-[0.2em] text-[#e8e2d0]/80 sm:p-6 sm:text-[11px] sm:tracking-[0.28em]">
         <div>
           <Link
             href="/"
@@ -85,7 +85,7 @@ export function FieldCanvas() {
         </div>
         <div className="text-right">
           <div>{badge}</div>
-          <div className="mt-1 text-[#e8e2d0]/45">POINTER MOVES THE LAMP</div>
+          <div className="mt-1 hidden text-[#e8e2d0]/45 sm:block">POINTER MOVES THE LAMP</div>
         </div>
       </div>
     </div>

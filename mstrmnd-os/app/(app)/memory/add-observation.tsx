@@ -50,13 +50,13 @@ export function AddObservation() {
           value={key}
           onChange={(e) => setKey(e.target.value)}
           placeholder="key (stable id)"
-          className="bg-transparent border border-line px-3 py-2 text-sm outline-none focus:border-line-strong mono"
+          className="bg-transparent border border-line px-3 py-2 text-base outline-none focus:border-line-strong sm:text-sm mono"
         />
         <input
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="tags, comma, separated"
-          className="bg-transparent border border-line px-3 py-2 text-sm outline-none focus:border-line-strong mono"
+          className="bg-transparent border border-line px-3 py-2 text-base outline-none focus:border-line-strong sm:text-sm mono"
         />
       </div>
       <textarea
@@ -64,9 +64,9 @@ export function AddObservation() {
         onChange={(e) => setContent(e.target.value)}
         placeholder="observation…"
         rows={3}
-        className="bg-transparent border border-line px-3 py-2 text-sm outline-none focus:border-line-strong resize-y"
+        className="bg-transparent border border-line px-3 py-2 text-base outline-none focus:border-line-strong resize-y sm:text-sm"
       />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {error ? (
           <span className="label text-foreground">{error}</span>
         ) : (
@@ -75,7 +75,7 @@ export function AddObservation() {
         <button
           type="submit"
           disabled={saving || !key.trim() || !content.trim()}
-          className="label border border-line-strong px-3 py-1.5 text-foreground hover:bg-surface-2 disabled:opacity-40"
+          className="label min-h-10 self-end border border-line-strong px-3 py-1.5 text-foreground hover:bg-surface-2 disabled:opacity-40"
         >
           {saving ? "Writing…" : "Write to Third-Mind"}
         </button>
