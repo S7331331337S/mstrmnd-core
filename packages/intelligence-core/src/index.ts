@@ -61,7 +61,20 @@ export {
   WORKSPACE_SCOUT,
   getAgentSpec,
   listAgentSpecs,
+  parseProposedTools,
+  readSpawnAgentIdAlias,
+  registeredAllowlistedSubAgents,
+  resolveSpawnSubagentId,
+  spawnSubagentPlanHint,
+  SPAWN_SUBAGENT_ID_ALIASES,
 } from "./orchestrator";
-export type { OrchestratorDeps } from "./orchestrator";
+export type { OrchestratorDeps, ProposedTool } from "./orchestrator";
+export {
+  assertBoundary,
+  evaluateBoundaryAction,
+  operatorZeroBoundary,
+  MissingBoundaryError,
+  BoundaryViolationError,
+} from "./policy-boundary";
 export { createRuntime } from "./runtime";
 export type { RuntimeConfig, MstrmndRuntime } from "./runtime";

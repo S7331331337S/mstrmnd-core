@@ -57,4 +57,8 @@ export interface RunState {
   resultSummary?: string;
   provenance: Provenance;
   handoffs?: SubAgentHandoff[];
+  /** ThreatBoundary.id attached at createRun. */
+  boundaryId?: string;
+  /** Accrued model/tool spend for this run (USD). */
+  costAccruedUsd?: number;
 }
