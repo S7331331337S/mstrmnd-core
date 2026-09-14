@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { ContextPack } from "@mstrmnd/schemas";
+import type { ContextPack, ThreatBoundary } from "@mstrmnd/schemas";
 import { MemoryEngine } from "./memory-engine";
 import { WorkspaceService } from "./workspace-service";
 import { assembleContext } from "./context-assembler";
@@ -18,6 +18,8 @@ import type { IdentityModel } from "@mstrmnd/schemas";
 import type { WriteApprover } from "./write-approval";
 
 export interface RuntimeConfig {
+  /** Explicit operator-approved access boundary; default denies remote providers. */
+  boundary?: ThreatBoundary;
   vaultPath?: string;
   repoRoot?: string;
   memoryQuery?: string;
@@ -109,7 +111,7 @@ export async function createRuntime(
         repoRoot,
         dryRun: opts?.dryRun,
         writeApprover: opts?.writeApprover,
-        boundary: operatorZeroBoundary({
+        boundary: config.boundary ?? operatorZeroBoundary({
           toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
           filesystemScope: workspace.listMounts().map((m) => ({
             mountId: m.id,

@@ -284,3 +284,5 @@ python -m pip install reportlab
 python scripts/generate_arch_spec.py \
   --output /tmp/MSTRMND_Core_Technical_Architecture_Specification.pdf
 ```
+
+Remote provider access now requires an explicit host-supplied boundary and per-call budget reservation; see [provider configuration and cleanup decisions](docs/pr-cleanup-2026-09-14.md#remote-provider-compatibility). Echo remains the offline default.

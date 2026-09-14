@@ -12,7 +12,7 @@ import type {
   SubAgentHandoff,
   ThreatBoundary,
 } from "@mstrmnd/schemas";
-import type { ModelProvider } from "./model-provider";
+import type { ModelProvider, ModelMessage } from "./model-provider";
 import { EchoProvider } from "./model-provider";
 import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
@@ -230,7 +230,7 @@ export class Orchestrator {
 
     try {
       const planPrompt = this.buildPlanPrompt(run, parent);
-      const plan = await this.deps.provider!.complete([
+      const plan = await this.completeModel(run, [
         {
           role: "system",
           content:
@@ -257,7 +257,7 @@ export class Orchestrator {
       for (const step of proposed) {
         await this.executeProposed(run, parent, step.tool, step.args);
       }
-      const synthesis = await this.deps.provider!.complete([
+      const synthesis = await this.completeModel(run, [
         {
           role: "system",
           content: "Summarize operator run results for the human.",
@@ -607,6 +607,23 @@ export class Orchestrator {
       ...partial,
     });
     run.updatedAt = nowIso();
+  }
+
+  private async completeModel(run: RunState, messages: ModelMessage[]): Promise<string> {
+    const provider = this.deps.provider!;
+    const policy = provider.policy;
+    if (!policy) throw new Error("model provider access metadata is required");
+    const decision = evaluateBoundaryAction(this.deps.boundary, {
+      toolId: "model.complete",
+      ...policy,
+      accruedCostUsd: run.costAccruedUsd ?? 0,
+    });
+    await this.auditPolicy(decision, "model.complete");
+    if (decision.outcome !== "allow") throw new Error(`model call denied: ${decision.reason}`);
+    // Reserve before sending, including failed requests. This is a conservative
+    // caller-supplied allowance, not a measurement of provider billing.
+    run.costAccruedUsd = (run.costAccruedUsd ?? 0) + policy.estimatedCostUsd;
+    return provider.complete(messages);
   }
 
   private async auditPolicy(

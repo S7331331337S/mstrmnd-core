@@ -70,7 +70,7 @@ export function operatorZeroBoundary(opts: {
     workflowId: opts.workflowId ?? "operator-zero",
     networkAllowlist: [],
     credentialAllowlist: [],
-    toolsAllowlist: [...opts.toolsAllowlist],
+    toolsAllowlist: [...new Set([...opts.toolsAllowlist, "model.complete"])],
     filesystemScope: opts.filesystemScope.map((e) => ({
       mountId: e.mountId,
       pathPrefix: e.pathPrefix,

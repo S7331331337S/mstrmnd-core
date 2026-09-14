@@ -26,6 +26,13 @@ These PRs contain unique deferred work. Closing them does not mean all their fea
 - [ ] Recover plugin SDK/onboarding using current scoped workspace and approval APIs.
 - [ ] Evaluate unique governance/skill/SCM modules from #16 in focused PRs.
 - [ ] Recover apps/mobile alone; authenticate and bound model access, then verify typecheck and web export with current main present.
-- [ ] Add provider-level network and actual model-cost enforcement. Current ThreatBoundary evaluates declared tool actions; costAccruedUsd is initialized but is not provider billing metering.
+- [x] Gate both provider calls on declared destinations, credential identity, and a conservative per-call budget reservation. Deny missing metadata and remote calls under the default boundary; reject HTTP redirects.
+- [ ] Replace configured cost reservations with provider usage/billing metering. Reservations are not a guarantee of actual dollar charges.
 
 PR cleanup does not alter branch protection or remove historical branches.
+
+## Remote provider compatibility
+
+Echo remains the default. Remote Hermes/MCP calls now fail closed under the default deny-all boundary. Hosts must pass an explicitly approved `RuntimeConfig.boundary` allowing `model.complete`, the model hostname and credential id `model-api-key`. Configure `MSTRMND_MODEL_CALL_BUDGET_USD` as a conservative per-call reservation (or `OpenAICompatibleConfig.estimatedCostUsd` for direct construction). Both planning and synthesis reserve funds before sending. Missing or invalid budgets deny; failed requests retain their reservation. Built-in CLI/MCP entrypoints do not yet load a custom boundary from disk; use the runtime API until that configuration surface is implemented.
+
+The older #16 review also flags lost policy notes in skill compilation, incomplete creative use-case coverage, and a no-op SCM adapter advertised as active. Those modules are not imported. #3 retains unresolved CLI validation/execution and vault-prompt issues; its source remains available for a focused rewrite.

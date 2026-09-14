@@ -10,6 +10,8 @@ export interface ModelCompleteOptions {
 
 export interface ModelProvider {
   readonly id: string;
+  /** Declared provider access; missing metadata fails closed in the orchestrator. */
+  readonly policy?: { networkDestinations: string[]; credentialIds: string[]; estimatedCostUsd: number };
   complete(
     messages: ModelMessage[],
     opts?: ModelCompleteOptions
@@ -19,6 +21,7 @@ export interface ModelProvider {
 /** Offline/CI provider — echoes the last user message with a fixed prefix. */
 export class EchoProvider implements ModelProvider {
   readonly id = "echo";
+  readonly policy = { networkDestinations: [], credentialIds: [], estimatedCostUsd: 0 };
 
   async complete(messages: ModelMessage[]): Promise<string> {
     const last = [...messages].reverse().find((m) => m.role === "user");
@@ -29,6 +32,9 @@ export class EchoProvider implements ModelProvider {
 
 export interface OpenAICompatibleConfig {
   apiKey: string;
+  /** Conservative per-call budget reservation; required for governed remote calls. */
+  estimatedCostUsd?: number;
+  credentialId?: string;
   /** OpenAI-compatible chat completions base, e.g. https://api.openai.com/v1 */
   baseUrl?: string;
   /** Model id (provider-specific) */
@@ -43,6 +49,7 @@ export interface OpenAICompatibleConfig {
  */
 export class OpenAICompatibleProvider implements ModelProvider {
   readonly id = "openai-compatible";
+  readonly policy: { networkDestinations: string[]; credentialIds: string[]; estimatedCostUsd: number };
   private apiKey: string;
   private baseUrl: string;
   private model: string;
@@ -57,6 +64,11 @@ export class OpenAICompatibleProvider implements ModelProvider {
       /\/$/,
       ""
     );
+    this.policy = {
+      networkDestinations: [this.baseUrl],
+      credentialIds: [config.credentialId ?? "model-api-key"],
+      estimatedCostUsd: config.estimatedCostUsd ?? Infinity,
+    };
     this.model = config.model ?? "gpt-4o-mini";
     this.organization = config.organization;
   }
@@ -83,6 +95,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
 
     const res = await fetch(url, {
       method: "POST",
+      redirect: "error",
       headers,
       body: JSON.stringify(body),
     });
@@ -148,6 +161,7 @@ export function resolveModelProvider(
       baseUrl: env("MSTRMND_MODEL_BASE_URL"),
       model: env("MSTRMND_MODEL_NAME"),
       organization: env("MSTRMND_MODEL_ORG"),
+      estimatedCostUsd: env("MSTRMND_MODEL_CALL_BUDGET_USD") ? Number(env("MSTRMND_MODEL_CALL_BUDGET_USD")) : undefined,
     });
   }
 

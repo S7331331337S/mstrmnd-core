@@ -68,6 +68,7 @@ function fixtureContext(): ContextPack {
 
 class ScriptedProvider implements ModelProvider {
   readonly id = "scripted";
+  readonly policy = { networkDestinations: [], credentialIds: [], estimatedCostUsd: 0 };
   constructor(private readonly replies: string[]) {}
   async complete(): Promise<string> {
     return this.replies.shift() ?? "[]";
@@ -76,6 +77,7 @@ class ScriptedProvider implements ModelProvider {
 
 class CapturingProvider implements ModelProvider {
   readonly id = "capturing";
+  readonly policy = { networkDestinations: [], credentialIds: [], estimatedCostUsd: 0 };
   readonly messages: ModelMessage[][] = [];
   constructor(private readonly replies: string[]) {}
   async complete(messages: ModelMessage[]): Promise<string> {
@@ -479,4 +481,32 @@ test("write_file stays require-approval and dry-run does not publish", async () 
   assert.ok(write);
   assert.match(write?.summary ?? "", /dry-run|not staged|not published/i);
   assert.equal(existsSync(path.join(vault, "note.md")), false);
+});
+
+test("remote provider is blocked before transmitting under the default boundary", async () => {
+  let calls = 0;
+  const provider: ModelProvider = {
+    id: "remote-test",
+    policy: { networkDestinations: ["https://api.example.com/v1"], credentialIds: ["model-api-key"], estimatedCostUsd: 0.1 },
+    async complete() { calls++; return "[]"; },
+  };
+  const orchestrator = new Orchestrator({ context: fixtureContext(), provider, boundary: testBoundary(), dryRun: true });
+  const run = await orchestrator.dispatch(orchestrator.createRun("operator-agent", "test"));
+  assert.equal(calls, 0);
+  assert.equal(run.status, "failed");
+});
+
+test("remote synthesis cannot exceed the reserved run budget", async () => {
+  let calls = 0;
+  const provider: ModelProvider = {
+    id: "remote-test",
+    policy: { networkDestinations: ["https://api.example.com/v1"], credentialIds: ["model-api-key"], estimatedCostUsd: 0.6 },
+    async complete() { calls++; return "[]"; },
+  };
+  const boundary = { ...testBoundary(), networkAllowlist: ["api.example.com"], credentialAllowlist: ["model-api-key"] };
+  const orchestrator = new Orchestrator({ context: fixtureContext(), provider, boundary, dryRun: true });
+  const run = await orchestrator.dispatch(orchestrator.createRun("operator-agent", "test"));
+  assert.equal(calls, 1);
+  assert.equal(run.status, "failed");
+  assert.equal(run.costAccruedUsd, 0.6);
 });
