@@ -11,7 +11,8 @@ import {
   resolveModelProvider,
   type ModelProvider,
 } from "./model-provider";
-import { Orchestrator } from "./orchestrator";
+import { Orchestrator, OPERATOR_AGENT } from "./orchestrator";
+import { operatorZeroBoundary } from "./policy-boundary";
 import { loadIdentity, EMPTY_IDENTITY } from "./identity-loader";
 import type { IdentityModel } from "@mstrmnd/schemas";
 import type { WriteApprover } from "./write-approval";
@@ -108,6 +109,13 @@ export async function createRuntime(
         repoRoot,
         dryRun: opts?.dryRun,
         writeApprover: opts?.writeApprover,
+        boundary: operatorZeroBoundary({
+          toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
+          filesystemScope: workspace.listMounts().map((m) => ({
+            mountId: m.id,
+            pathPrefix: "",
+          })),
+        }),
       }),
   };
 }

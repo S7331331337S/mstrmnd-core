@@ -37,3 +37,9 @@ export type {
 } from "./writeback";
 export { WRITEBACK_DRAFT_EXAMPLE } from "./writeback";
 
+export type {
+  ThreatBoundary,
+  FilesystemScopeEntry,
+  BoundaryAction,
+  BoundaryViolationCode,
+} from "./boundary";
