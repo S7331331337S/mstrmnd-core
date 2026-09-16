@@ -9,6 +9,13 @@ export function OPTIONS() {
   return corsPreflight();
 }
 
+/** Native / Expo clients that cannot use the httpOnly cookie need the JWT in the JSON body. */
+function wantsBearerToken(bodyClient: string | undefined, req: NextRequest): boolean {
+  const header = req.headers.get("x-mstrmnd-client");
+  const client = (bodyClient ?? header ?? "").toLowerCase();
+  return client === "board" || client === "alliance";
+}
+
 export async function POST(req: NextRequest) {
   let body: { email?: string; password?: string; client?: string };
   try {
@@ -37,10 +44,9 @@ export async function POST(req: NextRequest) {
     name: user.name,
     workspaceId: user.workspaceId,
   });
-  const forBoard =
-    body.client === "board" || req.headers.get("x-mstrmnd-client") === "board";
+  const includeToken = wantsBearerToken(body.client, req);
   const res = withCors(
-    NextResponse.json(forBoard ? { ok: true, user, token } : { ok: true, user }),
+    NextResponse.json(includeToken ? { ok: true, user, token } : { ok: true, user }),
   );
   res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
   return res;
