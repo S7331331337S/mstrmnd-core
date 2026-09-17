@@ -1,0 +1,28 @@
+:root {
+  --ink:        #0B0B0F;
+  --ink-2:      #111118;
+  --line:       #2A2A35;
+  --mint:       #00E5A0;
+  --violet:     #8B5CF6;
+  --paper:      #E8E8EC;
+  --muted:      #6B6B78;
+
+  --f-display:  "Big Shoulders Display", Impact, sans-serif;
+  --f-body:     "Instrument Sans", "Inter", system-ui, sans-serif;
+  --f-mono:     "JetBrains Mono", ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--mint); text-decoration: none; }
+a:hover { text-decoration: underline; }
