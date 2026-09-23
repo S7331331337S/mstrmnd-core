@@ -28,7 +28,15 @@ test("host health, adk, context, agents, and dry-run", async () => {
       provider: string;
     };
     assert.equal(health.ok, true);
-    assert.deepEqual(health.transports, ["api", "mcp", "adk", "cli"]);
+    assert.deepEqual(health.transports, ["api", "mcp", "adk", "cli", "tools"]);
+
+    const tools = await (await fetch(`${base}/v1/tools`)).json() as {
+      vercelSdk: string;
+      clis: Array<{ id: string }>;
+    };
+    assert.equal(tools.vercelSdk, "@vercel/sdk");
+    assert.ok(tools.clis.some((c) => c.id === "vercel-cli"));
+    assert.ok(tools.clis.some((c) => c.id === "gh"));
     assert.equal(health.provider, "echo");
 
     const ready = await fetch(`${base}/ready`);

@@ -72,6 +72,7 @@ What actually works today:
 - MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `write_file` (draft), `approve_write`, `list_agents`, `run_agent` (stdio + streamable HTTP)
 - HTTP host (`@mstrmnd/host`): `/health`, `/v1/*`, `/mcp`, `/adk`, `/.well-known/agent.json`; CLI remains Hermes
 - Portable stack: `infrastructure/Dockerfile.core` + `docker-compose.stack.yml` (core + Postgres; OS via `--profile os`)
+- Stack test CLIs: `@mstrmnd/stack-tools` wraps `@vercel/sdk` + `vercel` CLI + `gh` (read-only probes)
 - Operator pack template + `pnpm operator:init`
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
@@ -159,6 +160,7 @@ Update checkboxes here when work lands.
 ### Next (Operator Zero)
 
 - [x] Additional host transports beyond MCP stdio (HTTP API + MCP streamable HTTP + ADK agent card + core image)
+- [x] Vercel SDK/CLI + GitHub CLI stack-tools (read-only test probes; not in domain code)
 - [ ] Plugin SDK / onboarding template (after this stack)
 
 ### Next (Board)

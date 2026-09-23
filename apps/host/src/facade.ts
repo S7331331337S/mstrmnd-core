@@ -10,6 +10,7 @@ import {
   WorkspacePathError,
   type MstrmndRuntime,
 } from "@mstrmnd/intelligence-core";
+import { probeLocalClis, defaultRunner } from "@mstrmnd/stack-tools";
 
 export class HttpError extends Error {
   status: number;
@@ -29,7 +30,7 @@ export async function healthPayload(runtime: MstrmndRuntime) {
   return {
     ok: true,
     service: "mstrmnd-core",
-    transports: ["api", "mcp", "adk", "cli"],
+    transports: ["api", "mcp", "adk", "cli", "tools"],
     provider: runtime.provider.id,
     doctrineRef: runtime.context.doctrineRef,
     doctrineStatus: pin?.status ?? "missing",
@@ -37,6 +38,14 @@ export async function healthPayload(runtime: MstrmndRuntime) {
     operator: runtime.context.operator.displayName,
     memory: runtime.memory.size,
     mounts: runtime.workspace.listMounts().map((m) => m.id),
+  };
+}
+
+export async function toolsPayload() {
+  const clis = await probeLocalClis(defaultRunner);
+  return {
+    vercelSdk: "@vercel/sdk",
+    clis,
   };
 }
 

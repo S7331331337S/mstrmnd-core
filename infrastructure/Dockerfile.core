@@ -8,12 +8,19 @@
 
 FROM node:20-bookworm-slim
 
+ARG GH_VERSION=2.81.0
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 ca-certificates curl \
+  && apt-get install -y --no-install-recommends python3 ca-certificates curl git \
   && rm -rf /var/lib/apt/lists/* \
   && curl -fsSL -o /usr/local/bin/supercronic \
     https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
-  && chmod +x /usr/local/bin/supercronic
+  && chmod +x /usr/local/bin/supercronic \
+  && curl -fsSL -o /tmp/gh.tgz \
+    "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
+  && tar -xzf /tmp/gh.tgz -C /tmp \
+  && mv "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/gh \
+  && rm -rf /tmp/gh.tgz "/tmp/gh_${GH_VERSION}_linux_amd64" \
+  && gh --version
 
 WORKDIR /app
 RUN corepack enable
@@ -22,6 +29,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json doctrine.pin.
 COPY apps/hermes ./apps/hermes
 COPY apps/mcp-server ./apps/mcp-server
 COPY apps/host ./apps/host
+COPY apps/stack-tools ./apps/stack-tools
 COPY packages ./packages
 COPY scripts ./scripts
 COPY templates ./templates
@@ -35,6 +43,7 @@ RUN chmod +x /app/infrastructure/core-entrypoint.sh /app/infrastructure/cron-hea
     --filter @mstrmnd/host... \
     --filter @mstrmnd/hermes... \
     --filter @mstrmnd/mcp-server... \
+    --filter @mstrmnd/stack-tools... \
   && mkdir -p /app/.generated /data/vault \
   && cp -R /app/fixtures/doctrine-min /app/.generated/mstrmnd-md
 
@@ -46,6 +55,7 @@ ENV HOST=0.0.0.0
 ENV PORT=8080
 ENV MSTRMND_HOST_MODE=all
 ENV MSTRMND_CRON=1
+ENV PATH="/app/node_modules/.bin:${PATH}"
 
 VOLUME ["/data/vault", "/app/.generated", "/app/.mstrmnd"]
 EXPOSE 8080

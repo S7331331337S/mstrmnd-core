@@ -1,0 +1,23 @@
+{
+  "name": "@mstrmnd/stack-tools",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "start": "tsx src/cli.ts",
+    "check": "tsx src/cli.ts check"
+  },
+  "dependencies": {
+    "@vercel/sdk": "^1.27.0",
+    "tsx": "latest",
+    "vercel": "^48.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "latest"
+  }
+}

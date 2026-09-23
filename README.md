@@ -234,6 +234,10 @@ pnpm host                  # HTTP API + MCP streamable HTTP + ADK on :8080
 pnpm mcp                   # MCP stdio (Cursor plugin)
 pnpm hermes -- --dry-run   # CLI
 pnpm calibrate             # echo-provider regression against fixtures/calibration
+pnpm stack:tools           # Vercel CLI + @vercel/sdk + GitHub CLI versions
+pnpm stack:tools -- --live # read-only Vercel projects + gh run list (tokens optional)
+pnpm --filter @mstrmnd/stack-tools exec vercel --version
+gh --version
 ```
 
 ```bash
@@ -247,7 +251,7 @@ curl -X POST http://localhost:8080/v1/runs \
 
 OS (eve/Next) is a second image. Add it with `--profile os` (port 3000). Cloud Run spec: `infrastructure/cloudrun.yaml`. Vercel still deploys `mstrmnd-os/` as before.
 
-HTTP routes: `/health`, `/ready`, `/v1/context`, `/v1/doctrine`, `/v1/memory`, `/v1/workspace`, `/v1/agents`, `/v1/runs`, `/mcp`, `/adk`, `/.well-known/agent.json`. Workspace publishes still need `X-MSTRMND-APPROVE`. Network runs never publish.
+HTTP routes: `/health`, `/ready`, `/v1/context`, `/v1/doctrine`, `/v1/memory`, `/v1/workspace`, `/v1/agents`, `/v1/runs`, `/v1/tools`, `/mcp`, `/adk`, `/.well-known/agent.json`. Workspace publishes still need `X-MSTRMND-APPROVE`. Network runs never publish. `/v1/tools` reports Vercel CLI + `gh` versions; it does not call vendor APIs.
 
 ### Host integration
 

@@ -12,6 +12,7 @@
     "@mstrmnd/intelligence-core": "workspace:*",
     "@mstrmnd/mcp-server": "workspace:*",
     "@mstrmnd/schemas": "workspace:*",
+    "@mstrmnd/stack-tools": "workspace:*",
     "tsx": "latest"
   },
   "devDependencies": {

@@ -31,6 +31,8 @@ coordination are what persist.
 | Board budget / audit | `mstrmnd-os/lib/board-*.ts` | File ledger under `MSTRMND_HOME`; needs a mounted volume off-laptop | `MSTRMND_HOME` |
 | Intelligence host | `apps/host` (`@mstrmnd/host`) | Same Node process on Cloud Run / VPS / Compose — API + MCP HTTP + ADK + Hermes CLI | `MSTRMND_HOST_MODE` / `PORT` |
 | Core image | `infrastructure/Dockerfile.core` | Build once, run anywhere; GHCR tag or local `mstrmnd-core` | compose / Cloud Run |
+| Vercel deploy/test | `apps/stack-tools` (`@vercel/sdk` + `vercel` CLI) | Compose/Cloud Run/VPS path stays the core image; SDK is probe-only | `VERCEL_TOKEN` / `pnpm stack:tools` |
+| GitHub test CLI | `gh` in the core image and CI | Same git remote; no GitHub coupling in domain code | `GH_TOKEN` / `gh auth login` |
 
 Nothing in the table is a rewrite. Every row is a configuration change, because
 each vendor surface is reached through a seam rather than imported into domain
@@ -166,6 +168,8 @@ cannot reach the runtime.
 | `MSTRMND_HOST_MODE` | `all` | Core image: `all` \| `api` \| `mcp` \| `mcp-stdio` \| `cli` \| `calibrate` \| `cron` |
 | `MSTRMND_PUBLIC_URL` | unset | Public base URL written into the ADK / A2A agent card |
 | `MSTRMND_APPROVE_TOKEN` | unset | Required header `X-MSTRMND-APPROVE` to publish HTTP drafts |
+| `VERCEL_TOKEN` | unset | Optional read-only Vercel SDK probe (`pnpm stack:tools -- --live`) |
+| `GH_TOKEN` | unset | Optional GitHub CLI probe (`gh api`, `gh run list`) |
 
 `auto` sandbox selection resolves in eve's own priority order: Vercel Sandbox
 when deployed on Vercel, then Docker, then microsandbox, then just-bash.

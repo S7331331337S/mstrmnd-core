@@ -26,6 +26,7 @@ import {
   runAgent,
   searchMemory,
   stageWrite,
+  toolsPayload,
 } from "./facade";
 
 const MAX_BODY = 1_000_000;
@@ -138,6 +139,10 @@ export async function createHostServer(opts: {
       }
       if (method === "GET" && path === "/.well-known/agent.json") {
         send(res, 200, agentCard(runtime, publicBaseUrl(host)));
+        return;
+      }
+      if (method === "GET" && path === "/v1/tools") {
+        send(res, 200, await toolsPayload());
         return;
       }
       if (method === "GET" && path === "/v1/context") {

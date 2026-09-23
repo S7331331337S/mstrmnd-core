@@ -31,6 +31,9 @@ case "$MODE" in
   calibrate)
     exec pnpm --filter @mstrmnd/host calibrate
     ;;
+  tools)
+    exec pnpm --filter @mstrmnd/stack-tools check "$@"
+    ;;
   api|mcp|all|host)
     if [ "${MSTRMND_CRON:-1}" = "1" ]; then
       supercronic /app/infrastructure/crontab &
@@ -38,7 +41,7 @@ case "$MODE" in
     exec pnpm --filter @mstrmnd/host exec tsx src/index.ts
     ;;
   *)
-    echo "unknown MSTRMND_HOST_MODE=$MODE (all|api|mcp|mcp-stdio|cli|calibrate|cron)" >&2
+    echo "unknown MSTRMND_HOST_MODE=$MODE (all|api|mcp|mcp-stdio|cli|calibrate|tools|cron)" >&2
     exit 1
     ;;
 esac
