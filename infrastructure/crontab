@@ -1,0 +1,6 @@
+# MSTRMND core — in-container schedule (supercronic).
+# Calibration is echo-provider by default; pin a model via env to compare later.
+
+*/15 * * * * /app/infrastructure/cron-health.sh
+0 * * * * cd /app && pnpm --filter @mstrmnd/host calibrate
+0 4 * * * cd /app && python3 scripts/validate-doctrine.py

@@ -1,23 +1,20 @@
 {
-  "name": "@mstrmnd/mcp-server",
+  "name": "@mstrmnd/host",
   "private": true,
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
-  },
   "scripts": {
-    "dev": "tsx src/server.ts",
-    "start": "tsx src/server.ts"
+    "dev": "tsx src/index.ts",
+    "start": "tsx src/index.ts",
+    "calibrate": "tsx src/calibrate.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@mstrmnd/intelligence-core": "workspace:*",
+    "@mstrmnd/mcp-server": "workspace:*",
     "@mstrmnd/schemas": "workspace:*",
-    "zod": "^4.4.3"
+    "tsx": "latest"
   },
   "devDependencies": {
-    "tsx": "latest"
+    "@types/node": "latest"
   }
 }

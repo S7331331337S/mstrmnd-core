@@ -1,0 +1,56 @@
+# MSTRMND Core — portable host image (API + MCP HTTP + ADK + CLI + cron).
+#
+#   docker build -f infrastructure/Dockerfile.core -t mstrmnd-core .
+#   docker run -p 8080:8080 -v mstrmnd-vault:/data/vault mstrmnd-core
+#
+# Runs unchanged on Cloud Run, ECS, Fly, Railway, Kubernetes, or a VPS.
+# mstrmnd-os is a separate image (mstrmnd-os/Dockerfile) for the eve/Next host.
+
+FROM node:20-bookworm-slim
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 ca-certificates curl \
+  && rm -rf /var/lib/apt/lists/* \
+  && curl -fsSL -o /usr/local/bin/supercronic \
+    https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
+  && chmod +x /usr/local/bin/supercronic
+
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json doctrine.pin.json ./
+COPY apps/hermes ./apps/hermes
+COPY apps/mcp-server ./apps/mcp-server
+COPY apps/host ./apps/host
+COPY packages ./packages
+COPY scripts ./scripts
+COPY templates ./templates
+COPY fixtures ./fixtures
+COPY infrastructure/crontab ./infrastructure/crontab
+COPY infrastructure/core-entrypoint.sh ./infrastructure/core-entrypoint.sh
+COPY infrastructure/cron-health.sh ./infrastructure/cron-health.sh
+
+RUN chmod +x /app/infrastructure/core-entrypoint.sh /app/infrastructure/cron-health.sh \
+  && pnpm install --frozen-lockfile \
+    --filter @mstrmnd/host... \
+    --filter @mstrmnd/hermes... \
+    --filter @mstrmnd/mcp-server... \
+  && mkdir -p /app/.generated /data/vault \
+  && cp -R /app/fixtures/doctrine-min /app/.generated/mstrmnd-md
+
+ENV NODE_ENV=production
+ENV MSTRMND_CORE=/app
+ENV MSTRMND_MODEL_PROVIDER=echo
+ENV OBSIDIAN_VAULT_PATH=/data/vault
+ENV HOST=0.0.0.0
+ENV PORT=8080
+ENV MSTRMND_HOST_MODE=all
+ENV MSTRMND_CRON=1
+
+VOLUME ["/data/vault", "/app/.generated", "/app/.mstrmnd"]
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8080/health || exit 1
+
+ENTRYPOINT ["/app/infrastructure/core-entrypoint.sh"]

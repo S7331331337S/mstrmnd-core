@@ -225,9 +225,33 @@ pnpm board:web
 
 See [`apps/board/README.md`](apps/board/README.md). Live rooms sign in to `mstrmnd-os` and stream through `/api/board/complete`. No vendor API key lives on the device.
 
+### Portable stack (API / MCP / ADK / CLI)
+
+Same runtime, four hosts, one image:
+
+```bash
+pnpm host                  # HTTP API + MCP streamable HTTP + ADK on :8080
+pnpm mcp                   # MCP stdio (Cursor plugin)
+pnpm hermes -- --dry-run   # CLI
+pnpm calibrate             # echo-provider regression against fixtures/calibration
+```
+
+```bash
+docker compose -f infrastructure/docker-compose.stack.yml up --build core postgres
+curl http://localhost:8080/health
+curl http://localhost:8080/adk
+curl -X POST http://localhost:8080/v1/runs \
+  -H 'content-type: application/json' \
+  -d '{"goal":"Summarize Operator Zero","dryRun":true}'
+```
+
+OS (eve/Next) is a second image. Add it with `--profile os` (port 3000). Cloud Run spec: `infrastructure/cloudrun.yaml`. Vercel still deploys `mstrmnd-os/` as before.
+
+HTTP routes: `/health`, `/ready`, `/v1/context`, `/v1/doctrine`, `/v1/memory`, `/v1/workspace`, `/v1/agents`, `/v1/runs`, `/mcp`, `/adk`, `/.well-known/agent.json`. Workspace publishes still need `X-MSTRMND-APPROVE`. Network runs never publish.
+
 ### Host integration
 
-Hermes CLI and MCP both boot via `createRuntime()` in `@mstrmnd/intelligence-core`. Configure:
+Hermes CLI, MCP, and the HTTP host all boot via `createRuntime()` in `@mstrmnd/intelligence-core`. Configure:
 
 - `OBSIDIAN_VAULT_PATH` — vault or operator-pack root
 - `MSTRMND_MODEL_PROVIDER` — `echo` (default, offline) or `openai` / `openai-compatible`
@@ -269,7 +293,7 @@ bash scripts/run-icloud-map.sh
 
 ## Status
 
-Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent, model-proposed tools, fail-closed ThreatBoundary with per-tool `evaluateBoundaryAction`), shared runtime factory, MCP plugin tools, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
+Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent, model-proposed tools, fail-closed ThreatBoundary with per-tool `evaluateBoundaryAction`), shared runtime factory, MCP (stdio + HTTP), HTTP host + ADK card, echo calibration, portable core image, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
 
 Hermes/MCP (`@mstrmnd/intelligence-core`) and eve OS (`mstrmnd-os`) are two runtimes until a later adapter. CI typechecks `mstrmnd-os` on Node 24 via `pnpm --dir mstrmnd-os typecheck`; it is not part of the root pnpm workspace. Plugin SDK / onboarding template wait until after Operator Zero writes + model-proposed planning (both landed on this stack).
 

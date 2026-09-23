@@ -29,6 +29,15 @@
       "OBSIDIAN_VAULT_PATH": "<path-to-this-operator-pack-or-vault>"
     }
   },
+  "http": {
+    "command": "pnpm",
+    "args": ["host"],
+    "url": "http://127.0.0.1:8080",
+    "routes": ["/health", "/v1", "/mcp", "/adk"]
+  },
+  "adk": {
+    "agentCard": "http://127.0.0.1:8080/.well-known/agent.json"
+  },
   "hermes": {
     "command": "pnpm hermes",
     "args": ["--goal", "Summarize operator context", "--dry-run"]

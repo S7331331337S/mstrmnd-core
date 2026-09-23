@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+.turbo
+.git
+.generated
+.mstrmnd
+.env
+.env.doctrine
+.venv
+kits
+published
+apps/board
+mstrmnd-os
+*.log

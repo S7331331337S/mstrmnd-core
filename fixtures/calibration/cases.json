@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "cases": [
+    {
+      "id": "operator-zero-dry",
+      "goal": "Summarize Operator Zero context and workspace",
+      "agentId": "operator-agent",
+      "expect": {
+        "status": "succeeded",
+        "minSteps": 1,
+        "doctrinePinned": true
+      }
+    },
+    {
+      "id": "workspace-scout",
+      "goal": "List workspace mounts and summarize what is there",
+      "agentId": "workspace-scout",
+      "expect": {
+        "status": "succeeded",
+        "minSteps": 1
+      }
+    }
+  ]
+}

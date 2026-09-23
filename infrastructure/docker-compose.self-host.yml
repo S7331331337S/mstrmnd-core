@@ -6,6 +6,9 @@
 #
 #   docker compose -f infrastructure/docker-compose.self-host.yml up --build
 #
+# Prefer infrastructure/docker-compose.stack.yml when you also want the
+# intelligence-core host (API / MCP HTTP / ADK / cron) on :8080.
+#
 # Sandbox note: MSTRMND_SANDBOX=docker needs a reachable Docker daemon, and the
 # socket mount below is how the container gets one. Mounting the socket grants
 # the container control of the host's Docker — a real privilege escalation, and
@@ -14,6 +17,36 @@
 # and set MSTRMND_SANDBOX=justbash, if that trade is not acceptable here.
 
 services:
+  core:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.core
+    image: mstrmnd-core:local
+    container_name: mstrmnd-core
+    ports:
+      - "8080:8080"
+    environment:
+      MSTRMND_HOST_MODE: all
+      MSTRMND_CRON: ${MSTRMND_CRON:-1}
+      MSTRMND_MODEL_PROVIDER: ${MSTRMND_MODEL_PROVIDER:-echo}
+      MSTRMND_MODEL_API_KEY: ${MSTRMND_MODEL_API_KEY:-}
+      MSTRMND_MODEL_BASE_URL: ${MSTRMND_MODEL_BASE_URL:-}
+      MSTRMND_MODEL_NAME: ${MSTRMND_MODEL_NAME:-}
+      MSTRMND_APPROVE_TOKEN: ${MSTRMND_APPROVE_TOKEN:-}
+      MSTRMND_PUBLIC_URL: ${MSTRMND_PUBLIC_URL:-http://localhost:8080}
+      OBSIDIAN_VAULT_PATH: /data/vault
+    volumes:
+      - vault_data:/data/vault
+      - core_generated:/app/.generated
+      - core_runs:/app/.mstrmnd
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 25s
+    restart: unless-stopped
+
   os:
     build:
       context: ../mstrmnd-os
@@ -66,3 +99,6 @@ services:
 volumes:
   eve_data:
   postgres_data:
+  vault_data:
+  core_generated:
+  core_runs:

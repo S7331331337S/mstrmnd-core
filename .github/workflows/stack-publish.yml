@@ -1,0 +1,54 @@
+name: Stack image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/host/**"
+      - "apps/hermes/**"
+      - "apps/mcp-server/**"
+      - "packages/**"
+      - "infrastructure/**"
+      - "fixtures/calibration/**"
+      - "doctrine.pin.json"
+      - ".github/workflows/stack-publish.yml"
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm calibrate
+      - run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "scheduled calibration"
+
+  publish-core:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infrastructure/Dockerfile.core
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mstrmnd-core:latest
+            ghcr.io/${{ github.repository_owner }}/mstrmnd-core:${{ github.sha }}

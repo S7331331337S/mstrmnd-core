@@ -68,8 +68,10 @@ What actually works today:
 - `assembleContext()` → `ContextPack` (doctrine pin + company/operator + identity + memory hits)
 - `WorkspaceService` mounts with list/read/stat/write; writes stage under `.mstrmnd/drafts/` and publish only after human approval
 - Hermes orchestrator shell: parent `operator-agent` + `workspace-scout` sub-agent (default `EchoProvider`; `openai` / `openai-compatible` when env is set). Parent executes **model-proposed** allowlisted tools (`evaluateBoundaryAction` on each dispatch). Interactive writes prompt `y/yes`; non-interactive and `--dry-run` never publish. `Orchestrator.createRun` is fail-closed on a `ThreatBoundary`; `createRuntime` attaches the Operator Zero default (deny-all egress).
-- Shared `createRuntime()` factory used by Hermes and MCP
-- MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `write_file` (draft), `approve_write`, `list_agents`, `run_agent`
+- Shared `createRuntime()` factory used by Hermes, MCP, and the HTTP host
+- MCP tools: `search_memory`, `get_note`, `get_identity`, `get_context`, `list_workspace`, `read_file`, `write_file` (draft), `approve_write`, `list_agents`, `run_agent` (stdio + streamable HTTP)
+- HTTP host (`@mstrmnd/host`): `/health`, `/v1/*`, `/mcp`, `/adk`, `/.well-known/agent.json`; CLI remains Hermes
+- Portable stack: `infrastructure/Dockerfile.core` + `docker-compose.stack.yml` (core + Postgres; OS via `--profile os`)
 - Operator pack template + `pnpm operator:init`
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
@@ -79,7 +81,7 @@ What actually works today:
 
 What is still thin / next:
 
-- Additional host transports beyond MCP stdio
+- Plugin SDK / extra harness adapters (HTTP + MCP HTTP + ADK card + CLI are landed)
 - Multi-operator managed deploy
 - Extract Board packages only after the app runs intact (`deliberation`, `agent-roster`, `model-router`, `design-tokens`)
 
@@ -112,7 +114,7 @@ Full longer roadmap: [`modernization-roadmap.md`](./modernization-roadmap.md). P
 
 **Intelligence layer core — landed (context, workspace, orchestrator, plugin factory, operator pack).**
 
-Next hardening: broader harness adapters / plugin SDK after this Operator Zero stack. Policy-gated workspace writes, model-proposed parent planning, `mstrmnd-os` Node 24 typecheck in CI, fail-closed ThreatBoundary attach, and per-tool `evaluateBoundaryAction` on dispatch landed. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
+Next hardening: plugin SDK after this Operator Zero stack. HTTP host, MCP streamable HTTP, ADK card, echo calibration, and the core container image are landed. Policy-gated workspace writes, model-proposed parent planning, `mstrmnd-os` Node 24 typecheck in CI, fail-closed ThreatBoundary attach, and per-tool `evaluateBoundaryAction` on dispatch landed. `openai` / `openai-compatible` already landed; CI still defaults to `echo`.
 
 PRESS reference workflow remains deferred.
 
@@ -156,7 +158,8 @@ Update checkboxes here when work lands.
 
 ### Next (Operator Zero)
 
-- [ ] Additional host transports beyond MCP stdio (plugin SDK after this stack)
+- [x] Additional host transports beyond MCP stdio (HTTP API + MCP streamable HTTP + ADK agent card + core image)
+- [ ] Plugin SDK / onboarding template (after this stack)
 
 ### Next (Board)
 
@@ -172,7 +175,7 @@ Update checkboxes here when work lands.
 - Brand verify / Signal-on-publish wiring
 - Full multi-tenant managed deploy
 - Empty package scaffolding for optics
-- Plugin SDK / onboarding template (after Operator Zero can write + plan)
+- Plugin SDK / onboarding template (HTTP/MCP/ADK/CLI hosts landed; SDK still later)
 - Un-gated / auto-publish workspace writes (policy-gated draft → approve → publish is landed)
 
 ---
@@ -230,10 +233,10 @@ Update checkboxes here when work lands.
 
 ## Status stamp
 
-- **Last aligned:** 2026-09-03
-- **Priority:** Operator Zero MVP — context → policy-gated workspace writes → richer parent planning → fail-closed ThreatBoundary. Plugin SDK after that.
-- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, policy-gated writes (draft → approve → publish), Hermes orchestrator, MCP plugin tools, operator-pack template, openai-compatible provider (CI default `echo`), fail-closed ThreatBoundary on createRun with per-tool `evaluateBoundaryAction`; Board decision-room imported at `apps/board`
-- **Next:** plugin SDK / additional host transports (after this Operator Zero stack)
+- **Last aligned:** 2026-09-23
+- **Priority:** Operator Zero MVP — portable stack (core image + compose) with API / MCP / ADK / CLI. Plugin SDK after that.
+- **Code maturity:** Operator Zero runtime with context pack, workspace mounts, policy-gated writes (draft → approve → publish), Hermes orchestrator, MCP (stdio + HTTP), HTTP host + ADK card, echo calibration cron, core container image, openai-compatible provider (CI default `echo`), fail-closed ThreatBoundary on createRun with per-tool `evaluateBoundaryAction`; Board decision-room imported at `apps/board`
+- **Next:** plugin SDK / GHCR promotion of the core image on more hosts
 
 ## PR cleanup (2026-09-14)
 
