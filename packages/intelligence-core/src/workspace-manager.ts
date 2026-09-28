@@ -117,7 +117,10 @@ export class WorkspaceManager {
     const normalised = abs.endsWith(path.sep) ? abs : abs + path.sep;
     const allowed = this.policy.allowedPrefixes.some((prefix) => {
       const p = prefix.endsWith(path.sep) ? prefix : prefix + path.sep;
-      return normalised.startsWith(p) || abs.startsWith(prefix);
+      const normalisedPrefix = prefix.endsWith(path.sep)
+        ? prefix.slice(0, -1)
+        : prefix;
+      return normalised.startsWith(p) || abs === normalisedPrefix;
     });
 
     if (!allowed) {
