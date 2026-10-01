@@ -24,13 +24,13 @@ export function PixelWordmark({
   className?: string;
 }) {
   const [tick, setTick] = useState(0);
-  const [animate, setAnimate] = useState(false);
+  // Stays false under reduced motion because the interval never starts.
+  const animate = tick > 0;
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (reduced.matches) return;
 
-    setAnimate(true);
     const id = window.setInterval(() => {
       setTick((t) => t + 1);
     }, TICK_MS);

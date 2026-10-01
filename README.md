@@ -1,8 +1,48 @@
+<div align="center">
+
+<img src="assets/banner-chromatic.svg" width="100%" alt="MSTRMND: models change, the intelligence layer persists." />
+
+<br/>
+
+[![mstrmnd.dev](https://img.shields.io/badge/mstrmnd.dev-0B0B0F?style=for-the-badge&logo=vercel&logoColor=7C7CF0&labelColor=0B0B0F&color=7C7CF0)](https://mstrmnd.dev)
+[![runtime](https://img.shields.io/badge/runtime-model--agnostic-0B0B0F?style=for-the-badge&labelColor=0B0B0F&color=3ED9A6)](#runtime-loop)
+[![doctrine](https://img.shields.io/badge/doctrine-mstrmnd.md-0B0B0F?style=for-the-badge&labelColor=0B0B0F&color=FF5A1F)](https://github.com/S7331331337S/mstrmnd.md)
+[![contact](https://img.shields.io/badge/hello@mstrmnd.ai-0B0B0F?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0B0B0F&color=2a2a35)](mailto:hello@mstrmnd.ai)
+
+</div>
+
 # MSTRMND Core
 
 **Executable operational intelligence infrastructure.**
 
 > Models change. The intelligence layer persists.
+
+## `// MSTRMND-CORE`
+
+```text
+┌────────────┐   ┌────────────┐   ┌───────────────┐   ┌────────────┐
+│  CONTEXT   │──▶│   MEMORY   │──▶│ ORCHESTRATION │──▶│   SKILLS   │
+│ goals·data │   │ ranked·own │   │ route·delegate│   │  packaged  │
+└────────────┘   └────────────┘   └───────────────┘   └─────┬──────┘
+                                                            │
+┌────────────┐   ┌────────────┐   ┌───────────────┐   ┌─────▼──────┐
+│ CONTINUOUS │◀──│ EVALUATION │◀──│  GOVERNANCE   │◀──│   TOOLS    │
+│  LEARNING  │   │ scorecards │   │ policy·approve│   │ harnessed  │
+└─────┬──────┘   └────────────┘   └───────────────┘   └────────────┘
+      │
+      └──────────▶  feeds back into CONTEXT   [ loop closed ]
+```
+
+Providers are interchangeable. The runtime routes across them, enforces policy, and persists state so agents keep working when the model underneath changes.
+
+### Runtime loop
+
+| Phase | Directive |
+| :-- | :-- |
+| **01 · Context** | Load goals, systems, data, constraints, and users. |
+| **02 · Plan** | Define architecture and standards. |
+| **03 · Orchestrate & Build** | Ship runtime, product, and infrastructure. |
+| **04 · Evaluate & Learn** | Close the loop with scorecards and testing. |
 
 MSTRMND Core is the runtime implementation of the doctrine defined in [`mstrmnd.md`](https://github.com/S7331331337S/mstrmnd.md).
 
@@ -314,3 +354,20 @@ python scripts/generate_arch_spec.py \
 ```
 
 Remote provider access now requires an explicit host-supplied boundary and per-call budget reservation; see [provider configuration and cleanup decisions](docs/pr-cleanup-2026-09-14.md#remote-provider-compatibility). Echo remains the offline default.
+
+## `// TOKENS`
+
+<div align="center">
+
+![obsidian](https://img.shields.io/badge/OBSIDIAN-0B0B0F?style=for-the-badge&labelColor=0B0B0F&color=23232e)
+![field-orange](https://img.shields.io/badge/FIELD_ORANGE-FF5A1F?style=for-the-badge&labelColor=0B0B0F)
+![violet](https://img.shields.io/badge/VIOLET-7C7CF0?style=for-the-badge&labelColor=0B0B0F)
+![mint](https://img.shields.io/badge/MINT-3ED9A6?style=for-the-badge&labelColor=0B0B0F)
+
+</div>
+
+<div align="center">
+
+<sub><code>MSTRMND LABS</code> · REMOTE / GLOBAL · OPEN SOURCE / OPEN MIND / OPEN INTELLIGENCE</sub>
+
+</div>
