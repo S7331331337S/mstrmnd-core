@@ -22,7 +22,6 @@ case "$MODE" in
     exec supercronic /app/infrastructure/crontab
     ;;
   cli|hermes)
-    shift
     exec pnpm --filter @mstrmnd/hermes exec tsx src/index.ts "$@"
     ;;
   mcp-stdio)
