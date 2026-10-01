@@ -1,0 +1,16 @@
+{
+  "name": "@masterbrain/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./*.ts",
+    "./*.ts": "./*.ts"
+  },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@masterbrain/shared": "workspace:*", "@supabase/supabase-js": "^2.45.0" },
+  "devDependencies": { "typescript": "^5.6.0" }
+}
