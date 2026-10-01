@@ -1,0 +1,21 @@
+{
+  "name": "@mstrmnd/host",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "start": "tsx src/index.ts",
+    "calibrate": "tsx src/calibrate.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@mstrmnd/intelligence-core": "workspace:*",
+    "@mstrmnd/mcp-server": "workspace:*",
+    "@mstrmnd/schemas": "workspace:*",
+    "@mstrmnd/stack-tools": "workspace:*",
+    "tsx": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest"
+  }
+}

@@ -1,0 +1,66 @@
+# MSTRMND Core — portable host image (API + MCP HTTP + ADK + CLI + cron).
+#
+#   docker build -f infrastructure/Dockerfile.core -t mstrmnd-core .
+#   docker run -p 8080:8080 -v mstrmnd-vault:/data/vault mstrmnd-core
+#
+# Runs unchanged on Cloud Run, ECS, Fly, Railway, Kubernetes, or a VPS.
+# mstrmnd-os is a separate image (mstrmnd-os/Dockerfile) for the eve/Next host.
+
+FROM node:20-bookworm-slim
+
+ARG GH_VERSION=2.81.0
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 ca-certificates curl git \
+  && rm -rf /var/lib/apt/lists/* \
+  && curl -fsSL -o /usr/local/bin/supercronic \
+    https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
+  && chmod +x /usr/local/bin/supercronic \
+  && curl -fsSL -o /tmp/gh.tgz \
+    "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
+  && tar -xzf /tmp/gh.tgz -C /tmp \
+  && mv "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/gh \
+  && rm -rf /tmp/gh.tgz "/tmp/gh_${GH_VERSION}_linux_amd64" \
+  && gh --version
+
+WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json doctrine.pin.json ./
+COPY apps/hermes ./apps/hermes
+COPY apps/mcp-server ./apps/mcp-server
+COPY apps/host ./apps/host
+COPY apps/stack-tools ./apps/stack-tools
+COPY packages ./packages
+COPY scripts ./scripts
+COPY templates ./templates
+COPY fixtures ./fixtures
+COPY infrastructure/crontab ./infrastructure/crontab
+COPY infrastructure/core-entrypoint.sh ./infrastructure/core-entrypoint.sh
+COPY infrastructure/cron-health.sh ./infrastructure/cron-health.sh
+
+RUN chmod +x /app/infrastructure/core-entrypoint.sh /app/infrastructure/cron-health.sh \
+  && pnpm install --frozen-lockfile \
+    --filter @mstrmnd/host... \
+    --filter @mstrmnd/hermes... \
+    --filter @mstrmnd/mcp-server... \
+    --filter @mstrmnd/stack-tools... \
+  && mkdir -p /app/.generated /data/vault \
+  && cp -R /app/fixtures/doctrine-min /app/.generated/mstrmnd-md
+
+ENV NODE_ENV=production
+ENV MSTRMND_CORE=/app
+ENV MSTRMND_MODEL_PROVIDER=echo
+ENV OBSIDIAN_VAULT_PATH=/data/vault
+ENV HOST=0.0.0.0
+ENV PORT=8080
+ENV MSTRMND_HOST_MODE=all
+ENV MSTRMND_CRON=1
+ENV PATH="/app/node_modules/.bin:${PATH}"
+
+VOLUME ["/data/vault", "/app/.generated", "/app/.mstrmnd"]
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8080/health || exit 1
+
+ENTRYPOINT ["/app/infrastructure/core-entrypoint.sh"]

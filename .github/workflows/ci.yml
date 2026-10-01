@@ -54,6 +54,52 @@ jobs:
       - name: Hermes orchestrator dry-run
         run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI dry-run"
 
+      - name: Calibration (echo)
+        run: pnpm calibrate
+
+      - name: Stack tools (Vercel CLI/SDK + GitHub CLI)
+        env:
+          MSTRMND_TOOLS_LIVE: "0"
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh --version
+          pnpm --filter @mstrmnd/stack-tools exec vercel --version
+          pnpm stack:tools
+          pnpm stack:tools -- --live --json | tee /tmp/stack-tools-live.json
+
+  stack-image:
+    name: core image smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build core image
+        run: docker build -f infrastructure/Dockerfile.core -t mstrmnd-core:ci .
+
+      - name: Compose config
+        run: docker compose -f infrastructure/docker-compose.stack.yml config >/dev/null
+
+      - name: Run and smoke
+        run: |
+          docker run -d --name mstrmnd-core-ci -p 8080:8080 -e MSTRMND_CRON=0 mstrmnd-core:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/health >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8080/health
+          curl -fsS http://127.0.0.1:8080/ready
+          curl -fsS http://127.0.0.1:8080/adk
+          curl -fsS http://127.0.0.1:8080/.well-known/agent.json
+          curl -fsS http://127.0.0.1:8080/v1/tools
+          docker exec mstrmnd-core-ci gh --version
+          docker exec mstrmnd-core-ci vercel --version
+          curl -fsS -X POST http://127.0.0.1:8080/v1/runs \
+            -H 'content-type: application/json' \
+            -d '{"goal":"CI stack smoke","dryRun":true}'
+          docker logs mstrmnd-core-ci | tail -n 40
+          docker rm -f mstrmnd-core-ci
+
   # Nested workspace (Node 24). Keep out of the root pnpm graph —
   # Hermes/MCP and eve OS are two runtimes until a later adapter.
   mstrmnd-os:

@@ -1,0 +1,96 @@
+# MSTRMND portable stack — core + OS + Postgres.
+#
+#   docker compose -f infrastructure/docker-compose.stack.yml up --build
+#   # OS (eve/Next) is a longer build; skip with:
+#   docker compose -f infrastructure/docker-compose.stack.yml up --build core postgres
+#
+# Hosts:
+#   core  :8080  HTTP API / MCP / ADK / calibration
+#   os    :3000  Next + eve  (/eve/v1/health)
+#   postgres :5432
+#
+# Same compose on a VPS, Cloud Run sidecars, or Compose on GCE.
+# Vercel still deploys mstrmnd-os from /mstrmnd-os; core stays a container.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mstrmnd-postgres
+    environment:
+      POSTGRES_USER: mstrmnd
+      POSTGRES_PASSWORD: mstrmnd
+      POSTGRES_DB: mstrmnd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mstrmnd -d mstrmnd"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  core:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.core
+    image: mstrmnd-core:local
+    container_name: mstrmnd-core
+    ports:
+      - "8080:8080"
+    environment:
+      MSTRMND_HOST_MODE: all
+      MSTRMND_CRON: ${MSTRMND_CRON:-1}
+      MSTRMND_MODEL_PROVIDER: ${MSTRMND_MODEL_PROVIDER:-echo}
+      MSTRMND_MODEL_API_KEY: ${MSTRMND_MODEL_API_KEY:-}
+      MSTRMND_MODEL_BASE_URL: ${MSTRMND_MODEL_BASE_URL:-}
+      MSTRMND_MODEL_NAME: ${MSTRMND_MODEL_NAME:-}
+      MSTRMND_APPROVE_TOKEN: ${MSTRMND_APPROVE_TOKEN:-}
+      MSTRMND_PUBLIC_URL: ${MSTRMND_PUBLIC_URL:-http://localhost:8080}
+      OBSIDIAN_VAULT_PATH: /data/vault
+    volumes:
+      - vault_data:/data/vault
+      - core_generated:/app/.generated
+      - core_runs:/app/.mstrmnd
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 25s
+    restart: unless-stopped
+
+  os:
+    build:
+      context: ../mstrmnd-os
+      dockerfile: Dockerfile
+    image: mstrmnd-os:local
+    container_name: mstrmnd-os
+    profiles: ["os"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://mstrmnd:mstrmnd@postgres:5432/mstrmnd
+      AUTH_SECRET: ${AUTH_SECRET:-dev-only-change-me}
+      MSTRMND_PROVIDER: ${MSTRMND_PROVIDER:-}
+      MSTRMND_MODEL: ${MSTRMND_MODEL:-}
+      MSTRMND_MODEL_BASE_URL: ${MSTRMND_MODEL_BASE_URL:-}
+      MSTRMND_MODEL_API_KEY: ${MSTRMND_MODEL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MSTRMND_SANDBOX: ${MSTRMND_SANDBOX:-justbash}
+      MSTRMND_SANDBOX_NETWORK: ${MSTRMND_SANDBOX_NETWORK:-deny-all}
+    volumes:
+      - eve_data:/app/.eve
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  vault_data:
+  core_generated:
+  core_runs:
+  eve_data:

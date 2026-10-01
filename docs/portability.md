@@ -29,6 +29,10 @@ coordination are what persist.
 | WebGPU docs MCP | `mstrmnd-os/agent/lib/vgpu-mcp.ts` | Local modern MCP HTTP (`npx vgpu mcp` behind HTTP, or another URL) | `MSTRMND_VGPU_MCP_URL` |
 | Board client | `apps/board` | Signs in to OS; streams `/api/board/complete`; no vendor SDK | `EXPO_PUBLIC_MSTRMND_API_URL` |
 | Board budget / audit | `mstrmnd-os/lib/board-*.ts` | File ledger under `MSTRMND_HOME`; needs a mounted volume off-laptop | `MSTRMND_HOME` |
+| Intelligence host | `apps/host` (`@mstrmnd/host`) | Same Node process on Cloud Run / VPS / Compose — API + MCP HTTP + ADK + Hermes CLI | `MSTRMND_HOST_MODE` / `PORT` |
+| Core image | `infrastructure/Dockerfile.core` | Build once, run anywhere; GHCR tag or local `mstrmnd-core` | compose / Cloud Run |
+| Vercel deploy/test | `apps/stack-tools` (`@vercel/sdk` + `vercel` CLI) | Compose/Cloud Run/VPS path stays the core image; SDK is probe-only | `VERCEL_TOKEN` / `pnpm stack:tools` |
+| GitHub test CLI | `gh` in the core image and CI | Same git remote; no GitHub coupling in domain code | `GH_TOKEN` / `gh auth login` |
 
 Nothing in the table is a rewrite. Every row is a configuration change, because
 each vendor surface is reached through a seam rather than imported into domain
@@ -83,20 +87,29 @@ Two build-shape details worth keeping:
 ### 1. Run the whole stack off-platform
 
 ```bash
+# Core host (API / MCP / ADK / cron) + Postgres
+docker compose -f infrastructure/docker-compose.stack.yml up --build core postgres
+
+# Same plus OS (eve/Next) — longer image build
 AUTH_SECRET=$(openssl rand -hex 32) \
-  docker compose -f infrastructure/docker-compose.self-host.yml up --build
+  docker compose -f infrastructure/docker-compose.stack.yml --profile os up --build
 ```
 
-Brings up the standalone Next.js server (UI + the eve runtime same-origin at
-`/eve/v1/*`), durable workflow state on a named volume, and Postgres. Verify:
+`core` answers on `:8080`. OS answers on `:3000` with the eve runtime same-origin
+at `/eve/v1/*`. Verify:
 
 ```bash
-curl http://localhost:3000/eve/v1/health
+curl http://localhost:8080/health
+curl http://localhost:8080/adk
+curl http://localhost:3000/eve/v1/health   # with --profile os
 ```
 
 ### 2. Or build the image alone
 
 ```bash
+docker build -f infrastructure/Dockerfile.core -t mstrmnd-core .
+docker run -p 8080:8080 -v mstrmnd-vault:/data/vault mstrmnd-core
+
 cd mstrmnd-os
 docker build -t mstrmnd-os .
 docker run -p 3000:3000 --env-file .env -v mstrmnd-eve:/app/.eve mstrmnd-os
@@ -152,6 +165,11 @@ cannot reach the runtime.
 | `BOARD_MAX_PROMPT_CHARS` | `48000` | Max system + messages size for one Board turn |
 | `BOARD_CORS_ORIGIN` | `*` | Allowed origin for Board web → OS |
 | `MSTRMND_HOME` | `./.mstrmnd` | File home for Board budget/audit (and other OS files) |
+| `MSTRMND_HOST_MODE` | `all` | Core image: `all` \| `api` \| `mcp` \| `mcp-stdio` \| `cli` \| `calibrate` \| `cron` |
+| `MSTRMND_PUBLIC_URL` | unset | Public base URL written into the ADK / A2A agent card |
+| `MSTRMND_APPROVE_TOKEN` | unset | Required header `X-MSTRMND-APPROVE` to publish HTTP drafts |
+| `VERCEL_TOKEN` | unset | Optional read-only Vercel SDK probe (`pnpm stack:tools -- --live`) |
+| `GH_TOKEN` | unset | Optional GitHub CLI probe (`gh api`, `gh run list`) |
 
 `auto` sandbox selection resolves in eve's own priority order: Vercel Sandbox
 when deployed on Vercel, then Docker, then microsandbox, then just-bash.
