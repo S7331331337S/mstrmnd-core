@@ -6,7 +6,7 @@
 # Runs unchanged on Cloud Run, ECS, Fly, Railway, Kubernetes, or a VPS.
 # mstrmnd-os is a separate image (mstrmnd-os/Dockerfile) for the eve/Next host.
 
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 
 ARG GH_VERSION=2.81.0
 RUN apt-get update \
@@ -55,7 +55,9 @@ ENV HOST=0.0.0.0
 ENV PORT=8080
 ENV MSTRMND_HOST_MODE=all
 ENV MSTRMND_CRON=1
-ENV PATH="/app/node_modules/.bin:${PATH}"
+# vercel CLI is a dependency of @mstrmnd/stack-tools, so its bin lives in that
+# package's node_modules/.bin (pnpm does not hoist bins to the root).
+ENV PATH="/app/node_modules/.bin:/app/apps/stack-tools/node_modules/.bin:${PATH}"
 
 VOLUME ["/data/vault", "/app/.generated", "/app/.mstrmnd"]
 EXPOSE 8080
