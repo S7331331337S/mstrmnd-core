@@ -76,5 +76,12 @@ export {
   MissingBoundaryError,
   BoundaryViolationError,
 } from "./policy-boundary";
+export {
+  loadOperatorPackBoundary,
+  operatorPackBoundaryPath,
+  resolveOperatorPackDir,
+  OPERATOR_PACK_BOUNDARY_FILE,
+} from "./operator-pack";
+export type { BoundarySource } from "./operator-pack";
 export { createRuntime } from "./runtime";
 export type { RuntimeConfig, MstrmndRuntime } from "./runtime";

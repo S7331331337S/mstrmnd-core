@@ -1,0 +1,31 @@
+{
+  "id": "example-operator",
+  "workflowId": "example-operator",
+  "networkAllowlist": [],
+  "credentialAllowlist": [],
+  "toolsAllowlist": [
+    "search_memory",
+    "list_workspace",
+    "read_file",
+    "write_file",
+    "get_context",
+    "spawn_subagent"
+  ],
+  "filesystemScope": [
+    { "mountId": "vault", "pathPrefix": "" },
+    { "mountId": "templates", "pathPrefix": "" }
+  ],
+  "costCeilingUsd": 1,
+  "consequentialApprovals": [
+    "external.communicate",
+    "content.publish",
+    "money.commit",
+    "data.delete",
+    "permission.change",
+    "production.code.change",
+    "contract.enter",
+    "sensitive.disclose"
+  ],
+  "mcpAllowlist": ["mstrmnd"],
+  "reason": "Example operator pack: deny-all egress, no credentials, local MCP only, approval on consequential actions. To use a remote model add its hostname to networkAllowlist and \"model-api-key\" to credentialAllowlist, then set MSTRMND_MODEL_CALL_BUDGET_USD."
+}

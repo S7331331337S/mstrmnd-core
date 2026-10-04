@@ -27,5 +27,24 @@ See `mstrmnd.host.json` for a full example.
 | `company.md` | Company / business context |
 | `operator.md` | Operator profile |
 | `identity.md` | Identity preferences |
-| `agent-graph.json` | Default parent + sub-agent ids |
-| `mstrmnd.host.json` | Host/plugin wiring example |
+| `boundary.json` | **Executable.** `ThreatBoundary` every run from this pack runs under — tools, mounts, egress, credentials, spend cap, approvals |
+| `agent-graph.json` | Descriptive today: default parent + sub-agent ids (runtime still uses built-in specs) |
+| `mstrmnd.host.json` | Host/plugin wiring example (descriptive, not loaded) |
+
+## Boundary
+
+`createRuntime()` (Hermes, MCP, HTTP host) loads `boundary.json` from the
+operator pack directory — `MSTRMND_OPERATOR_PACK` if set, otherwise
+`OBSIDIAN_VAULT_PATH`. Hermes prints `source=pack` when it is in effect.
+
+- No `boundary.json` → the Operator Zero default applies (deny-all egress).
+- Present but malformed or structurally invalid → the runtime refuses to
+  boot. A broken pack never silently runs under a different boundary.
+- `model.complete` is always allowed as a tool id; egress is still governed
+  by `networkAllowlist` / `credentialAllowlist`.
+- Workspace writes stay draft → human approval → publish regardless of the
+  boundary. There is no field that disables that gate.
+
+To use a remote model from a pack, add the provider hostname to
+`networkAllowlist`, `"model-api-key"` to `credentialAllowlist`, and set
+`MSTRMND_MODEL_CALL_BUDGET_USD` so each call reserves against `costCeilingUsd`.

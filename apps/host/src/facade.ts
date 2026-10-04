@@ -38,6 +38,11 @@ export async function healthPayload(runtime: MstrmndRuntime) {
     operator: runtime.context.operator.displayName,
     memory: runtime.memory.size,
     mounts: runtime.workspace.listMounts().map((m) => m.id),
+    boundary: {
+      id: runtime.boundary.id,
+      source: runtime.boundarySource,
+      workflowId: runtime.boundary.workflowId,
+    },
   };
 }
 

@@ -13,13 +13,27 @@ import {
 } from "./model-provider";
 import { Orchestrator, OPERATOR_AGENT } from "./orchestrator";
 import { operatorZeroBoundary } from "./policy-boundary";
+import {
+  loadOperatorPackBoundary,
+  resolveOperatorPackDir,
+  type BoundarySource,
+} from "./operator-pack";
 import { loadIdentity, EMPTY_IDENTITY } from "./identity-loader";
 import type { IdentityModel } from "@mstrmnd/schemas";
 import type { WriteApprover } from "./write-approval";
 
 export interface RuntimeConfig {
-  /** Explicit operator-approved access boundary; default denies remote providers. */
+  /**
+   * Explicit operator-approved access boundary. Wins over the pack file.
+   * When unset, `<operatorPackDir>/boundary.json` is loaded if present;
+   * otherwise the Operator Zero default (deny-all egress) applies.
+   */
   boundary?: ThreatBoundary;
+  /**
+   * Operator pack directory holding `boundary.json`. Defaults to
+   * `MSTRMND_OPERATOR_PACK`, then the vault path.
+   */
+  operatorPackDir?: string;
   vaultPath?: string;
   repoRoot?: string;
   memoryQuery?: string;
@@ -35,6 +49,9 @@ export interface MstrmndRuntime {
   context: ContextPack;
   identity: IdentityModel;
   provider: ModelProvider;
+  /** Boundary every orchestrator from this runtime runs under. */
+  boundary: ThreatBoundary;
+  boundarySource: BoundarySource;
   createOrchestrator: (opts?: {
     dryRun?: boolean;
     writeApprover?: WriteApprover;
@@ -95,6 +112,13 @@ export async function createRuntime(
 
   const provider = resolveModelProvider(config.modelProvider);
 
+  const { boundary, boundarySource } = await resolveBoundary(
+    config,
+    vaultPath,
+    workspace,
+    context
+  );
+
   return {
     config: { ...config, vaultPath, repoRoot },
     memory,
@@ -102,6 +126,8 @@ export async function createRuntime(
     context,
     identity,
     provider,
+    boundary,
+    boundarySource,
     createOrchestrator: (opts) =>
       new Orchestrator({
         context,
@@ -111,14 +137,36 @@ export async function createRuntime(
         repoRoot,
         dryRun: opts?.dryRun,
         writeApprover: opts?.writeApprover,
-        boundary: config.boundary ?? operatorZeroBoundary({
-          toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
-          filesystemScope: workspace.listMounts().map((m) => ({
-            mountId: m.id,
-            pathPrefix: "",
-          })),
-        }),
+        boundary,
       }),
+  };
+}
+
+async function resolveBoundary(
+  config: RuntimeConfig,
+  vaultPath: string,
+  workspace: WorkspaceService,
+  context: ContextPack
+): Promise<{ boundary: ThreatBoundary; boundarySource: BoundarySource }> {
+  if (config.boundary) {
+    return { boundary: config.boundary, boundarySource: "config" };
+  }
+  const packDir = resolveOperatorPackDir(config.operatorPackDir, vaultPath);
+  const fromPack = packDir
+    ? await loadOperatorPackBoundary(packDir, { scope: context.scope })
+    : null;
+  if (fromPack) {
+    return { boundary: fromPack, boundarySource: "pack" };
+  }
+  return {
+    boundary: operatorZeroBoundary({
+      toolsAllowlist: [...OPERATOR_AGENT.toolsAllowlist],
+      filesystemScope: workspace.listMounts().map((m) => ({
+        mountId: m.id,
+        pathPrefix: "",
+      })),
+    }),
+    boundarySource: "default",
   };
 }
 

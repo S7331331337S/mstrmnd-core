@@ -112,7 +112,7 @@ There is no flag that disables the approval gate.
     });
     const boundary = orch.getBoundary();
     console.log(
-      `Threat boundary: id=${boundary.id} workflow=${boundary.workflowId} tools=${boundary.toolsAllowlist.join(",")} mounts=${
+      `Threat boundary: id=${boundary.id} source=${runtime.boundarySource} workflow=${boundary.workflowId} tools=${boundary.toolsAllowlist.join(",")} mounts=${
         boundary.filesystemScope.map((e) => e.mountId).join(",") || "none"
       } costCeilingUsd=${boundary.costCeilingUsd} network=${
         boundary.networkAllowlist.length === 0 ? "deny-all" : boundary.networkAllowlist.join(",")

@@ -5,7 +5,7 @@
     "dev": "turbo dev",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test packages/intelligence-core/src/workspace-service.test.ts packages/intelligence-core/src/write-approval.test.ts packages/intelligence-core/src/orchestrator.test.ts packages/intelligence-core/src/policy-boundary.test.ts apps/hermes/src/approval.test.ts apps/host/src/http.test.ts apps/host/src/calibrate.test.ts apps/stack-tools/src/check.test.ts",
+    "test": "tsx --test packages/intelligence-core/src/workspace-service.test.ts packages/intelligence-core/src/write-approval.test.ts packages/intelligence-core/src/orchestrator.test.ts packages/intelligence-core/src/policy-boundary.test.ts packages/intelligence-core/src/operator-pack.test.ts apps/hermes/src/approval.test.ts apps/host/src/http.test.ts apps/host/src/calibrate.test.ts apps/stack-tools/src/check.test.ts",
     "hermes": "pnpm --filter @mstrmnd/hermes dev",
     "mcp": "pnpm --filter @mstrmnd/mcp-server start",
     "host": "pnpm --filter @mstrmnd/host start",
