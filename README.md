@@ -298,6 +298,7 @@ HTTP routes: `/health`, `/ready`, `/v1/context`, `/v1/doctrine`, `/v1/memory`, `
 Hermes CLI, MCP, and the HTTP host all boot via `createRuntime()` in `@mstrmnd/intelligence-core`. Configure:
 
 - `OBSIDIAN_VAULT_PATH` — vault or operator-pack root
+- `MSTRMND_OPERATOR_PACK` — directory holding `boundary.json` (the run `ThreatBoundary`); defaults to the vault path. Absent file → Operator Zero default (deny-all egress); invalid file → runtime refuses to boot
 - `MSTRMND_MODEL_PROVIDER` — `echo` (default, offline) or `openai` / `openai-compatible`
 - `MSTRMND_MODEL_API_KEY` or `OPENAI_API_KEY` — required when provider is openai*
 - `MSTRMND_MODEL_BASE_URL` — Chat Completions base (default `https://api.openai.com/v1`)

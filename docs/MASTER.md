@@ -73,7 +73,7 @@ What actually works today:
 - HTTP host (`@mstrmnd/host`): `/health`, `/v1/*`, `/mcp`, `/adk`, `/.well-known/agent.json`; CLI remains Hermes
 - Portable stack: `infrastructure/Dockerfile.core` + `docker-compose.stack.yml` (core + Postgres; OS via `--profile os`)
 - Stack test CLIs: `@mstrmnd/stack-tools` wraps `@vercel/sdk` + `vercel` CLI + `gh` (read-only probes)
-- Operator pack template + `pnpm operator:init`
+- Operator pack template + `pnpm operator:init`; the pack's `boundary.json` is the run `ThreatBoundary` (loaded by `createRuntime()`, fail-closed on invalid, `source=pack` in Hermes / `/health`)
 - Doctrine pin active; `pnpm verify` CI gate
 - Editorial worker exists but is **out of active focus**
 - vgpu stack tools on Maestro (`vgpu_docs` + `vgpu_examples`; URL via `MSTRMND_VGPU_MCP_URL`)
@@ -161,7 +161,12 @@ Update checkboxes here when work lands.
 
 - [x] Additional host transports beyond MCP stdio (HTTP API + MCP streamable HTTP + ADK agent card + core image)
 - [x] Vercel SDK/CLI + GitHub CLI stack-tools (read-only test probes; not in domain code)
-- [ ] Plugin SDK / onboarding template (after this stack)
+- [x] Onboarding template, slice 1: operator pack `boundary.json` is executable.
+      `createRuntime()` loads it for Hermes / MCP / HTTP host (`MSTRMND_OPERATOR_PACK`,
+      else the vault path); invalid files fail closed; explicit `RuntimeConfig.boundary` wins
+- [ ] Onboarding template, slice 2: load `agent-graph.json` into a validated agent-spec
+      registry (today the runtime still uses built-in `OPERATOR_AGENT` / `WORKSPACE_SCOUT`)
+- [ ] Plugin SDK (`@mstrmnd/plugin` host-adapter contract) once a second host adapter needs it
 
 ### Next (Board)
 
@@ -177,7 +182,7 @@ Update checkboxes here when work lands.
 - Brand verify / Signal-on-publish wiring
 - Full multi-tenant managed deploy
 - Empty package scaffolding for optics
-- Plugin SDK / onboarding template (HTTP/MCP/ADK/CLI hosts landed; SDK still later)
+- Plugin SDK `@mstrmnd/plugin` (HTTP/MCP/ADK/CLI hosts landed; the onboarding template is active under Next, the SDK package still waits for a second host adapter)
 - Un-gated / auto-publish workspace writes (policy-gated draft → approve → publish is landed)
 
 ---
@@ -235,10 +240,10 @@ Update checkboxes here when work lands.
 
 ## Status stamp
 
-- **Last aligned:** 2026-09-23
-- **Priority:** Operator Zero MVP — portable stack (core image + compose) with API / MCP / ADK / CLI. Plugin SDK after that.
+- **Last aligned:** 2026-10-04
+- **Priority:** Operator Zero MVP — portable stack (core image + compose) with API / MCP / ADK / CLI. Onboarding template is now being made executable (boundary landed; agent graph next). Plugin SDK after that.
 - **Code maturity:** Operator Zero runtime with context pack, workspace mounts, policy-gated writes (draft → approve → publish), Hermes orchestrator, MCP (stdio + HTTP), HTTP host + ADK card, echo calibration cron, core container image, openai-compatible provider (CI default `echo`), fail-closed ThreatBoundary on createRun with per-tool `evaluateBoundaryAction`; Board decision-room imported at `apps/board`
-- **Next:** plugin SDK / GHCR promotion of the core image on more hosts
+- **Next:** operator pack `agent-graph.json` → validated spec registry; then plugin SDK / GHCR promotion of the core image on more hosts
 
 ## PR cleanup (2026-09-14)
 
