@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    "jsx": "preserve",
+    "incremental": true,
+    "paths": {
+      "@masterbrain/agents": ["./packages/agents/index.ts"],
+      "@masterbrain/agents/*": ["./packages/agents/*"],
+      "@masterbrain/orchestration": ["./packages/orchestration/index.ts"],
+      "@masterbrain/canon": ["./packages/canon/index.ts"],
+      "@masterbrain/db": ["./packages/db/index.ts"],
+      "@masterbrain/integrations/*": ["./packages/integrations/*"],
+      "@masterbrain/shared": ["./packages/shared/index.ts"],
+      "@masterbrain/shared/*": ["./packages/shared/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next"]
+}

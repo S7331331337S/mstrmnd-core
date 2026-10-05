@@ -1,0 +1,35 @@
+{
+  "name": "masterbrain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MASTERBRAIN — The Council of Twelve as an operating system",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "pnpm --filter masterbrain dev",
+    "build": "pnpm --filter masterbrain build",
+    "lint": "pnpm -r lint",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "council:test": "tsx scripts/test-council.ts",
+    "harness:loop": "tsx harness/run-loop.ts",
+    "harness:checks": "tsx harness/checks.ts",
+    "harness:routes": "tsx harness/route-checks.ts",
+    "verify": "pnpm typecheck && pnpm harness:checks && pnpm harness:routes"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "@types/node": "^22.20.3",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  }
+}

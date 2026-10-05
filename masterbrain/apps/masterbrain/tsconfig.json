@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }],
+    "baseUrl": "../..",
+    "paths": {
+      "@masterbrain/agents":         ["./packages/agents/index.ts"],
+      "@masterbrain/agents/*":       ["./packages/agents/*"],
+      "@masterbrain/orchestration":  ["./packages/orchestration/index.ts"],
+      "@masterbrain/canon":          ["./packages/canon/index.ts"],
+      "@masterbrain/db":             ["./packages/db/index.ts"],
+      "@masterbrain/integrations/*": ["./packages/integrations/*"],
+      "@masterbrain/shared":         ["./packages/shared/index.ts"],
+      "@masterbrain/shared/env":     ["./packages/shared/env.ts"],
+      "@masterbrain/shared/*":       ["./packages/shared/*"],
+      "@/*":                         ["./apps/masterbrain/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
