@@ -203,6 +203,8 @@ export class Orchestrator {
     return {
       runId: randomUUID(),
       status: "pending",
+      executionMode: this.deps.provider?.id === "echo" ? "simulation" : "model",
+      objectiveVerified: false,
       scope: this.deps.context.scope,
       doctrineRef: this.deps.context.doctrineRef,
       parentAgentId: agentId,
