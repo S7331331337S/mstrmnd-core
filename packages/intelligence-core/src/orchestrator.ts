@@ -182,10 +182,16 @@ export class Orchestrator {
 
   constructor(deps: OrchestratorDeps) {
     assertBoundary(deps.boundary);
-    this.deps = {
-      provider: deps.provider ?? new EchoProvider(),
-      ...deps,
-    };
+    const provider = deps.provider ?? (process.env.NODE_ENV === "production"
+      ? undefined
+      : new EchoProvider());
+    if (!provider) {
+      throw new Error("Production orchestrator requires an explicitly configured model provider");
+    }
+    if (process.env.NODE_ENV === "production" && provider.id === "echo") {
+      throw new Error("EchoProvider cannot execute production orchestrator runs");
+    }
+    this.deps = { ...deps, provider };
     const root = resolveRepoRoot(deps.repoRoot);
     this.runsDir = join(root, ".mstrmnd", "runs");
     this.auditPath = join(root, ".mstrmnd", "audit.jsonl");
