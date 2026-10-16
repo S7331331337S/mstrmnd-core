@@ -82,7 +82,7 @@ jobs:
 
       - name: Run and smoke
         run: |
-          docker run -d --name mstrmnd-core-ci -p 8080:8080 -e MSTRMND_CRON=0 mstrmnd-core:ci
+          docker run -d --name mstrmnd-core-ci -p 8080:8080 -e MSTRMND_CRON=0 -e NODE_ENV=test -e MSTRMND_MODEL_PROVIDER=echo mstrmnd-core:ci
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8080/health >/dev/null; then break; fi
             sleep 2
