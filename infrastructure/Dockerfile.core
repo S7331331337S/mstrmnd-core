@@ -49,7 +49,8 @@ RUN chmod +x /app/infrastructure/core-entrypoint.sh /app/infrastructure/cron-hea
 
 ENV NODE_ENV=production
 ENV MSTRMND_CORE=/app
-ENV MSTRMND_MODEL_PROVIDER=echo
+# Set MSTRMND_MODEL_PROVIDER and model credentials at deployment time.
+# Never bake the offline echo provider into the production image.
 ENV OBSIDIAN_VAULT_PATH=/data/vault
 ENV HOST=0.0.0.0
 ENV PORT=8080
