@@ -124,6 +124,8 @@ test("EchoProvider dry-run succeeds without a hardcoded tool sequence", async ()
   const run = orch.createRun(OPERATOR_AGENT.id, "Summarize operator context");
   const finished = await orch.dispatch(run);
   assert.equal(finished.status, "succeeded");
+  assert.equal(finished.executionMode, "simulation");
+  assert.equal(finished.objectiveVerified, false);
   assert.equal(
     finished.steps.some((s) => s.summary === "tool search_memory"),
     false,
