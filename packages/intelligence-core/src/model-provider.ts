@@ -132,7 +132,7 @@ function env(name: string): string | undefined {
 /**
  * Resolve provider from name / env.
  *
- * - `echo` (default): offline stub for CI
+ * - `echo`: offline stub for local development and CI only
  * - `openai` | `openai-compatible`: Chat Completions HTTP API
  *
  * Env:
@@ -143,10 +143,18 @@ function env(name: string): string | undefined {
  * - MSTRMND_MODEL_ORG (optional)
  */
 export function resolveModelProvider(
-  name = process.env.MSTRMND_MODEL_PROVIDER ?? "echo"
+  name = process.env.MSTRMND_MODEL_PROVIDER ?? (process.env.NODE_ENV === "production" ? "" : "echo")
 ): ModelProvider {
-  const id = (name || "echo").trim().toLowerCase();
-  if (id === "echo") return new EchoProvider();
+  const id = name.trim().toLowerCase();
+  if (id === "echo") {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("EchoProvider is a simulation and cannot be used in production");
+    }
+    return new EchoProvider();
+  }
+  if (!id) {
+    throw new Error("Production model provider must be configured explicitly (MSTRMND_MODEL_PROVIDER)");
+  }
 
   if (id === "openai" || id === "openai-compatible") {
     const apiKey =
