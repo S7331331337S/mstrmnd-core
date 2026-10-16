@@ -239,6 +239,8 @@ export async function createHostServer(opts: {
         send(res, 200, {
           runId: finished.runId,
           status: finished.status,
+          executionMode: finished.executionMode,
+          objectiveVerified: finished.objectiveVerified,
           doctrineRef: finished.doctrineRef,
           resultSummary: finished.resultSummary,
           steps: finished.steps.length,
