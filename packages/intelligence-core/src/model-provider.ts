@@ -158,7 +158,7 @@ export function assertEchoAllowed(env: NodeJS.ProcessEnv = process.env): void {
  * - MSTRMND_MODEL_PROVIDER (required)
  * - MSTRMND_ALLOW_ECHO=1 (opt-in for echo outside NODE_ENV=test)
  * - MSTRMND_MODEL_API_KEY or OPENAI_API_KEY
- * - MSTRMND_MODEL_BASE_URL (default https://api.openai.com/v1)
+ * - MSTRMND_MODEL_BASE_URL (required for openai-compatible; `openai` defaults to https://api.openai.com/v1)
  * - MSTRMND_MODEL_NAME (default gpt-4o-mini)
  * - MSTRMND_MODEL_ORG (optional)
  */
@@ -184,9 +184,16 @@ export function resolveModelProvider(
         `MSTRMND_MODEL_PROVIDER=${id} requires MSTRMND_MODEL_API_KEY or OPENAI_API_KEY`
       );
     }
+    const baseUrl = env("MSTRMND_MODEL_BASE_URL");
+    // `openai` may use the public OpenAI default; `openai-compatible` targets a
+    // third-party gateway, so a missing base URL must fail closed, never fall
+    // back to api.openai.com.
+    if (id === "openai-compatible" && !baseUrl) {
+      throw new Error("MSTRMND_MODEL_PROVIDER=openai-compatible requires MSTRMND_MODEL_BASE_URL (no default)");
+    }
     return new OpenAICompatibleProvider({
       apiKey,
-      baseUrl: env("MSTRMND_MODEL_BASE_URL"),
+      baseUrl,
       model: env("MSTRMND_MODEL_NAME"),
       organization: env("MSTRMND_MODEL_ORG"),
       estimatedCostUsd: env("MSTRMND_MODEL_CALL_BUDGET_USD") ? Number(env("MSTRMND_MODEL_CALL_BUDGET_USD")) : undefined,
