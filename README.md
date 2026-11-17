@@ -302,6 +302,8 @@ Hermes CLI, MCP, and the HTTP host all boot via `createRuntime()` in `@mstrmnd/i
 - `MSTRMND_MODEL_API_KEY` or `OPENAI_API_KEY` — required when provider is openai*
 - `MSTRMND_MODEL_BASE_URL` — Chat Completions base (required for `openai-compatible`; `openai` defaults to `https://api.openai.com/v1`)
 - `MSTRMND_MODEL_NAME` — model id (default `gpt-4o-mini`)
+- `MSTRMND_EGRESS_ALLOWLIST` — optional, comma-separated **exact hostnames** the default boundary may reach (e.g. `ai-gateway.vercel.sh`). Unset/blank = deny-all (the default). Wildcards, schemes, paths, ports, IP literals and empty entries are a startup error. Setting it also opens only the `model-api-key` credential id.
+- `MSTRMND_MODEL_PROCESS_BUDGET_USD` — required when an allowlist is set: per-process cap on the summed per-call reservations (`MSTRMND_MODEL_CALL_BUDGET_USD`). Exhausted (or `0`) denies further model calls; denials are logged as `[egress-denied] host=… reason=…` (never secrets).
 - Doctrine: `pnpm doctrine:sync` then pinned `doctrine.pin.json`
 
 **Production model access (Cloud Run):** production goes through Vercel AI Gateway using the existing `openai-compatible` provider (`MSTRMND_MODEL_BASE_URL=https://ai-gateway.vercel.sh/v1`, model ids in Gateway `provider/model` form, key via Secret Manager mapped onto `MSTRMND_MODEL_API_KEY`). No AI Gateway key exists yet; Cloud Run stays fail-closed until Steele creates the `AI_GATEWAY_API_KEY` secret. Note: the default Operator Zero boundary denies all network egress, so remote model calls are also denied until the host supplies a boundary that allows the Gateway hostname (see `docs/pr-cleanup-2026-09-14.md`).
