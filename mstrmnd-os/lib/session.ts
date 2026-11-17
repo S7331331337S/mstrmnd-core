@@ -16,9 +16,31 @@ export interface SessionUser {
   workspaceId: string;
 }
 
+/** Dev-only fallback. Never accepted in production (see resolveAuthSecret). */
+export const DEV_FALLBACK_SECRET = "dev-insecure-secret-change-me";
+
+/**
+ * Resolve the JWT signing secret. Fails closed: in production a missing,
+ * blank, or known-placeholder AUTH_SECRET throws instead of silently signing
+ * with a value that is public in this repo (anyone could forge sessions).
+ */
+export function resolveAuthSecret(
+  env: Record<string, string | undefined> = process.env,
+): string {
+  const value = env.AUTH_SECRET?.trim();
+  if (env.NODE_ENV === "production") {
+    if (!value || value === DEV_FALLBACK_SECRET) {
+      throw new Error(
+        "AUTH_SECRET is missing or a placeholder in production; refusing to sign or verify sessions. Set a stable random AUTH_SECRET (e.g. openssl rand -hex 32).",
+      );
+    }
+    return value;
+  }
+  return value || DEV_FALLBACK_SECRET;
+}
+
 function secret(): Uint8Array {
-  const value = process.env.AUTH_SECRET ?? "dev-insecure-secret-change-me";
-  return new TextEncoder().encode(value);
+  return new TextEncoder().encode(resolveAuthSecret());
 }
 
 export async function signSession(user: SessionUser): Promise<string> {
@@ -35,8 +57,9 @@ export async function signSession(user: SessionUser): Promise<string> {
 }
 
 export async function verifySession(token: string): Promise<SessionUser | null> {
+  const key = secret(); // throws on misconfigured production; never swallowed
   try {
-    const { payload } = await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, key);
     if (!payload.sub) return null;
     return {
       userId: payload.sub,
