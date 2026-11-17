@@ -30,12 +30,12 @@
     "hermes:dry": "pnpm --filter @mstrmnd/hermes dev -- --dry-run"
   },
   "devDependencies": {
-    "turbo": "^2.10.7",
-    "typescript": "^7.0.2",
-    "tsx": "^4.23.1",
-    "@types/node": "^26.1.1"
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.11",
+    "typescript": "^7.0.2"
   },
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.34.9",
   "engines": {
     "node": ">=24"
   }
