@@ -17,9 +17,9 @@
 const ramp = {
   ink: "#0B0B0C",
   ink800: "#26262A",
-  ink600: "#55555C",
-  ink500: "#5F5F67",
-  ink400: "#6E6E76",
+  ink600: "#3A3A40",
+  ink500: "#4A4A52",
+  ink400: "#5C5C64",
   ink300: "#B4B4BC",
   ink200: "#D8D8DD",
   ink100: "#E9E9EC",
