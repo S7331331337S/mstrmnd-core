@@ -45,8 +45,13 @@ export default function TabsLayout() {
           name={tab.name}
           options={{
             title: tab.title,
+            // RN 0.88 widened ColorValue (null | number); Ionicons takes string | NativeColorValue.
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name={tab.icon} color={color} size={size} />
+              <Ionicons
+                name={tab.icon}
+                color={typeof color === "number" ? undefined : (color ?? undefined)}
+                size={size}
+              />
             ),
           }}
         />

@@ -1,7 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  type ScrollViewInstance,
+  Share,
+  StyleSheet,
+  View,
+} from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,7 +28,7 @@ export function Room({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const haptics = useHaptics();
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
   const session = useSessions((s) => s.sessions.find((item) => item.id === sessionId));
   const runningId = useSessions((s) => s.runningId);

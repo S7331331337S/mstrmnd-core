@@ -7,20 +7,13 @@
     "icon": "./assets/icon.png",
     "scheme": "mstrmnd",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "backgroundColor": "#FAFAFB",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FAFAFB"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ai.mstrmnd.board"
     },
     "android": {
       "package": "ai.mstrmnd.board",
-      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
