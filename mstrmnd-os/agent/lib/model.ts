@@ -3,7 +3,7 @@ import { createPerplexity } from "@ai-sdk/perplexity";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createGateway, type LanguageModel } from "ai";
+import { createGateway, defaultSettingsMiddleware, wrapLanguageModel, type LanguageModel } from "ai";
 import { withToolSchemaGuard } from "./tool-schema";
 
 /** Vercel AI Gateway key, accepting either env var name. */
@@ -11,8 +11,33 @@ function gatewayKey(): string | undefined {
   return process.env.AI_GATEWAY_API_KEY ?? process.env.AI_GATEWAY;
 }
 
+/**
+ * Gateway fallback chain: `MSTRMND_MODEL_FALLBACKS` is a comma-separated list of
+ * Gateway model ids (e.g. `openai/gpt-5.4`) tried in order after the primary
+ * model fails or its provider is unavailable. Unset means no fallback.
+ */
+export function gatewayFallbacks(): string[] {
+  return (process.env.MSTRMND_MODEL_FALLBACKS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * With no `AI_GATEWAY_API_KEY`, `createGateway` authenticates with the Vercel
+ * OIDC token the platform injects per request, so a deployed project needs no
+ * key at all. A non-empty key always wins over OIDC.
+ */
 function gatewayModel(id: string): LanguageModel {
-  return createGateway({ apiKey: gatewayKey() })(id);
+  const model = createGateway({ apiKey: gatewayKey() })(id);
+  const fallbacks = gatewayFallbacks().filter((f) => f !== id);
+  if (fallbacks.length === 0) return model;
+  return wrapLanguageModel({
+    model,
+    middleware: defaultSettingsMiddleware({
+      settings: { providerOptions: { gateway: { models: fallbacks } } },
+    }),
+  });
 }
 
 /**
