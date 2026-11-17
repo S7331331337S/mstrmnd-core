@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { activeTurn } from "eve/events";
 import { useEveAgent } from "eve/react";
 import { AsciiMark } from "@/app/_components/ascii-mark";
 
@@ -17,14 +18,18 @@ export function AllianceCommand() {
   const agent = useEveAgent();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isBusy = agent.status === "submitted" || agent.status === "streaming";
+  // eve 1.0: status is "idle" | "busy" | "resuming"; whether a turn can be
+  // cancelled comes from the session view, not the status.
+  const isBusy = agent.status !== "idle";
+  const turnOpen = activeTurn(agent.view) !== undefined;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [agent.data.messages, agent.status]);
+  }, [agent.messages, agent.status]);
 
+  // v27 session events: a subagent call opens a child session.
   const subagentEvents = agent.events.filter(
-    (e) => e.type === "subagent.called" || e.type === "subagent.completed",
+    (e) => e.type === "child.opened",
   ).length;
 
   return (
@@ -46,7 +51,7 @@ export function AllianceCommand() {
         ref={scrollRef}
         className="flex h-[min(420px,55dvh)] flex-col gap-4 overflow-y-auto px-4 py-4 sm:h-[420px]"
       >
-        {agent.data.messages.length === 0 ? (
+        {agent.messages.length === 0 ? (
           <div className="text-muted text-sm leading-relaxed">
             <AsciiMark className="mb-4 opacity-90" tagline="alliance standing by" />
             <p className="display-pixel text-foreground mb-2">The alliance is standing by.</p>
@@ -60,7 +65,7 @@ export function AllianceCommand() {
             </ul>
           </div>
         ) : (
-          agent.data.messages.map((message) => {
+          agent.messages.map((message) => {
             const body = textOf(message);
             const isUser = message.role === "user";
             return (
@@ -81,12 +86,12 @@ export function AllianceCommand() {
             );
           })
         )}
-        {agent.status === "streaming" && (
+        {agent.status === "busy" && (
           <span className="label pulse">Maestro is responding…</span>
         )}
-        {agent.status === "error" && (
+        {agent.error && (
           <span className="label text-foreground">
-            Error: {agent.error?.message ?? "unknown"}
+            Error: {agent.error.message || "unknown"}
           </span>
         )}
       </div>
@@ -108,7 +113,7 @@ export function AllianceCommand() {
           placeholder="Direct the alliance…"
           className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-faint disabled:opacity-50 sm:text-sm"
         />
-        {isBusy ? (
+        {turnOpen ? (
           <button
             type="button"
             onClick={() => void agent.cancel()}
