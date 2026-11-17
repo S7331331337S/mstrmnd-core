@@ -49,7 +49,7 @@ Hosting is an adapter, not a dependency. Vercel is one target; the same source
 builds a plain Node container.
 
 - `agent/sandbox.ts` — `MSTRMND_SANDBOX` = `auto` | `vercel` | `docker` |
-  `microsandbox` | `justbash`; egress is `deny-all` by default
+  `justbash` (eve 1.0 removed microsandbox); egress is `deny-all` by default
   (`MSTRMND_SANDBOX_NETWORK`).
 - `agent/agent.ts` — `MSTRMND_WORKFLOW_WORLD` binds durability to a Workflow
   world package; unset uses eve's file-backed world under `.eve/`. Read at

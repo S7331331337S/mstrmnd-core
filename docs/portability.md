@@ -21,7 +21,7 @@ coordination are what persist.
 | Agent framework | `eve` (Apache-2.0), `mstrmnd-os/agent/**` | None needed — `eve build` emits a self-contained Nitro server at `.output/server/index.mjs` | build target |
 | Host runtime | Next.js 16.3 (`mstrmnd-os/app/**`) | `output: "standalone"` → `.next/standalone/server.js` in a container | `MSTRMND_STANDALONE` (auto: on unless `VERCEL` is set) |
 | Durable execution | Workflow SDK, `mstrmnd-os/workflows/**` | eve's file-backed local world (`.eve/.workflow-data`) on a mounted volume, or a Workflow world package | `MSTRMND_WORKFLOW_WORLD` (build time) |
-| Code execution | approval-gated `execute_code` | Docker / microsandbox / just-bash backends behind `agent/sandbox.ts` | `MSTRMND_SANDBOX` |
+| Code execution | approval-gated `execute_code` | Docker / just-bash backends behind `agent/sandbox.ts` | `MSTRMND_SANDBOX` |
 | Model access | `agent/lib/model.ts` | Self-operated OpenAI-compatible gateway (LiteLLM, Portkey, vLLM, Ollama), or a direct provider SDK | `MSTRMND_MODEL_BASE_URL` / `MSTRMND_PROVIDER` |
 | Data | `mstrmnd-os/lib/db.ts` | Already portable — any Postgres via `DATABASE_URL` | connection string |
 | Auth | `lib/session.ts` (JWT via `jose`), `agent/channels/eve.ts` | Already portable — no platform identity provider; `AUTH_SECRET` is ours | — |
@@ -150,7 +150,7 @@ cannot reach the runtime.
 |---|---|---|
 | `MSTRMND_STANDALONE` | auto (`1` off Vercel) | Force/suppress the standalone Next.js build |
 | `MSTRMND_WORKFLOW_WORLD` | unset → local file world | Workflow world package, read at **build** time |
-| `MSTRMND_SANDBOX` | `auto` | `vercel` \| `docker` \| `microsandbox` \| `justbash` |
+| `MSTRMND_SANDBOX` | `auto` | `vercel` \| `docker` \| `justbash` |
 | `MSTRMND_SANDBOX_NETWORK` | `deny-all` | Sandbox egress policy |
 | `MSTRMND_SANDBOX_IMAGE` | eve's published image | Base image for the container/VM backends |
 | `MSTRMND_MODEL_BASE_URL` | unset | Self-hosted OpenAI-compatible gateway; wins over the AI Gateway |
@@ -171,12 +171,16 @@ cannot reach the runtime.
 | `VERCEL_TOKEN` | unset | Optional read-only Vercel SDK probe (`pnpm stack:tools -- --live`) |
 | `GH_TOKEN` | unset | Optional GitHub CLI probe (`gh api`, `gh run list`) |
 
-`auto` sandbox selection resolves in eve's own priority order: Vercel Sandbox
-when deployed on Vercel, then Docker, then microsandbox, then just-bash.
+`auto` sandbox selection uses eve 1.0's `DefaultSandbox`, which picks the
+provider once, at `eve build` time: Vercel Sandbox when built on Vercel, then
+Docker when a daemon is reachable during the build, and just-bash only under
+`eve dev` / `eve eval`. A production build with neither Vercel nor Docker
+succeeds but cannot open a sandbox, so self-hosted builds should set
+`MSTRMND_SANDBOX` explicitly. eve 1.0 removed the microsandbox provider.
 
 **Egress is default-closed.** `MSTRMND_SANDBOX_NETWORK` defaults to `deny-all`
 because `execute_code` runs model-authored commands. Open it deliberately, per
-environment, and prefer the `vercel()` or `microsandbox()` backends when you
+environment, and prefer the Vercel backend when you
 need a domain allow-list rather than an on/off switch — the Docker backend
 supports only all-or-nothing egress.
 

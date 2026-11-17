@@ -8,12 +8,12 @@
 
 FROM node:24-bookworm-slim
 
-ARG GH_VERSION=2.81.0
+ARG GH_VERSION=2.104.0
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 ca-certificates curl git \
   && rm -rf /var/lib/apt/lists/* \
   && curl -fsSL -o /usr/local/bin/supercronic \
-    https://github.com/aptible/supercronic/releases/download/v0.2.33/supercronic-linux-amd64 \
+    https://github.com/aptible/supercronic/releases/download/v0.2.51/supercronic-linux-amd64 \
   && chmod +x /usr/local/bin/supercronic \
   && curl -fsSL -o /tmp/gh.tgz \
     "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
