@@ -55,7 +55,7 @@ export function Sessions() {
                 accessibilityRole="button"
                 accessibilityLabel={`${session.topic}. ${statusText(session)}. ${relativeTime(session.createdAt)}. ${
                   session.engine === "demo" ? "Offline" : "Hosted"
-                }`}
+                }. Members: ${session.members.map((id) => getAgent(id).name).join(", ")}`}
                 accessibilityHint="Opens the session"
                 accessibilityActions={[{ name: "delete", label: "Delete session" }]}
                 onAccessibilityAction={(e) => {

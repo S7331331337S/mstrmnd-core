@@ -67,17 +67,25 @@ export function Room({ sessionId }: { sessionId: string }) {
 
   // Screen readers: say when a member finishes or fails. Streaming tokens are
   // deliberately not announced; that would read the transcript out one word at a time.
+  // Only on a change while the room is open: re-opening an adjourned session
+  // must not replay "finished speaking" for turns that completed long ago.
   const turns = session?.turns;
+  const announcedDone = useRef(doneCount);
   useEffect(() => {
-    if (!turns || doneCount === 0) return;
+    const previous = announcedDone.current;
+    announcedDone.current = doneCount;
+    if (!turns || doneCount <= previous) return;
     const last = [...turns].reverse().find((t) => t.status === "done");
     if (last) AccessibilityInfo.announceForAccessibility(`${getAgent(last.agentId).name} finished speaking`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doneCount]);
 
   const errorCount = turns?.filter((t) => t.status === "error").length ?? 0;
+  const announcedErrors = useRef(errorCount);
   useEffect(() => {
-    if (!turns || errorCount === 0) return;
+    const previous = announcedErrors.current;
+    announcedErrors.current = errorCount;
+    if (!turns || errorCount <= previous) return;
     const last = [...turns].reverse().find((t) => t.status === "error");
     if (last) {
       AccessibilityInfo.announceForAccessibility(
