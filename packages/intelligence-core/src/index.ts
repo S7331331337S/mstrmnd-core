@@ -45,6 +45,16 @@ export type {
   PublishOutcome,
 } from "./write-approval";
 export {
+  EGRESS_ALLOWLIST_ENV,
+  PROCESS_BUDGET_ENV,
+  MODEL_CREDENTIAL_ID,
+  EgressConfigError,
+  ProcessModelBudget,
+  loadEgressConfig,
+  parseEgressAllowlist,
+  logEgressDenied,
+} from "./egress";
+export {
   EchoProvider,
   OpenAICompatibleProvider,
   assertEchoAllowed,

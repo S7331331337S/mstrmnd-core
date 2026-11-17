@@ -64,12 +64,15 @@ export function operatorZeroBoundary(opts: {
   filesystemScope: ThreatBoundary["filesystemScope"];
   mcpAllowlist?: string[];
   workflowId?: string;
+  /** Opt-in egress (see egress.ts). Defaults keep deny-all. */
+  networkAllowlist?: string[];
+  credentialAllowlist?: string[];
 }): ThreatBoundary {
   return {
     id: "operator-zero-default",
     workflowId: opts.workflowId ?? "operator-zero",
-    networkAllowlist: [],
-    credentialAllowlist: [],
+    networkAllowlist: [...(opts.networkAllowlist ?? [])],
+    credentialAllowlist: [...(opts.credentialAllowlist ?? [])],
     toolsAllowlist: [...new Set([...opts.toolsAllowlist, "model.complete"])],
     filesystemScope: opts.filesystemScope.map((e) => ({
       mountId: e.mountId,
@@ -79,7 +82,9 @@ export function operatorZeroBoundary(opts: {
     consequentialApprovals: [...CONSEQUENTIAL_ACTIONS],
     mcpAllowlist: opts.mcpAllowlist ?? ["mstrmnd"],
     reason:
-      "Operator Zero default: deny-all egress, no extra credentials, local MCP only, approval on consequential actions",
+      opts.networkAllowlist?.length
+        ? "Operator Zero default with opt-in egress allowlist (MSTRMND_EGRESS_ALLOWLIST), local MCP only, approval on consequential actions"
+        : "Operator Zero default: deny-all egress, no extra credentials, local MCP only, approval on consequential actions",
   };
 }
 

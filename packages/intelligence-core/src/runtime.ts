@@ -13,6 +13,7 @@ import {
 } from "./model-provider";
 import { Orchestrator, OPERATOR_AGENT } from "./orchestrator";
 import { operatorZeroBoundary } from "./policy-boundary";
+import { loadEgressConfig, type EgressConfig } from "./egress";
 import { loadIdentity, EMPTY_IDENTITY } from "./identity-loader";
 import type { IdentityModel } from "@mstrmnd/schemas";
 import type { WriteApprover } from "./write-approval";
@@ -104,6 +105,13 @@ export async function createRuntime(
   const getProvider = (): ModelProvider => (resolved ??= resolveModelProvider(config.modelProvider));
   if (!config.lazyProvider) getProvider();
 
+  // Opt-in egress allowlist (MSTRMND_EGRESS_ALLOWLIST). Invalid values throw. With
+  // lazyProvider the load is deferred like the provider, so non-model MCP tools
+  // survive a bad value and only the model path fails closed.
+  let egress: EgressConfig | undefined;
+  const getEgress = (): EgressConfig => (egress ??= loadEgressConfig());
+  if (!config.lazyProvider) getEgress();
+
   return {
     config: { ...config, vaultPath, repoRoot },
     memory,
@@ -119,6 +127,7 @@ export async function createRuntime(
         memory,
         workspace,
         provider: getProvider(),
+        modelBudget: getEgress().processBudget,
         repoRoot,
         dryRun: opts?.dryRun,
         writeApprover: opts?.writeApprover,
@@ -128,6 +137,8 @@ export async function createRuntime(
             mountId: m.id,
             pathPrefix: "",
           })),
+          networkAllowlist: getEgress().networkAllowlist,
+          credentialAllowlist: getEgress().credentialAllowlist,
         }),
       }),
   };

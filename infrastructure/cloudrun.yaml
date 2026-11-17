@@ -47,6 +47,15 @@ spec:
             # intentionally not a valid model and Gateway will reject it.
             - name: MSTRMND_MODEL_NAME
               value: PLACEHOLDER-provider/PLACEHOLDER-model
+            # Egress (opt-in; deny-all when unset). Exactly one host, no wildcards.
+            - name: MSTRMND_EGRESS_ALLOWLIST
+              value: ai-gateway.vercel.sh
+            # TODO(Steele): set a real per-process USD cap for model calls. "0" is a deliberate
+            # placeholder: it denies every model call (fail closed) until you choose a number.
+            # Also set MSTRMND_MODEL_CALL_BUDGET_USD (per-call reservation, e.g. via this file or
+            # a secret); without it every call is denied by the boundary cost check.
+            - name: MSTRMND_MODEL_PROCESS_BUDGET_USD
+              value: "0"
             - name: HOST
               value: 0.0.0.0
             - name: PORT

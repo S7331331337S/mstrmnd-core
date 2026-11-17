@@ -14,6 +14,7 @@ import type {
 } from "@mstrmnd/schemas";
 import type { ModelProvider, ModelMessage } from "./model-provider";
 import { assertEchoAllowed } from "./model-provider";
+import { logEgressDenied, type ProcessModelBudget } from "./egress";
 import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
 import {
@@ -173,6 +174,8 @@ export interface OrchestratorDeps {
   writeApprover?: WriteApprover;
   /** Mandatory. Construct/createRun refuse without a valid threat boundary. */
   boundary: ThreatBoundary;
+  /** Optional process-wide cap on model-call cost reservations (see egress.ts). */
+  modelBudget?: ProcessModelBudget | null;
 }
 
 export class Orchestrator {
@@ -623,7 +626,18 @@ export class Orchestrator {
       accruedCostUsd: run.costAccruedUsd ?? 0,
     });
     await this.auditPolicy(decision, "model.complete");
-    if (decision.outcome !== "allow") throw new Error(`model call denied: ${decision.reason}`);
+    if (decision.outcome !== "allow") {
+      logEgressDenied(policy.networkDestinations, decision.reason);
+      throw new Error(`model call denied: ${decision.reason}`);
+    }
+    const budget = this.deps.modelBudget;
+    if (budget) {
+      const reserved = budget.tryReserve(policy.estimatedCostUsd);
+      if (!reserved.ok) {
+        logEgressDenied(policy.networkDestinations, reserved.reason);
+        throw new Error(`model call denied: ${reserved.reason}`);
+      }
+    }
     // Reserve before sending, including failed requests. This is a conservative
     // caller-supplied allowance, not a measurement of provider billing.
     run.costAccruedUsd = (run.costAccruedUsd ?? 0) + policy.estimatedCostUsd;
