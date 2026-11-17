@@ -53,6 +53,17 @@ export function Sessions() {
             <Animated.View key={session.id} layout={LinearTransition} entering={FadeIn}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={`${session.topic}. ${statusText(session)}. ${relativeTime(session.createdAt)}. ${
+                  session.engine === "demo" ? "Offline" : "Hosted"
+                }`}
+                accessibilityHint="Opens the session"
+                accessibilityActions={[{ name: "delete", label: "Delete session" }]}
+                onAccessibilityAction={(e) => {
+                  if (e.nativeEvent.actionName === "delete") {
+                    haptics.warn();
+                    remove(session.id);
+                  }
+                }}
                 onPress={() => {
                   haptics.tap();
                   router.push(`/room/${session.id}`);
