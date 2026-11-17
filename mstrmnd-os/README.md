@@ -66,6 +66,14 @@ configured (`AI_GATEWAY_API_KEY`, or link a Vercel project with `eve link` for
 OIDC). To call a provider directly, set its key (`ANTHROPIC_API_KEY`,
 `XAI_TOKEN`, `PERPLEXITY_API_TOKEN`, …) and select it with `MSTRMND_PROVIDER`.
 
+**Vercel deployment on AI Gateway (no key).** Set `MSTRMND_PROVIDER=gateway`,
+`MSTRMND_MODEL=<provider/model>` (an id from `https://ai-gateway.vercel.sh/v1/models`)
+and optionally `MSTRMND_MODEL_FALLBACKS=<id>[,<id>…]` for models Gateway tries
+when the primary fails. With no `AI_GATEWAY_API_KEY` set, the AI SDK
+authenticates with the project's Vercel OIDC token; a non-empty
+`AI_GATEWAY_API_KEY` always takes priority over OIDC, so leave it unset to use
+OIDC. Billing is the team's AI Gateway Credits.
+
 ```bash
 MSTRMND_PROVIDER=perplexity AUTH_SECRET=$(openssl rand -hex 32) pnpm dev
 ```
