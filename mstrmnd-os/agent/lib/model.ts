@@ -4,6 +4,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGateway, type LanguageModel } from "ai";
+import { withToolSchemaGuard } from "./tool-schema";
 
 /** Vercel AI Gateway key, accepting either env var name. */
 function gatewayKey(): string | undefined {
@@ -62,7 +63,16 @@ export function modelIdForHint(hint?: ModelHint): string | undefined {
   return undefined;
 }
 
+/**
+ * Resolve the provider model and wrap it with the tool schema guard, so a tool
+ * with a non-object input schema is normalized or dropped (with a warning)
+ * instead of failing the whole chat turn at the provider.
+ */
 export function resolveModel(overrideId?: string): LanguageModel | string {
+  return withToolSchemaGuard(resolveProviderModel(overrideId));
+}
+
+function resolveProviderModel(overrideId?: string): LanguageModel {
   const provider = process.env.MSTRMND_PROVIDER?.toLowerCase();
 
   if (provider === "compatible") {
