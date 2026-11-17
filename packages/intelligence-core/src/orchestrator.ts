@@ -13,7 +13,7 @@ import type {
   ThreatBoundary,
 } from "@mstrmnd/schemas";
 import type { ModelProvider, ModelMessage } from "./model-provider";
-import { EchoProvider } from "./model-provider";
+import { assertEchoAllowed } from "./model-provider";
 import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
 import {
@@ -182,15 +182,11 @@ export class Orchestrator {
 
   constructor(deps: OrchestratorDeps) {
     assertBoundary(deps.boundary);
-    const provider = deps.provider ?? (process.env.NODE_ENV === "production"
-      ? undefined
-      : new EchoProvider());
+    const provider = deps.provider;
     if (!provider) {
-      throw new Error("Production orchestrator requires an explicitly configured model provider");
+      throw new Error("Orchestrator requires an explicitly configured model provider (no default)");
     }
-    if (process.env.NODE_ENV === "production" && provider.id === "echo") {
-      throw new Error("EchoProvider cannot execute production orchestrator runs");
-    }
+    if (provider.id === "echo") assertEchoAllowed();
     this.deps = { ...deps, provider };
     const root = resolveRepoRoot(deps.repoRoot);
     this.runsDir = join(root, ".mstrmnd", "runs");

@@ -40,7 +40,8 @@ Usage:
   pnpm hermes [--goal "..."] [--agent operator-agent] [--dry-run]
 
 Boots the shared runtime (context, memory, workspace), then dispatches
-the parent agent. Default model provider is echo (offline).
+the parent agent. There is no default model provider: set MSTRMND_MODEL_PROVIDER
+(echo is offline-only and requires NODE_ENV=test or MSTRMND_ALLOW_ECHO=1).
 Workspace writes are staged as drafts under .mstrmnd/drafts/ and published
 only after explicit y/yes. Non-interactive and --dry-run never publish.
 There is no flag that disables the approval gate.
