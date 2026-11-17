@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
@@ -41,7 +41,7 @@ export function Sessions() {
         {sessions.length === 0 ? (
           <Animated.View entering={FadeIn}>
             <Card style={styles.empty}>
-              <Ionicons name="albums-outline" size={26} color={colors.tertiaryLabel} />
+              <Icon name="albums-outline" size={26} color={colors.tertiaryLabel} />
               <ThemedText variant="headline">No sessions yet</ThemedText>
               <ThemedText variant="subhead" style={styles.emptyText}>
                 Put a question to the board from the Table tab and it will show up here.
@@ -67,7 +67,11 @@ export function Sessions() {
                   <ThemedText variant="overline" style={{ color: statusColor(session) }}>
                     {statusText(session)}
                   </ThemedText>
-                  <ThemedText variant="caption" style={{ color: colors.tertiaryLabel }}>
+                  <ThemedText
+                    variant="caption"
+                    numberOfLines={1}
+                    style={{ color: colors.tertiaryLabel, flexShrink: 0 }}
+                  >
                     {relativeTime(session.createdAt)}
                   </ThemedText>
                 </View>
@@ -87,7 +91,7 @@ export function Sessions() {
                 <View style={styles.rowFoot}>
                   <View style={styles.bench}>
                     {session.members.slice(0, 5).map((id) => (
-                      <AgentAvatar key={id} agent={getAgent(id)} size="sm" />
+                      <AgentAvatar key={id} agent={getAgent(id)} size="sm" decorative />
                     ))}
                     {session.members.length > 5 ? (
                       <ThemedText variant="caption" style={styles.more}>
