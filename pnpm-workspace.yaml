@@ -1,6 +1,6 @@
 packages:
   - apps/*
   - packages/*
-  # Expo SDK 57 app with its own npm lockfile. Keep it out of the
+  # Expo SDK 58 app with its own npm lockfile. Keep it out of the
   # intelligence-layer workspace so React Native deps cannot break Hermes/MCP.
   - "!apps/board"
