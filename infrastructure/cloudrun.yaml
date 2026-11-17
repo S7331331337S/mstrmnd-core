@@ -41,9 +41,12 @@ spec:
                 secretKeyRef:
                   name: AI_GATEWAY_API_KEY
                   key: latest
-            # TODO(Steele): set MSTRMND_MODEL_NAME to a Gateway `provider/model` id (e.g.
-            # `<provider>/<model>`). Unset, core falls back to its built-in `gpt-4o-mini`, which
-            # Gateway does not accept.
+            # TODO(Steele): replace the placeholder with a real Gateway `provider/model` id before
+            # deploying (example form only, not a decision: `anthropic/claude-sonnet-4.5`). Core
+            # passes this string through untouched. Do not leave the placeholder: it is
+            # intentionally not a valid model and Gateway will reject it.
+            - name: MSTRMND_MODEL_NAME
+              value: PLACEHOLDER-provider/PLACEHOLDER-model
             - name: HOST
               value: 0.0.0.0
             - name: PORT
