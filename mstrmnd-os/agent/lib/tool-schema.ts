@@ -45,6 +45,14 @@ function constType(value: unknown): string | undefined {
   return undefined;
 }
 
+/** `{ const: x }` or `{ enum: [x] }` is a literal; anything else is a plain schema. */
+function literalOf(schema: unknown): { literal: true; value: unknown } | { literal: false } {
+  if (!isRecord(schema)) return { literal: false };
+  if ("const" in schema) return { literal: true, value: schema.const };
+  if (Array.isArray(schema.enum) && schema.enum.length === 1) return { literal: true, value: schema.enum[0] };
+  return { literal: false };
+}
+
 /** Flatten a root `oneOf`/`anyOf` whose branches are all object schemas. */
 function flattenObjectUnion(schema: JsonObject, branches: unknown[]): NormalizedToolSchema {
   if (branches.length === 0) return emptyObject("empty union at root");
@@ -53,7 +61,7 @@ function flattenObjectUnion(schema: JsonObject, branches: unknown[]): Normalized
   }
   const objects = branches as JsonObject[];
   const properties: JsonObject = {};
-  const constValues = new Map<string, unknown[]>();
+  // Every distinct variant of each property across branches, const ones included.
   const variants = new Map<string, unknown[]>();
   const requiredSets = objects.map(
     (b) => new Set(Array.isArray(b.required) ? (b.required as unknown[]).filter((k) => typeof k === "string") : []),
@@ -62,12 +70,6 @@ function flattenObjectUnion(schema: JsonObject, branches: unknown[]): Normalized
   for (const branch of objects) {
     const props = isRecord(branch.properties) ? branch.properties : {};
     for (const [key, value] of Object.entries(props)) {
-      if (isRecord(value) && "const" in value) {
-        const list = constValues.get(key) ?? [];
-        if (!list.includes(value.const)) list.push(value.const);
-        constValues.set(key, list);
-        continue;
-      }
       const list = variants.get(key) ?? [];
       if (!list.some((v) => JSON.stringify(v) === JSON.stringify(value))) list.push(value);
       variants.set(key, list);
@@ -76,27 +78,30 @@ function flattenObjectUnion(schema: JsonObject, branches: unknown[]): Normalized
   // A property defined differently in different branches (e.g. `limit` max 50
   // for search but 65536 for read) is advertised as `anyOf` of every variant,
   // so no branch's valid inputs are excluded. Runtime validation stays exact.
+  //
+  // The only collapse is the discriminator case: when EVERY variant of a key is
+  // a const (or single-value enum) of one primitive type, advertise one `enum`.
+  // If any branch has a plain (non-const) schema for the key, the const variants
+  // must not replace it, so the full `anyOf` is kept.
   for (const [key, list] of variants) {
+    const description = list
+      .map((v) => (isRecord(v) ? v.description : undefined))
+      .find((d) => typeof d === "string");
+    const literals = list.map(literalOf);
+    if (literals.every((l) => l.literal)) {
+      const values = literals.map((l) => l.value);
+      const types = new Set(values.map(constType));
+      const type = types.size === 1 ? [...types][0] : undefined;
+      if (type) {
+        properties[key] = { type, enum: values, ...(description ? { description } : {}) };
+        continue;
+      }
+    }
     if (list.length === 1) {
       properties[key] = list[0];
       continue;
     }
-    const description = list
-      .map((v) => (isRecord(v) ? v.description : undefined))
-      .find((d) => typeof d === "string");
     properties[key] = { anyOf: list, ...(description ? { description } : {}) };
-  }
-  for (const [key, values] of constValues) {
-    const types = new Set(values.map(constType));
-    const type = types.size === 1 ? [...types][0] : undefined;
-    const description = objects
-      .map((b) => (isRecord(b.properties) && isRecord(b.properties[key]) ? b.properties[key].description : undefined))
-      .find((d) => typeof d === "string");
-    properties[key] = {
-      ...(type ? { type } : {}),
-      enum: values,
-      ...(description ? { description } : {}),
-    };
   }
 
   const required = [...(requiredSets[0] ?? [])].filter((k) => requiredSets.every((s) => s.has(k)));
