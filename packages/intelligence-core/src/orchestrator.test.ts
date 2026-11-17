@@ -124,6 +124,8 @@ test("EchoProvider dry-run succeeds without a hardcoded tool sequence", async ()
   const run = orch.createRun(OPERATOR_AGENT.id, "Summarize operator context");
   const finished = await orch.dispatch(run);
   assert.equal(finished.status, "succeeded");
+  assert.equal(finished.executionMode, "simulation");
+  assert.equal(finished.objectiveVerified, false);
   assert.equal(
     finished.steps.some((s) => s.summary === "tool search_memory"),
     false,
@@ -215,6 +217,7 @@ test("constructor and createRun refuse a missing threat boundary", () => {
 test("createRun stamps boundaryId from the attached ThreatBoundary", () => {
   const orch = new Orchestrator({
     context: fixtureContext(),
+    provider: new EchoProvider(),
     dryRun: true,
     boundary: testBoundary(),
   });
@@ -509,4 +512,24 @@ test("remote synthesis cannot exceed the reserved run budget", async () => {
   assert.equal(calls, 1);
   assert.equal(run.status, "failed");
   assert.equal(run.costAccruedUsd, 0.6);
+});
+
+test("orchestrator has no default provider and refuses echo unless allowed", () => {
+  const saved = { n: process.env.NODE_ENV, a: process.env.MSTRMND_ALLOW_ECHO };
+  const base = { context: fixtureContext(), dryRun: true, boundary: testBoundary() };
+  try {
+    delete process.env.NODE_ENV;
+    delete process.env.MSTRMND_ALLOW_ECHO;
+    assert.throws(() => new Orchestrator(base), /explicitly configured model provider/);
+    assert.throws(() => new Orchestrator({ ...base, provider: new EchoProvider() }), /allowed only when NODE_ENV=test/);
+    process.env.MSTRMND_ALLOW_ECHO = "1";
+    assert.doesNotThrow(() => new Orchestrator({ ...base, provider: new EchoProvider() }));
+    process.env.NODE_ENV = "test";
+    delete process.env.MSTRMND_ALLOW_ECHO;
+    assert.throws(() => new Orchestrator(base), /explicitly configured model provider/);
+    assert.doesNotThrow(() => new Orchestrator({ ...base, provider: new EchoProvider() }));
+  } finally {
+    if (saved.n === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = saved.n;
+    if (saved.a === undefined) delete process.env.MSTRMND_ALLOW_ECHO; else process.env.MSTRMND_ALLOW_ECHO = saved.a;
+  }
 });

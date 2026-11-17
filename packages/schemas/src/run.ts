@@ -46,6 +46,10 @@ export interface SubAgentHandoff {
 export interface RunState {
   runId: string;
   status: RunStatus;
+  /** Whether this run used an offline scripted model rather than inference. */
+  executionMode?: "simulation" | "model";
+  /** Run completion is not proof that the requested goal was achieved. */
+  objectiveVerified?: boolean;
   scope: RuntimeScope;
   doctrineRef: string | null;
   parentAgentId: string;

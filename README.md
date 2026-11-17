@@ -204,10 +204,10 @@ export OBSIDIAN_VAULT_PATH="/absolute/path/to/my-operator"
 ### 4. Smoke test Hermes (orchestrator)
 
 ```bash
-OBSIDIAN_VAULT_PATH="/path/to/your/vault" pnpm hermes -- --goal "Summarize operator context" --dry-run
+MSTRMND_ALLOW_ECHO=1 MSTRMND_MODEL_PROVIDER=echo OBSIDIAN_VAULT_PATH="/path/to/your/vault" pnpm hermes -- --goal "Summarize operator context" --dry-run
 ```
 
-Expected: context summary, doctrine ref, workspace mounts, run status `succeeded` (EchoProvider).
+Expected: context summary, doctrine ref, workspace mounts, run status `succeeded` (EchoProvider; offline simulation, opt-in via `MSTRMND_ALLOW_ECHO=1`).
 
 ### 5. Connect through MCP (plugin)
 
@@ -273,7 +273,7 @@ Same runtime, four hosts, one image:
 pnpm host                  # HTTP API + MCP streamable HTTP + ADK on :8080
 pnpm mcp                   # MCP stdio (Cursor plugin)
 pnpm hermes -- --dry-run   # CLI
-pnpm calibrate             # echo-provider regression against fixtures/calibration
+pnpm calibrate             # regression against fixtures/calibration; skips (exit 0) when no model provider is configured
 pnpm stack:tools           # Vercel CLI + @vercel/sdk + GitHub CLI versions
 pnpm stack:tools -- --live # read-only Vercel projects + gh run list (tokens optional)
 pnpm --filter @mstrmnd/stack-tools exec vercel --version
@@ -298,7 +298,7 @@ HTTP routes: `/health`, `/ready`, `/v1/context`, `/v1/doctrine`, `/v1/memory`, `
 Hermes CLI, MCP, and the HTTP host all boot via `createRuntime()` in `@mstrmnd/intelligence-core`. Configure:
 
 - `OBSIDIAN_VAULT_PATH` — vault or operator-pack root
-- `MSTRMND_MODEL_PROVIDER` — `echo` (default, offline) or `openai` / `openai-compatible`
+- `MSTRMND_MODEL_PROVIDER` — **required, no default**: `openai` / `openai-compatible`, or `echo` (offline simulation; allowed only when `NODE_ENV=test` or `MSTRMND_ALLOW_ECHO=1`, fails closed everywhere else including `NODE_ENV` unset and `VERCEL_ENV` preview/production)
 - `MSTRMND_MODEL_API_KEY` or `OPENAI_API_KEY` — required when provider is openai*
 - `MSTRMND_MODEL_BASE_URL` — Chat Completions base (default `https://api.openai.com/v1`)
 - `MSTRMND_MODEL_NAME` — model id (default `gpt-4o-mini`)
@@ -337,7 +337,7 @@ bash scripts/run-icloud-map.sh
 
 ## Status
 
-Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent, model-proposed tools, fail-closed ThreatBoundary with per-tool `evaluateBoundaryAction`), shared runtime factory, MCP (stdio + HTTP), HTTP host + ADK card, echo calibration, portable core image, operator-pack template, doctrine pin. Model providers: `echo` (CI default) and `openai` / `openai-compatible`.
+Current state: Operator Zero intelligence layer — context packs, workspace mounts (list/read/stat plus policy-gated writes: draft → human approval → publish), Hermes orchestrator (parent + `workspace-scout` sub-agent, model-proposed tools, fail-closed ThreatBoundary with per-tool `evaluateBoundaryAction`), shared runtime factory, MCP (stdio + HTTP), HTTP host + ADK card, echo calibration, portable core image, operator-pack template, doctrine pin. Model providers: `openai` / `openai-compatible`, plus `echo` (offline simulation for tests/CI only; must be selected explicitly).
 
 Hermes/MCP (`@mstrmnd/intelligence-core`) and eve OS (`mstrmnd-os`) are two runtimes until a later adapter. CI typechecks `mstrmnd-os` on Node 24 via `pnpm --dir mstrmnd-os typecheck`; it is not part of the root pnpm workspace. Plugin SDK / onboarding template wait until after Operator Zero writes + model-proposed planning (both landed on this stack).
 
@@ -353,7 +353,7 @@ python scripts/generate_arch_spec.py \
   --output /tmp/MSTRMND_Core_Technical_Architecture_Specification.pdf
 ```
 
-Remote provider access now requires an explicit host-supplied boundary and per-call budget reservation; see [provider configuration and cleanup decisions](docs/pr-cleanup-2026-09-14.md#remote-provider-compatibility). Echo remains the offline default.
+Remote provider access now requires an explicit host-supplied boundary and per-call budget reservation; see [provider configuration and cleanup decisions](docs/pr-cleanup-2026-09-14.md#remote-provider-compatibility). Echo is offline-only (`NODE_ENV=test` or `MSTRMND_ALLOW_ECHO=1`) and is never a default.
 
 ## `// TOKENS`
 

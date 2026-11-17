@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 import {
   createRuntime,
   denyApprover,
+  isEchoAllowed,
   loadDoctrinePin,
 } from "@mstrmnd/intelligence-core";
 
@@ -133,7 +134,26 @@ export async function writeReport(
   return latest;
 }
 
-export async function calibrateMain(repoRoot = REPO_ROOT): Promise<CalibrationReport> {
+/**
+ * Calibration needs a real model provider. Returns a skip reason when none is
+ * configured (unset, or echo in an environment where echo is not allowed).
+ * No test provider is ever substituted.
+ */
+export function calibrationSkipReason(env: NodeJS.ProcessEnv = process.env): string | null {
+  const id = (env.MSTRMND_MODEL_PROVIDER ?? "").trim().toLowerCase();
+  if (!id) return "skipped: no model provider (MSTRMND_MODEL_PROVIDER is unset)";
+  if (id === "echo" && !isEchoAllowed(env)) {
+    return "skipped: no model provider (echo is not allowed outside NODE_ENV=test / MSTRMND_ALLOW_ECHO=1)";
+  }
+  return null;
+}
+
+export async function calibrateMain(repoRoot = REPO_ROOT): Promise<CalibrationReport | null> {
+  const skip = calibrationSkipReason();
+  if (skip) {
+    console.log(`calibration ${skip}`);
+    return null;
+  }
   const report = await runCalibration({ repoRoot });
   const path = await writeReport(report, repoRoot);
   console.log(
@@ -150,7 +170,7 @@ const invoked = process.argv[1] && fileURLToPath(import.meta.url) === process.ar
 if (invoked) {
   calibrateMain()
     .then((report) => {
-      if (report.failed > 0) process.exit(1);
+      if (report && report.failed > 0) process.exit(1);
     })
     .catch((err) => {
       console.error("calibration fatal:", err);

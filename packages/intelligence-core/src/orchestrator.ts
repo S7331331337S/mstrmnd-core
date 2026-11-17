@@ -13,7 +13,7 @@ import type {
   ThreatBoundary,
 } from "@mstrmnd/schemas";
 import type { ModelProvider, ModelMessage } from "./model-provider";
-import { EchoProvider } from "./model-provider";
+import { assertEchoAllowed } from "./model-provider";
 import type { WorkspaceService } from "./workspace-service";
 import type { MemoryEngine } from "./memory-engine";
 import {
@@ -182,10 +182,12 @@ export class Orchestrator {
 
   constructor(deps: OrchestratorDeps) {
     assertBoundary(deps.boundary);
-    this.deps = {
-      provider: deps.provider ?? new EchoProvider(),
-      ...deps,
-    };
+    const provider = deps.provider;
+    if (!provider) {
+      throw new Error("Orchestrator requires an explicitly configured model provider (no default)");
+    }
+    if (provider.id === "echo") assertEchoAllowed();
+    this.deps = { ...deps, provider };
     const root = resolveRepoRoot(deps.repoRoot);
     this.runsDir = join(root, ".mstrmnd", "runs");
     this.auditPath = join(root, ".mstrmnd", "audit.jsonl");
@@ -203,6 +205,8 @@ export class Orchestrator {
     return {
       runId: randomUUID(),
       status: "pending",
+      executionMode: this.deps.provider?.id === "echo" ? "simulation" : "model",
+      objectiveVerified: false,
       scope: this.deps.context.scope,
       doctrineRef: this.deps.context.doctrineRef,
       parentAgentId: agentId,

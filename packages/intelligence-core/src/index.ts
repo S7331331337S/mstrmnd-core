@@ -47,6 +47,8 @@ export type {
 export {
   EchoProvider,
   OpenAICompatibleProvider,
+  assertEchoAllowed,
+  isEchoAllowed,
   resolveModelProvider,
 } from "./model-provider";
 export type {

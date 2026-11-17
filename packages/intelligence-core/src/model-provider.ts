@@ -130,23 +130,51 @@ function env(name: string): string | undefined {
 }
 
 /**
- * Resolve provider from name / env.
+ * Echo is an offline simulation. It may run only under `NODE_ENV=test` or when
+ * the operator opts in explicitly with `MSTRMND_ALLOW_ECHO=1`. Every other
+ * environment (including `NODE_ENV` unset and `VERCEL_ENV=preview|production`)
+ * fails closed.
+ */
+export function isEchoAllowed(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.NODE_ENV === "test" || env.MSTRMND_ALLOW_ECHO === "1";
+}
+
+export function assertEchoAllowed(env: NodeJS.ProcessEnv = process.env): void {
+  if (!isEchoAllowed(env)) {
+    throw new Error(
+      "EchoProvider is an offline simulation: allowed only when NODE_ENV=test or MSTRMND_ALLOW_ECHO=1"
+    );
+  }
+}
+
+/**
+ * Resolve provider from name / env. There is no default provider: an unset
+ * `MSTRMND_MODEL_PROVIDER` throws.
  *
- * - `echo` (default): offline stub for CI
+ * - `echo`: offline simulation; see {@link isEchoAllowed}
  * - `openai` | `openai-compatible`: Chat Completions HTTP API
  *
  * Env:
- * - MSTRMND_MODEL_PROVIDER
+ * - MSTRMND_MODEL_PROVIDER (required)
+ * - MSTRMND_ALLOW_ECHO=1 (opt-in for echo outside NODE_ENV=test)
  * - MSTRMND_MODEL_API_KEY or OPENAI_API_KEY
  * - MSTRMND_MODEL_BASE_URL (default https://api.openai.com/v1)
  * - MSTRMND_MODEL_NAME (default gpt-4o-mini)
  * - MSTRMND_MODEL_ORG (optional)
  */
 export function resolveModelProvider(
-  name = process.env.MSTRMND_MODEL_PROVIDER ?? "echo"
+  name: string | undefined = process.env.MSTRMND_MODEL_PROVIDER
 ): ModelProvider {
-  const id = (name || "echo").trim().toLowerCase();
-  if (id === "echo") return new EchoProvider();
+  const id = (name ?? "").trim().toLowerCase();
+  if (!id) {
+    throw new Error(
+      "MSTRMND_MODEL_PROVIDER must be configured explicitly (echo | openai | openai-compatible); there is no default"
+    );
+  }
+  if (id === "echo") {
+    assertEchoAllowed();
+    return new EchoProvider();
+  }
 
   if (id === "openai" || id === "openai-compatible") {
     const apiKey =
@@ -166,6 +194,6 @@ export function resolveModelProvider(
   }
 
   throw new Error(
-    `Unknown MSTRMND_MODEL_PROVIDER=${name!}. Use echo | openai | openai-compatible`
+    `Unknown MSTRMND_MODEL_PROVIDER=${name}. Use echo | openai | openai-compatible`
   );
 }

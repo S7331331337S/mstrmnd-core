@@ -384,7 +384,7 @@ export function registerMstrmndTools(
     "run_agent",
     {
       description:
-        "Create and dispatch an orchestrator run (default operator-agent). Uses EchoProvider unless MSTRMND_MODEL_PROVIDER is set.",
+        "Create and dispatch an orchestrator run (default operator-agent). Requires MSTRMND_MODEL_PROVIDER to be configured (no default; echo only under NODE_ENV=test or MSTRMND_ALLOW_ECHO=1).",
       inputSchema: {
         goal: z.string().describe("Run goal"),
         agentId: z

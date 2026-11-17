@@ -26,8 +26,17 @@ spec:
               value: all
             - name: MSTRMND_CRON
               value: "1"
-            - name: MSTRMND_MODEL_PROVIDER
-              value: echo
+            # TODO(Steele): prod model provider = Vercel AI Gateway (decided via CoS), but the
+            # core runtime has no Gateway provider yet: intelligence-core supports only
+            # `openai` | `openai-compatible` (+ test-only `echo`). Until a provider is chosen
+            # and wired, MSTRMND_MODEL_PROVIDER is intentionally unset and core fails closed.
+            # Deploy is blocked until the AI Gateway key secret below is created and populated
+            # by Steele. Do not create keys or enable spend from this file.
+            - name: MSTRMND_MODEL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: PLACEHOLDER-ai-gateway-api-key # TODO(Steele): Secret Manager secret, not yet created
+                  key: latest
             - name: HOST
               value: 0.0.0.0
             - name: PORT
