@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { useState } from "react";
 import {
   Alert,
@@ -114,7 +114,7 @@ export function Settings() {
           {token ? (
             <View style={styles.keyActive}>
               <View style={styles.keyRow}>
-                <Ionicons name="shield-checkmark" size={18} color={colors.ink} />
+                <Icon name="shield-checkmark" size={18} color={colors.ink} />
                 <View style={styles.flex}>
                   <ThemedText variant="headline">MSTRMND OS connected</ThemedText>
                   <ThemedText variant="caption" style={styles.mask}>
@@ -207,7 +207,7 @@ export function Settings() {
                   <ThemedText variant="caption">{option.hint}</ThemedText>
                 </View>
                 {active ? (
-                  <Ionicons name="checkmark-circle" size={20} color={colors.ink} />
+                  <Icon name="checkmark-circle" size={20} color={colors.ink} />
                 ) : null}
               </Pressable>
             );
@@ -242,7 +242,7 @@ export function Settings() {
                   <ThemedText variant="caption">{option.hint}</ThemedText>
                 </View>
                 {active ? (
-                  <Ionicons name="checkmark-circle" size={20} color={colors.ink} />
+                  <Icon name="checkmark-circle" size={20} color={colors.ink} />
                 ) : null}
               </Pressable>
             );

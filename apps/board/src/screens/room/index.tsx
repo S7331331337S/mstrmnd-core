@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import {
@@ -96,7 +96,7 @@ export function Room({ sessionId }: { sessionId: string }) {
               router.back();
             }}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.secondaryLabel} />
+            <Icon name="chevron-back" size={24} color={colors.secondaryLabel} />
           </Pressable>
 
           <ThemedText variant="overline" style={styles.status}>
@@ -114,7 +114,7 @@ export function Room({ sessionId }: { sessionId: string }) {
             }}
             style={session.turns.length === 0 && styles.disabled}
           >
-            <Ionicons name="share-outline" size={20} color={colors.secondaryLabel} />
+            <Icon name="share-outline" size={20} color={colors.secondaryLabel} />
           </Pressable>
         </View>
 
