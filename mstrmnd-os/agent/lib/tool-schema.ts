@@ -54,6 +54,7 @@ function flattenObjectUnion(schema: JsonObject, branches: unknown[]): Normalized
   const objects = branches as JsonObject[];
   const properties: JsonObject = {};
   const constValues = new Map<string, unknown[]>();
+  const variants = new Map<string, unknown[]>();
   const requiredSets = objects.map(
     (b) => new Set(Array.isArray(b.required) ? (b.required as unknown[]).filter((k) => typeof k === "string") : []),
   );
@@ -67,8 +68,23 @@ function flattenObjectUnion(schema: JsonObject, branches: unknown[]): Normalized
         constValues.set(key, list);
         continue;
       }
-      if (!(key in properties)) properties[key] = value;
+      const list = variants.get(key) ?? [];
+      if (!list.some((v) => JSON.stringify(v) === JSON.stringify(value))) list.push(value);
+      variants.set(key, list);
     }
+  }
+  // A property defined differently in different branches (e.g. `limit` max 50
+  // for search but 65536 for read) is advertised as `anyOf` of every variant,
+  // so no branch's valid inputs are excluded. Runtime validation stays exact.
+  for (const [key, list] of variants) {
+    if (list.length === 1) {
+      properties[key] = list[0];
+      continue;
+    }
+    const description = list
+      .map((v) => (isRecord(v) ? v.description : undefined))
+      .find((d) => typeof d === "string");
+    properties[key] = { anyOf: list, ...(description ? { description } : {}) };
   }
   for (const [key, values] of constValues) {
     const types = new Set(values.map(constType));

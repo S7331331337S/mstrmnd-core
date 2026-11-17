@@ -75,6 +75,19 @@ test("root oneOf of objects is flattened; discriminator becomes a required enum"
   assert.equal(r.schema.additionalProperties, false);
 });
 
+test("a property defined differently per branch is advertised as anyOf of every variant", () => {
+  const r = normalizeToolInputSchema({
+    oneOf: [
+      { type: "object", properties: { op: { const: "search" }, limit: { type: "integer", maximum: 50 } }, required: ["op"] },
+      { type: "object", properties: { op: { const: "read" }, limit: { type: "integer", maximum: 65536 } }, required: ["op"] },
+      { type: "object", properties: { op: { const: "list" }, limit: { type: "integer", maximum: 50 } }, required: ["op"] },
+    ],
+  });
+  assert.ok(r.ok);
+  const limit = (r.schema.properties as Json).limit as Json;
+  assert.deepEqual(limit, { anyOf: [{ type: "integer", maximum: 50 }, { type: "integer", maximum: 65536 }] });
+});
+
 test("unrecoverable roots are rejected", () => {
   for (const input of [
     { type: "string" },
@@ -229,6 +242,9 @@ test("vgpu_examples: advertised schema is flat, runtime validation keeps the uni
   const schema = serializeModelInputSchema(toInputSchema(mod.default.inputSchema)) as Json;
   assert.equal(schema.type, "object");
   assert.deepEqual(((schema.properties as Json).operation as Json).enum, ["search", "show", "read"]);
+  const limit = (schema.properties as Json).limit as Json;
+  const maxima = (limit.anyOf as Json[]).map((v) => v.maximum).sort((a, b) => Number(a) - Number(b));
+  assert.deepEqual(maxima, [50, 65536], "read's larger limit is still advertised");
 
   assert.equal((await validate("vgpu_examples.ts", { operation: "show", id: "hello-triangle" })).issues, undefined);
   assert.ok((await validate("vgpu_examples.ts", { operation: "show", id: "Bad ID!" })).issues?.length, "id regex");
