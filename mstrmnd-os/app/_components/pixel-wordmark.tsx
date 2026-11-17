@@ -20,14 +20,22 @@ const TICK_MS = 140;
 
 export function PixelWordmark({
   className = "text-sm tracking-[0.35em] text-foreground",
+  animate: allowAnimation = true,
 }: {
   className?: string;
+  /**
+   * Set false to render the wordmark statically in the solid Square variant.
+   * The cycling variants (line / triangle / circle) have thin strokes that read
+   * as dim, glitchy letters at small sizes.
+   */
+  animate?: boolean;
 }) {
   const [tick, setTick] = useState(0);
   // Stays false under reduced motion because the interval never starts.
-  const animate = tick > 0;
+  const animate = allowAnimation && tick > 0;
 
   useEffect(() => {
+    if (!allowAnimation) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (reduced.matches) return;
 
@@ -35,7 +43,7 @@ export function PixelWordmark({
       setTick((t) => t + 1);
     }, TICK_MS);
     return () => window.clearInterval(id);
-  }, []);
+  }, [allowAnimation]);
 
   return (
     <span

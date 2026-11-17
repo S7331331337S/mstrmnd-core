@@ -22,9 +22,9 @@ export function AuthForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <AsciiMark className="hidden sm:block -mx-1" />
+      <AsciiMark fit className="-mx-1" />
       <div className="flex flex-col gap-1">
-        <span className="label">{isSignUp ? "Create account" : "Sign in"}</span>
+        <span className="label-legible">{isSignUp ? "Create account" : "Sign in"}</span>
         <h1 className="display-pixel text-xl font-medium tracking-tight text-foreground">
           {isSignUp ? "Assemble your alliance" : "Welcome back"}
         </h1>
@@ -62,18 +62,18 @@ export function AuthForm({
       >
         {isSignUp && (
           <label className="flex flex-col gap-1">
-            <span className="label">Name</span>
+            <span className="label-legible">Name</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
               placeholder="Ada Lovelace"
-              className="bg-transparent border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+              className="bg-transparent border border-line px-3 py-2 text-sm placeholder:text-muted outline-none focus:border-foreground focus-visible:ring-1 focus-visible:ring-foreground"
             />
           </label>
         )}
         <label className="flex flex-col gap-1">
-          <span className="label">Email</span>
+          <span className="label-legible">Email</span>
           <input
             type="email"
             value={email}
@@ -81,11 +81,11 @@ export function AuthForm({
             autoComplete="email"
             required
             placeholder="you@company.com"
-            className="bg-transparent border border-line px-3 py-2 text-sm outline-none focus:border-line-strong mono"
+            className="bg-transparent border border-line px-3 py-2 text-sm placeholder:text-muted outline-none focus:border-foreground focus-visible:ring-1 focus-visible:ring-foreground mono"
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="label">Password</span>
+          <span className="label-legible">Password</span>
           <input
             type="password"
             value={password}
@@ -93,17 +93,19 @@ export function AuthForm({
             autoComplete={isSignUp ? "new-password" : "current-password"}
             required
             minLength={8}
-            placeholder={isSignUp ? "At least 8 characters" : "••••••••"}
-            className="bg-transparent border border-line px-3 py-2 text-sm outline-none focus:border-line-strong"
+            placeholder={isSignUp ? "At least 8 characters" : "Your password"}
+            className="bg-transparent border border-line px-3 py-2 text-sm placeholder:text-muted outline-none focus:border-foreground focus-visible:ring-1 focus-visible:ring-foreground"
           />
         </label>
 
-        {error && <span className="label text-foreground">{error}</span>}
+        {error && <span role="alert" className="label-legible !text-foreground">
+            {error}
+          </span>}
 
         <button
           type="submit"
           disabled={busy}
-          className="mt-1 display-pixel-grid border border-line-strong bg-surface-2 px-3 py-2 text-sm text-foreground hover:bg-surface disabled:opacity-40"
+          className="mt-1 display-pixel border border-foreground bg-foreground px-3 py-2 text-sm font-medium text-background hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-foreground"
         >
           {busy
             ? isSignUp
