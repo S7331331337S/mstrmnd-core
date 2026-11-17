@@ -1,6 +1,6 @@
 # ############################################################################
-# NOT DEPLOYED. core runs on Vercel; there is no live Cloud Run service
-# (per Steele, 2026-11-17). If you deploy this, set the provider first: the
+# NOT DEPLOYED — core runs on Vercel; no live Cloud Run service (per Steele 2026-11-17).
+# If you deploy this, set provider first. The
 # env below uses MSTRMND_MODEL_PROVIDER=openai-compatible via the Vercel AI
 # Gateway, and it needs the AI_GATEWAY_API_KEY secret and a real model id
 # (see the TODOs below) or the service fails closed at startup.
