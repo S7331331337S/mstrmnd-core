@@ -18,8 +18,18 @@ function filePath(): string {
   return path.join(root, "board-audit.jsonl");
 }
 
+/**
+ * Best-effort audit. On a read-only filesystem (Vercel functions: /var/task)
+ * the file append fails; that must not turn an auth denial into a 500, so the
+ * event goes to the function log instead.
+ */
 export async function writeBoardAudit(event: BoardAuditEvent): Promise<void> {
-  const dest = filePath();
-  await mkdir(path.dirname(dest), { recursive: true });
-  await appendFile(dest, `${JSON.stringify(event)}\n`);
+  const line = JSON.stringify(event);
+  try {
+    const dest = filePath();
+    await mkdir(path.dirname(dest), { recursive: true });
+    await appendFile(dest, `${line}\n`);
+  } catch {
+    console.info(`[board-audit] ${line}`);
+  }
 }

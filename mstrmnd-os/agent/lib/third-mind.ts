@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, isAbsolute } from "node:path";
 import { randomUUID } from "node:crypto";
-import { hasDatabase, getPool, ensureSchema } from "../../lib/db";
+import { hasDatabase, ensureSchema, withWorkspace, DEV_WORKSPACE } from "../../lib/db";
 
 /**
  * Third-Mind — the shared observation / memory layer.
@@ -163,7 +163,7 @@ function rowToObservation(r: PgObservationRow): Observation {
 export class PostgresThirdMindStore implements ThirdMindStore {
   async write(input: WriteInput): Promise<Observation> {
     await ensureSchema();
-    const { rows } = await getPool().query<PgObservationRow>(
+    const { rows } = await withWorkspace(input.scope, (db) => db.query<PgObservationRow>(
       `insert into observations (id, scope, key, content, tags, agent)
        values ($1, $2, $3, $4, $5, $6)
        on conflict (scope, key) do update
@@ -180,19 +180,19 @@ export class PostgresThirdMindStore implements ThirdMindStore {
         input.tags ?? [],
         input.agent ?? "unknown",
       ],
-    );
+    ));
     return rowToObservation(rows[0]);
   }
 
   async read(scope: string, idOrKey: string): Promise<Observation | null> {
     await ensureSchema();
-    const { rows } = await getPool().query<PgObservationRow>(
+    const { rows } = await withWorkspace(scope, (db) => db.query<PgObservationRow>(
       `select id, scope, key, content, tags, agent, created_at
          from observations
         where scope = $1 and (key = $2 or id::text = $2)
         limit 1`,
       [scope, idOrKey],
-    );
+    ));
     return rows[0] ? rowToObservation(rows[0]) : null;
   }
 
@@ -201,7 +201,7 @@ export class PostgresThirdMindStore implements ThirdMindStore {
     const doc = "key || ' ' || content || ' ' || array_to_string(tags, ' ')";
     // Full-text ranked search, with an ILIKE fallback for queries that produce
     // no lexemes. Semantic (pgvector) recall is a later slice.
-    const { rows } = await getPool().query<PgObservationRow & { score: number }>(
+    const { rows } = await withWorkspace(scope, (db) => db.query<PgObservationRow & { score: number }>(
       `select id, scope, key, content, tags, agent, created_at,
               ts_rank(to_tsvector('english', ${doc}),
                       websearch_to_tsquery('english', $2)) as score
@@ -212,20 +212,20 @@ export class PostgresThirdMindStore implements ThirdMindStore {
         order by score desc, created_at desc
         limit $3`,
       [scope, query, limit],
-    );
+    ));
     return rows.map((r) => ({ ...rowToObservation(r), score: Number(r.score) || 0 }));
   }
 
   async list(scope: string, limit = 50): Promise<Observation[]> {
     await ensureSchema();
-    const { rows } = await getPool().query<PgObservationRow>(
+    const { rows } = await withWorkspace(scope, (db) => db.query<PgObservationRow>(
       `select id, scope, key, content, tags, agent, created_at
          from observations
         where scope = $1
         order by created_at desc
         limit $2`,
       [scope, limit],
-    );
+    ));
     return rows.map(rowToObservation);
   }
 }
@@ -242,5 +242,5 @@ export function thirdMind(): ThirdMindStore {
   return singleton;
 }
 
-/** Fallback scope for unauthenticated/local contexts. */
-export const DEFAULT_SCOPE = "ws_local";
+/** Fallback scope for unauthenticated local/dev contexts (never production). */
+export const DEFAULT_SCOPE = DEV_WORKSPACE;

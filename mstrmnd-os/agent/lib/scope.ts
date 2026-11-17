@@ -1,4 +1,4 @@
-import { DEFAULT_SCOPE } from "./third-mind";
+import { resolveWorkspaceId } from "../../lib/db";
 
 interface AuthLike {
   session?: {
@@ -22,7 +22,9 @@ export function scopeFromCtx(ctx: unknown): string {
   if (typeof ws === "string" && ws.length > 0) return ws;
   const pid = current?.principalId;
   if (typeof pid === "string" && pid.length > 0) return `ws_${pid}`;
-  return DEFAULT_SCOPE;
+  // No authenticated principal: shared dev scope locally, hard error in
+  // production (never a shared bucket).
+  return resolveWorkspaceId(undefined);
 }
 
 export function agentFromCtx(ctx: unknown, fallback: string): string {
