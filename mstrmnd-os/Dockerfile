@@ -47,6 +47,14 @@ ENV EVE_NEXT_PRODUCTION_PORT=${EVE_PORT}
 ARG MSTRMND_WORKFLOW_WORLD
 ENV MSTRMND_WORKFLOW_WORLD=${MSTRMND_WORKFLOW_WORLD}
 
+# Sandbox backend. eve 1.0 picks the sandbox provider once, during `eve build`,
+# and records it in the build output, so this must be a build arg: setting
+# MSTRMND_SANDBOX only at runtime is too late. Under the default `auto`, a
+# build with neither Vercel nor a reachable Docker daemon cannot open a sandbox.
+# Pass the same value at build time (--build-arg) and runtime (compose does).
+ARG MSTRMND_SANDBOX=justbash
+ENV MSTRMND_SANDBOX=$MSTRMND_SANDBOX
+
 RUN pnpm eve:build
 RUN pnpm build
 

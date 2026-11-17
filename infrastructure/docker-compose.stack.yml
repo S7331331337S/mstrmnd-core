@@ -65,6 +65,9 @@ services:
     build:
       context: ../mstrmnd-os
       dockerfile: Dockerfile
+      args:
+        # eve picks the sandbox at build time; keep it equal to the runtime value below.
+        MSTRMND_SANDBOX: ${MSTRMND_SANDBOX:-justbash}
     image: mstrmnd-os:local
     container_name: mstrmnd-os
     profiles: ["os"]
