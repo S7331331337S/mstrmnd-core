@@ -37,7 +37,14 @@ export function TurnCard({ turn }: { turn: Turn }) {
       </View>
 
       {turn.status === "error" ? (
-        <Animated.View entering={FadeIn} style={styles.error}>
+        <Animated.View
+          entering={FadeIn}
+          style={styles.error}
+          accessible
+          accessibilityRole="alert"
+          accessibilityLiveRegion="assertive"
+          accessibilityLabel={`${agent.name} could not respond. ${turn.error ?? ""}`.trim()}
+        >
           <Ionicons name="alert-circle-outline" size={16} color={colors.secondaryLabel} />
           <ThemedText variant="subhead" style={styles.errorText}>
             {turn.error}
