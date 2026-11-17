@@ -51,6 +51,9 @@ services:
     build:
       context: ../mstrmnd-os
       dockerfile: Dockerfile
+      args:
+        # eve picks the sandbox at build time; keep it equal to the runtime value below.
+        MSTRMND_SANDBOX: ${MSTRMND_SANDBOX:-docker}
     container_name: mstrmnd-os
     depends_on:
       postgres:

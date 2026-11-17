@@ -175,8 +175,12 @@ cannot reach the runtime.
 provider once, at `eve build` time: Vercel Sandbox when built on Vercel, then
 Docker when a daemon is reachable during the build, and just-bash only under
 `eve dev` / `eve eval`. A production build with neither Vercel nor Docker
-succeeds but cannot open a sandbox, so self-hosted builds should set
-`MSTRMND_SANDBOX` explicitly. eve 1.0 removed the microsandbox provider.
+succeeds but cannot open a sandbox, so self-hosted builds must set
+`MSTRMND_SANDBOX` at **build** time: `mstrmnd-os/Dockerfile` takes it as
+`ARG MSTRMND_SANDBOX` (default `justbash`) and both compose files pass the same
+value as a build arg and at runtime (`justbash` in `docker-compose.stack.yml`,
+`docker` in `docker-compose.self-host.yml`). Setting it only at runtime is too
+late. eve 1.0 removed the microsandbox provider.
 
 **Egress is default-closed.** `MSTRMND_SANDBOX_NETWORK` defaults to `deny-all`
 because `execute_code` runs model-authored commands. Open it deliberately, per
