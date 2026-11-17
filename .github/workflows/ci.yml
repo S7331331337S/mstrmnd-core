@@ -125,6 +125,9 @@ jobs:
       - name: Typecheck mstrmnd-os
         run: pnpm --dir mstrmnd-os typecheck
 
+      - name: Tool schema tests (provider-safe tool input schemas)
+        run: pnpm --dir mstrmnd-os test:tools
+
       - name: Build mstrmnd-os
         run: pnpm --dir mstrmnd-os build
 
