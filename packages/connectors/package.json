@@ -10,6 +10,6 @@
     "./obsidian": "./src/obsidian/vault-reader.ts"
   },
   "devDependencies": {
-    "@types/node": "latest"
+    "@types/node": "^26.6.6"
   }
 }
