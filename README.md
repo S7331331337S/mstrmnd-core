@@ -289,7 +289,7 @@ curl -X POST http://localhost:8080/v1/runs \
   -d '{"goal":"Summarize Operator Zero","dryRun":true}'
 ```
 
-OS (eve/Next) is a second image. Add it with `--profile os` (port 3000). Cloud Run spec: `infrastructure/cloudrun.yaml`. Vercel still deploys `mstrmnd-os/` as before.
+OS (eve/Next) is a second image. Add it with `--profile os` (port 3000). Cloud Run spec: `infrastructure/cloudrun.yaml` (**not deployed**: core runs on Vercel and no Cloud Run service is live per Steele, 2026-11-17; set the provider and key before ever deploying it). Vercel still deploys `mstrmnd-os/` as before.
 
 HTTP routes: `/health`, `/ready`, `/v1/context`, `/v1/doctrine`, `/v1/memory`, `/v1/workspace`, `/v1/agents`, `/v1/runs`, `/v1/tools`, `/mcp`, `/adk`, `/.well-known/agent.json`. Workspace publishes still need `X-MSTRMND-APPROVE`. Network runs never publish. `/v1/tools` reports Vercel CLI + `gh` versions; it does not call vendor APIs.
 
@@ -304,7 +304,7 @@ Hermes CLI, MCP, and the HTTP host all boot via `createRuntime()` in `@mstrmnd/i
 - `MSTRMND_MODEL_NAME` — model id (default `gpt-4o-mini`)
 - Doctrine: `pnpm doctrine:sync` then pinned `doctrine.pin.json`
 
-**Production model access (Cloud Run):** production goes through Vercel AI Gateway using the existing `openai-compatible` provider (`MSTRMND_MODEL_BASE_URL=https://ai-gateway.vercel.sh/v1`, model ids in Gateway `provider/model` form, key via Secret Manager mapped onto `MSTRMND_MODEL_API_KEY`). No AI Gateway key exists yet; Cloud Run stays fail-closed until Steele creates the `AI_GATEWAY_API_KEY` secret. Note: the default Operator Zero boundary denies all network egress, so remote model calls are also denied until the host supplies a boundary that allows the Gateway hostname (see `docs/pr-cleanup-2026-09-14.md`).
+**Model access if Cloud Run is ever deployed (not deployed today):** production goes through Vercel AI Gateway using the existing `openai-compatible` provider (`MSTRMND_MODEL_BASE_URL=https://ai-gateway.vercel.sh/v1`, model ids in Gateway `provider/model` form, key via Secret Manager mapped onto `MSTRMND_MODEL_API_KEY`). No AI Gateway key exists yet; Cloud Run stays fail-closed until Steele creates the `AI_GATEWAY_API_KEY` secret. Note: the default Operator Zero boundary denies all network egress, so remote model calls are also denied until the host supplies a boundary that allows the Gateway hostname (see `docs/pr-cleanup-2026-09-14.md`).
 
 Example (real model):
 

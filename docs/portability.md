@@ -118,6 +118,10 @@ docker run -p 3000:3000 --env-file .env -v mstrmnd-eve:/app/.eve mstrmnd-os
 The image is plain Node. It runs unchanged on ECS/Fargate, Cloud Run, Fly,
 Railway, Kubernetes, or one VPS.
 
+`infrastructure/cloudrun.yaml` is a spec only: **not deployed** (core runs on Vercel;
+no live Cloud Run service per Steele, 2026-11-17). Set the model provider, key
+and model id in it before deploying.
+
 **Verified locally** (Node 24, no Vercel credentials, no platform APIs):
 `eve build` produces the Nitro runtime and it answers `/eve/v1/health`;
 `next build` produces a flat standalone server; the standalone server proxies
