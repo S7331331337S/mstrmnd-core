@@ -11,6 +11,8 @@
   --foreground: #e8e2d0;
   --muted: #8a877d;
   --faint: #55534c;
+  /* Small-text tone: ≥ 9:1 on --background (see sign-in UX PR). */
+  --muted-strong: #b4b0a3;
   --line: #1e1e22;
   --line-strong: #2a2a30;
   --accent: #e8e2d0;
@@ -23,6 +25,7 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
+  --color-muted-strong: var(--muted-strong);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
@@ -55,6 +58,21 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/*
+ * Legible small label. `.label` uses Geist Pixel Line, whose hairline strokes
+ * anti-alias to far below the token colour at 10px, so it reads as near-invisible
+ * even though --muted is 5.5:1. This variant uses Geist Mono at 11px in
+ * --muted-strong so the *rendered* glyphs clear WCAG AA. Opt-in (auth screens).
+ */
+.label-legible {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-strong);
 }
 
 .label-grid {

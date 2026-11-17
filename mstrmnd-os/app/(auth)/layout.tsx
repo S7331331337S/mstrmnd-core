@@ -8,8 +8,8 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto max-w-6xl w-full px-6 h-14 flex items-center">
           <Link href="/" className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-accent pulse" />
-            <PixelWordmark />
-            <span className="label hidden sm:inline">/ OS</span>
+            <PixelWordmark animate={false} />
+            <span className="label-legible hidden sm:inline">/ OS</span>
           </Link>
         </div>
       </header>
