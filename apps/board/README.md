@@ -4,7 +4,7 @@ A mastermind board that argues. You put a decision in front of it; seven special
 take positions, tear into each other's reasoning, and a chair closes the room with a
 call and three things to do this week.
 
-Built with Expo SDK 57, Expo Router, and Reanimated 4. Runs on iOS, Android and web.
+Built with Expo SDK 58 (React Native 0.88), Expo Router, and Reanimated 4. Runs on iOS, Android and web.
 
 ## Provenance
 

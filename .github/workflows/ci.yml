@@ -32,7 +32,7 @@ jobs:
         run: pnpm test
 
       - name: Board policy tests
-        run: pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts
+        run: pnpm exec tsx --test mstrmnd-os/lib/board-policy.test.ts mstrmnd-os/lib/proxy-paths.test.ts
 
       - name: Doctrine pin + fixture self-test
         run: pnpm doctrine:ci

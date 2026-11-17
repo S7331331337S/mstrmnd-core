@@ -8,14 +8,14 @@
     "calibrate": "tsx src/calibrate.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@mstrmnd/intelligence-core": "workspace:*",
     "@mstrmnd/mcp-server": "workspace:*",
     "@mstrmnd/schemas": "workspace:*",
     "@mstrmnd/stack-tools": "workspace:*",
-    "tsx": "latest"
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
-    "@types/node": "latest"
+    "@types/node": "^26.6.6"
   }
 }
