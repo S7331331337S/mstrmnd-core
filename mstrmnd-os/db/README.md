@@ -31,8 +31,10 @@ let the app connect as it (out of band, by someone with the owner URL):
 ALTER ROLE mstrmnd_app LOGIN PASSWORD '<generated>';
 ```
 
-Then point the app's `DATABASE_URL` at a connection string for
-`mstrmnd_app` (same host/database). `lib/db.ts` reads `DATABASE_URL` first.
+Then set `MSTRMND_APP_DATABASE_URL` (a pooled connection string for
+`mstrmnd_app`, same host/database) on the Vercel project. `lib/db.ts` reads it
+before the integration-managed `DATABASE_URL` (owner), so no integration
+variable has to be edited; deleting it rolls the app back to the owner URL.
 
 ## How the app uses it
 

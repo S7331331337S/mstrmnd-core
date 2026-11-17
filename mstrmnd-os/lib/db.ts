@@ -13,6 +13,9 @@ import { Pool, type PoolClient } from "pg";
  */
 export function databaseUrl(): string | undefined {
   return (
+    // Least-privilege app role (mstrmnd_app, db/migrations/0001_rls.sql). Set
+    // explicitly, so it wins over the integration-managed owner DATABASE_URL.
+    process.env.MSTRMND_APP_DATABASE_URL ??
     process.env.DATABASE_URL ??
     process.env.POSTGRES_URL ??
     process.env.POSTGRES_PRISMA_URL ??
