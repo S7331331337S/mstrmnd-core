@@ -27,8 +27,17 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm calibrate
-      - run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "scheduled calibration"
+      # Echo is a test-only provider; opt in explicitly (same as ci.yml).
+      - name: Calibration (echo, test-only)
+        env:
+          NODE_ENV: test
+          MSTRMND_MODEL_PROVIDER: echo
+        run: pnpm calibrate
+      - name: Hermes dry-run (echo, test-only)
+        env:
+          NODE_ENV: test
+          MSTRMND_MODEL_PROVIDER: echo
+        run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "scheduled calibration"
 
   publish-core:
     runs-on: ubuntu-latest
