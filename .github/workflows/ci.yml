@@ -52,9 +52,15 @@ jobs:
           fi
 
       - name: Hermes orchestrator dry-run
+        env:
+          NODE_ENV: test
+          MSTRMND_MODEL_PROVIDER: echo
         run: pnpm --filter @mstrmnd/hermes exec tsx src/index.ts --dry-run --goal "CI dry-run"
 
-      - name: Calibration (echo)
+      - name: Calibration (echo, test-only)
+        env:
+          NODE_ENV: test
+          MSTRMND_MODEL_PROVIDER: echo
         run: pnpm calibrate
 
       - name: Stack tools (Vercel CLI/SDK + GitHub CLI)
@@ -78,6 +84,8 @@ jobs:
         run: docker build -f infrastructure/Dockerfile.core -t mstrmnd-core:ci .
 
       - name: Compose config
+        env:
+          MSTRMND_MODEL_PROVIDER: echo
         run: docker compose -f infrastructure/docker-compose.stack.yml config >/dev/null
 
       - name: Run and smoke

@@ -5,6 +5,10 @@ import { join } from "node:path";
 import test from "node:test";
 import { createHostServer, listen } from "./http";
 
+// Echo is an explicit, test-only opt-in; there is no default provider.
+process.env.NODE_ENV ??= "test";
+process.env.MSTRMND_MODEL_PROVIDER ??= "echo";
+
 const REPO = join(import.meta.dirname, "../../..");
 
 async function withHost(
