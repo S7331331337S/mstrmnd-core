@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, isAbsolute } from "node:path";
 import { randomUUID, randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { hasDatabase, getPool, ensureSchema } from "./db";
+import { hasDatabase, getPool, ensureSchema, withWorkspace } from "./db";
 
 const scrypt = promisify(scryptCb);
 
@@ -22,7 +22,7 @@ export interface PublicUser {
 interface UserStore {
   createUser(input: { email: string; name: string; password: string }): Promise<PublicUser>;
   authenticate(email: string, password: string): Promise<PublicUser | null>;
-  findById(id: string): Promise<PublicUser | null>;
+  findById(id: string, workspaceId: string): Promise<PublicUser | null>;
 }
 
 async function hashPassword(password: string): Promise<string> {
@@ -109,8 +109,8 @@ class FileUserStore implements UserStore {
     return (await verifyPassword(password, user.passwordHash)) ? toPublic(user) : null;
   }
 
-  async findById(id: string) {
-    const user = this.load().find((u) => u.id === id);
+  async findById(id: string, workspaceId: string) {
+    const user = this.load().find((u) => u.id === id && u.workspaceId === workspaceId);
     return user ? toPublic(user) : null;
   }
 }
@@ -127,22 +127,30 @@ interface PgUserRow {
   workspace_id: string;
 }
 
+/** Postgres "undefined_function": migration 0001_rls not applied yet. */
+const UNDEFINED_FUNCTION = "42883";
+
 class PostgresUserStore implements UserStore {
   async createUser(input: { email: string; name: string; password: string }) {
     await ensureSchema();
     const record = newUser(input.email, input.name, await hashPassword(input.password));
     try {
-      await getPool().query(
-        `insert into users (id, email, name, password_hash, workspace_id, created_at)
-         values ($1, $2, $3, $4, $5, $6)`,
-        [
-          record.id,
-          record.email,
-          record.name,
-          record.passwordHash,
-          record.workspaceId,
-          record.createdAt,
-        ],
+      // The new row belongs to the new user's own workspace, so the insert
+      // passes the users RLS policy's WITH CHECK under mstrmnd_app. A duplicate
+      // email still raises 23505 (unique checks are not filtered by RLS).
+      await withWorkspace(record.workspaceId, (db) =>
+        db.query(
+          `insert into users (id, email, name, password_hash, workspace_id, created_at)
+           values ($1, $2, $3, $4, $5, $6)`,
+          [
+            record.id,
+            record.email,
+            record.name,
+            record.passwordHash,
+            record.workspaceId,
+            record.createdAt,
+          ],
+        ),
       );
     } catch (err) {
       if ((err as { code?: string }).code === "23505") {
@@ -153,23 +161,47 @@ class PostgresUserStore implements UserStore {
     return toPublic(record);
   }
 
+  /**
+   * Sign-in runs before there is a session, so there is no workspace to scope
+   * by. It goes through the narrow SECURITY DEFINER function
+   * mstrmnd_auth_lookup (db/migrations/0001_rls.sql). Until that migration is
+   * applied (owner connection only), fall back to the direct owner query.
+   */
+  private async lookupByEmail(email: string): Promise<PgUserRow | undefined> {
+    const normalized = email.trim().toLowerCase();
+    try {
+      const { rows } = await getPool().query<PgUserRow>(
+        `select id, email, name, password_hash, workspace_id
+           from mstrmnd_auth_lookup($1)`,
+        [normalized],
+      );
+      return rows[0];
+    } catch (err) {
+      if ((err as { code?: string }).code !== UNDEFINED_FUNCTION) throw err;
+      const { rows } = await getPool().query<PgUserRow>(
+        `select id, email, name, password_hash, workspace_id
+           from users where email = $1`,
+        [normalized],
+      );
+      return rows[0];
+    }
+  }
+
   async authenticate(email: string, password: string) {
     await ensureSchema();
-    const { rows } = await getPool().query<PgUserRow>(
-      `select id, email, name, password_hash, workspace_id
-         from users where email = $1`,
-      [email.trim().toLowerCase()],
-    );
-    const row = rows[0];
+    const row = await this.lookupByEmail(email);
     if (!row) return null;
     return (await verifyPassword(password, row.password_hash)) ? rowToPublic(row) : null;
   }
 
-  async findById(id: string) {
+  async findById(id: string, workspaceId: string) {
     await ensureSchema();
-    const { rows } = await getPool().query<PgUserRow>(
-      `select id, email, name, password_hash, workspace_id from users where id = $1`,
-      [id],
+    const { rows } = await withWorkspace(workspaceId, (db) =>
+      db.query<PgUserRow>(
+        `select id, email, name, password_hash, workspace_id
+           from users where id = $1 and workspace_id = $2`,
+        [id, workspaceId],
+      ),
     );
     return rows[0] ? rowToPublic(rows[0]) : null;
   }
@@ -211,6 +243,6 @@ export function createUser(input: { email: string; name: string; password: strin
 export function authenticate(email: string, password: string) {
   return userStore().authenticate(email, password);
 }
-export function findById(id: string) {
-  return userStore().findById(id);
+export function findById(id: string, workspaceId: string) {
+  return userStore().findById(id, workspaceId);
 }
