@@ -23,9 +23,12 @@ function toolError(err: unknown) {
 }
 
 export async function createMcpServer(): Promise<McpServer> {
-  const runtime = await createRuntime({ allowMissingVault: true });
+  // The model provider is resolved lazily: only run_agent needs one, so a
+  // missing MSTRMND_MODEL_PROVIDER must not take down every other tool. run_agent
+  // fails closed with an isError tool result instead (see its try/catch).
+  const runtime = await createRuntime({ allowMissingVault: true, lazyProvider: true });
   console.error(
-    `MSTRMND MCP: runtime ready — memory=${runtime.memory.size} doctrine=${runtime.context.doctrineRef ?? "none"} company=${runtime.context.company.name} model=${runtime.provider.id}`
+    `MSTRMND MCP: runtime ready — memory=${runtime.memory.size} doctrine=${runtime.context.doctrineRef ?? "none"} company=${runtime.context.company.name} model=lazy(${process.env.MSTRMND_MODEL_PROVIDER?.trim() || "unset"})`
   );
 
   const server = new McpServer({
