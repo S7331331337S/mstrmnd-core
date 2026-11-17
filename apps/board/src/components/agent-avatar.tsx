@@ -29,11 +29,18 @@ export function AgentAvatar({
   size = "md",
   speaking = false,
   dimmed = false,
+  decorative = false,
 }: {
   agent: Agent;
   size?: keyof typeof SIZES;
   speaking?: boolean;
   dimmed?: boolean;
+  /**
+   * True when the member's name is already spoken by the parent (a labelled
+   * row, or a name rendered beside the avatar): the avatar is then skipped by
+   * screen readers instead of reading the name twice.
+   */
+  decorative?: boolean;
 }) {
   const dimension = SIZES[size];
   const pulse = useSharedValue(0);
@@ -60,7 +67,12 @@ export function AgentAvatar({
   const filled = speaking || !dimmed;
 
   return (
-    <View style={{ width: dimension, height: dimension }}>
+    <View
+      style={{ width: dimension, height: dimension }}
+      {...(decorative
+        ? { accessibilityElementsHidden: true, importantForAccessibility: "no-hide-descendants" as const }
+        : { accessible: true, accessibilityRole: "image" as const, accessibilityLabel: agent.name })}
+    >
       {speaking ? (
         <Animated.View
           pointerEvents="none"
@@ -79,6 +91,7 @@ export function AgentAvatar({
         ]}
       >
         <ThemedText
+          importantForAccessibility="no"
           style={{
             fontFamily: fonts.semibold,
             fontSize: dimension * 0.31,

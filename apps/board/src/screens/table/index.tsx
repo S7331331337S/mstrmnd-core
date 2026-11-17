@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -109,7 +109,7 @@ export function Table() {
 
           {!hosted ? (
             <Animated.View entering={FadeIn} style={styles.notice}>
-              <Ionicons name="flash-outline" size={15} color={colors.secondaryLabel} />
+              <Icon name="flash-outline" size={15} color={colors.secondaryLabel} />
               <ThemedText variant="caption" style={{ flex: 1, color: colors.secondaryLabel }}>
                 Running the offline board. Sign in to MSTRMND OS in Settings for a live
                 deliberation.
@@ -157,6 +157,8 @@ export function Table() {
           <Animated.View layout={LinearTransition} style={styles.field}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Context"
+              accessibilityState={{ expanded: showContext }}
               onPress={() => {
                 haptics.tap();
                 setShowContext((v) => !v);
@@ -164,7 +166,7 @@ export function Table() {
               style={styles.contextToggle}
             >
               <ThemedText variant="overline">Context</ThemedText>
-              <Ionicons
+              <Icon
                 name={showContext ? "chevron-up" : "chevron-down"}
                 size={14}
                 color={colors.tertiaryLabel}

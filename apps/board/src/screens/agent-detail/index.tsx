@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -48,12 +48,12 @@ export function AgentDetail({ agentId }: { agentId: string }) {
               router.back();
             }}
           >
-            <Ionicons name="close" size={24} color={colors.secondaryLabel} />
+            <Icon name="close" size={24} color={colors.secondaryLabel} />
           </Pressable>
         </View>
 
         <View style={styles.hero}>
-          <AgentAvatar agent={agent} size="lg" speaking />
+          <AgentAvatar agent={agent} size="lg" speaking decorative />
           <View style={styles.heroText}>
             <ThemedText variant="overline">{agent.role}</ThemedText>
             <ThemedText variant="largeTitle">{agent.name}</ThemedText>

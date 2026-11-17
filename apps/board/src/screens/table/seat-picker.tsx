@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import type { Agent, AgentId, Preset } from "@/agents/roster";
@@ -41,6 +41,7 @@ export function SeatPicker({
               <Pressable
                 key={preset.id}
                 accessibilityRole="button"
+                accessibilityLabel={preset.name}
                 accessibilityState={{ selected: on }}
                 onPress={() => onPreset(preset.id)}
                 style={({ pressed }) => [
@@ -49,7 +50,7 @@ export function SeatPicker({
                   pressed && styles.pressed,
                 ]}
               >
-                <Ionicons
+                <Icon
                   name={preset.icon as never}
                   size={15}
                   color={on ? colors.ink : colors.tertiaryLabel}
@@ -94,7 +95,7 @@ export function SeatPicker({
                   pressed && styles.pressed,
                 ]}
               >
-                <AgentAvatar agent={agent} size="sm" dimmed={!seated} />
+                <AgentAvatar agent={agent} size="sm" dimmed={!seated} decorative />
 
                 <View style={styles.seatText}>
                   <ThemedText
@@ -110,9 +111,9 @@ export function SeatPicker({
                 </View>
 
                 {seated ? (
-                  <Ionicons name="checkmark-circle" size={19} color={colors.ink} />
+                  <Icon name="checkmark-circle" size={19} color={colors.ink} />
                 ) : (
-                  <Ionicons name="add-circle-outline" size={19} color={colors.tertiaryLabel} />
+                  <Icon name="add-circle-outline" size={19} color={colors.tertiaryLabel} />
                 )}
               </Pressable>
             );

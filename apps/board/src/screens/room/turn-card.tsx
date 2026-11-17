@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, LinearTransition } from "react-native-reanimated";
 
@@ -24,7 +24,7 @@ export function TurnCard({ turn }: { turn: Turn }) {
       style={[styles.card, isRuling && styles.ruling, speaking && styles.speaking]}
     >
       <View style={styles.header}>
-        <AgentAvatar agent={agent} size="sm" speaking={speaking} />
+        <AgentAvatar agent={agent} size="sm" speaking={speaking} decorative />
 
         <View style={styles.identity}>
           <ThemedText variant="headline">{agent.name}</ThemedText>
@@ -38,7 +38,7 @@ export function TurnCard({ turn }: { turn: Turn }) {
 
       {turn.status === "error" ? (
         <Animated.View entering={FadeIn} style={styles.error}>
-          <Ionicons name="alert-circle-outline" size={16} color={colors.secondaryLabel} />
+          <Icon name="alert-circle-outline" size={16} color={colors.secondaryLabel} />
           <ThemedText variant="subhead" style={styles.errorText}>
             {turn.error}
           </ThemedText>
