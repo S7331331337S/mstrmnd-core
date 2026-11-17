@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "mstrmnd",
+    "scheme": "mstrmnd-board",
     "userInterfaceStyle": "light",
     "backgroundColor": "#FAFAFB",
     "ios": {
@@ -42,6 +42,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "mstrmndgo",
+    "extra": {
+      "eas": {
+        "projectId": "2787fcb4-95d3-4f61-bd5f-2c6310f74d9c"
+      }
     }
   }
 }
