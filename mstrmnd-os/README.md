@@ -16,7 +16,7 @@ Next.js 16.3 as the host application and UI surface.
 | Agent runtime | [`eve`](https://eve.dev) | Filesystem agents, durable sessions, subagents, skills, tools, channels |
 | Models | AI Gateway + AI SDK (`ai`) | Provider-agnostic model access via string IDs or direct providers |
 | Durability | Workflow SDK (`workflow`) | Checkpointed, resumable multi-agent patterns; world selectable |
-| Execution | Sandbox adapter (`agent/sandbox.ts`) | Vercel Sandbox, Docker, or just-bash — same `/workspace` |
+| Execution | Sandbox adapter (`agent/sandbox.ts`) | Vercel Sandbox, Docker, microsandbox, or just-bash — same `/workspace` |
 | WebGPU | [vgpu](https://vgpu.sh) | MCP docs/examples plus the public `/field` shader (WebGL2 fallback) |
 | Auth | Session (JWT via `jose`) | Sign in / sign up; gates the app **and** the agent; per-workspace scope |
 | Data | Postgres / Neon (`pg`) | Users + Third-Mind persist in Postgres when `DATABASE_URL` is set (file fallback otherwise) |
@@ -124,7 +124,7 @@ environment variable:
 | Surface | Adapter | Switch |
 | --- | --- | --- |
 | Host runtime | Next.js `output: "standalone"` | `MSTRMND_STANDALONE` (auto off Vercel) |
-| Sandbox | `agent/sandbox.ts` | `MSTRMND_SANDBOX` = `auto`/`vercel`/`docker`/`justbash` |
+| Sandbox | `agent/sandbox.ts` | `MSTRMND_SANDBOX` = `auto`/`vercel`/`docker`/`microsandbox`/`justbash` |
 | Durability | `agent/agent.ts` | `MSTRMND_WORKFLOW_WORLD` (build time; unset → local file world) |
 | Models | `agent/lib/model.ts` | `MSTRMND_MODEL_BASE_URL` / `MSTRMND_PROVIDER` |
 | Data | `lib/db.ts` | `DATABASE_URL` (any Postgres) |
