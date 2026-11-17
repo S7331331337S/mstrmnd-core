@@ -13,11 +13,11 @@
     "check": "tsx src/cli.ts check"
   },
   "dependencies": {
-    "@vercel/sdk": "^1.27.0",
-    "tsx": "latest",
-    "vercel": "^48.0.0"
+    "@vercel/sdk": "^1.28.65",
+    "tsx": "^4.23.15",
+    "vercel": "^65.17.0"
   },
   "devDependencies": {
-    "@types/node": "latest"
+    "@types/node": "^26.6.6"
   }
 }

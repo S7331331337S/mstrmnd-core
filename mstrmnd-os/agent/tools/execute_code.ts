@@ -9,8 +9,8 @@ import { z } from "zod";
  *
  * The tool is deliberately **backend-agnostic**. It asks the runtime for the
  * session's sandbox handle and never imports a vendor SDK, so the same tool
- * runs against Vercel Sandbox, a Docker container, a microsandbox VM, or a
- * custom isolation service. Which one is in play is decided once, at the edge,
+ * runs against Vercel Sandbox, a Docker container, or a custom isolation
+ * service. Which one is in play is decided once, at the edge,
  * in `agent/sandbox.ts` — see `docs/portability.md` in the repo root.
  */
 
@@ -48,7 +48,7 @@ export default defineTool({
       return {
         ok: false as const,
         error: err instanceof Error ? err.message : String(err),
-        hint: "Check the sandbox backend: MSTRMND_SANDBOX selects vercel | docker | microsandbox | justbash (default: auto).",
+        hint: "Check the sandbox backend: MSTRMND_SANDBOX selects vercel | docker | justbash (default: auto).",
       };
     }
   },

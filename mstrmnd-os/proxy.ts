@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isWorkflowPath } from "@/lib/proxy-paths";
 import { readSessionCookie, verifySession } from "@/lib/session";
 
 /**
@@ -15,6 +16,12 @@ const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/api/auth", "/api/board", "/ev
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Vercel Workflow / eve callbacks (/.well-known/workflow/*) must pass
+  // through untouched — never redirect them to /sign-in.
+  if (isWorkflowPath(pathname)) {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return NextResponse.next();
   }
@@ -30,6 +37,10 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except Next internals and static assets.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // Run on everything except Next internals, static assets and the Workflow
+  // routes (/.well-known/workflow/*). Must stay a string literal: Next.js
+  // statically analyses config.matcher and rejects imported constants.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|\\.well-known/workflow/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };
