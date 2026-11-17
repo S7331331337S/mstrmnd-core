@@ -88,7 +88,7 @@ What is still thin / next:
 
 **Two runtimes (until a later adapter):** Hermes/MCP boot `@mstrmnd/intelligence-core` (root pnpm workspace, Node 20 in CI). Board live path and Field boot eve inside `mstrmnd-os` (nested pnpm workspace, Node 24). They do not share packages today. Do not fold `mstrmnd-os` into the root graph. CI runs `pnpm --dir mstrmnd-os typecheck` as a separate job (`next typegen` then `tsc --noEmit`; `next-env.d.ts` is gitignored).
 
-**Models:** `openai` / `openai-compatible` Chat Completions provider is landed; there is no default provider; CI sets `echo` explicitly under `NODE_ENV=test`.
+**Models:** production goes through Vercel AI Gateway via `openai-compatible` (config only; `MSTRMND_MODEL_BASE_URL` is required, no Gateway key exists yet, Cloud Run stays fail-closed until Steele creates `AI_GATEWAY_API_KEY`). `openai` / `openai-compatible` Chat Completions provider is landed; there is no default provider; CI sets `echo` explicitly under `NODE_ENV=test`.
 
 ---
 

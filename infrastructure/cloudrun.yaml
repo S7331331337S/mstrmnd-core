@@ -26,17 +26,24 @@ spec:
               value: all
             - name: MSTRMND_CRON
               value: "1"
-            # TODO(Steele): prod model provider = Vercel AI Gateway (decided via CoS), but the
-            # core runtime has no Gateway provider yet: intelligence-core supports only
-            # `openai` | `openai-compatible` (+ test-only `echo`). Until a provider is chosen
-            # and wired, MSTRMND_MODEL_PROVIDER is intentionally unset and core fails closed.
-            # Deploy is blocked until the AI Gateway key secret below is created and populated
-            # by Steele. Do not create keys or enable spend from this file.
+            # Prod model provider: Vercel AI Gateway via the existing `openai-compatible`
+            # provider (config only; no Gateway-specific code in core).
+            - name: MSTRMND_MODEL_PROVIDER
+              value: openai-compatible
+            - name: MSTRMND_MODEL_BASE_URL
+              value: https://ai-gateway.vercel.sh/v1
+            # TODO(Steele): create the Secret Manager secret `AI_GATEWAY_API_KEY` (an AI Gateway
+            # key). It does not exist yet, so Cloud Run stays fail-closed (deploy will not start)
+            # until you create and populate it. Nothing here creates a key or enables spend.
+            # core reads its key from MSTRMND_MODEL_API_KEY, so the secret is mapped onto that name.
             - name: MSTRMND_MODEL_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: PLACEHOLDER-ai-gateway-api-key # TODO(Steele): Secret Manager secret, not yet created
+                  name: AI_GATEWAY_API_KEY
                   key: latest
+            # TODO(Steele): set MSTRMND_MODEL_NAME to a Gateway `provider/model` id (e.g.
+            # `<provider>/<model>`). Unset, core falls back to its built-in `gpt-4o-mini`, which
+            # Gateway does not accept.
             - name: HOST
               value: 0.0.0.0
             - name: PORT

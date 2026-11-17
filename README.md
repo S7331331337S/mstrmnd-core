@@ -300,8 +300,10 @@ Hermes CLI, MCP, and the HTTP host all boot via `createRuntime()` in `@mstrmnd/i
 - `OBSIDIAN_VAULT_PATH` — vault or operator-pack root
 - `MSTRMND_MODEL_PROVIDER` — **required, no default**: `openai` / `openai-compatible`, or `echo` (offline simulation; allowed only when `NODE_ENV=test` or `MSTRMND_ALLOW_ECHO=1`, fails closed everywhere else including `NODE_ENV` unset and `VERCEL_ENV` preview/production)
 - `MSTRMND_MODEL_API_KEY` or `OPENAI_API_KEY` — required when provider is openai*
-- `MSTRMND_MODEL_BASE_URL` — Chat Completions base (default `https://api.openai.com/v1`)
+- `MSTRMND_MODEL_BASE_URL` — Chat Completions base (required for `openai-compatible`; `openai` defaults to `https://api.openai.com/v1`)
 - `MSTRMND_MODEL_NAME` — model id (default `gpt-4o-mini`)
+
+**Production model access (Cloud Run):** production goes through Vercel AI Gateway using the existing `openai-compatible` provider (`MSTRMND_MODEL_BASE_URL=https://ai-gateway.vercel.sh/v1`, model ids in Gateway `provider/model` form, key via Secret Manager mapped onto `MSTRMND_MODEL_API_KEY`). No AI Gateway key exists yet; Cloud Run stays fail-closed until Steele creates the `AI_GATEWAY_API_KEY` secret. Note: the default Operator Zero boundary denies all network egress, so remote model calls are also denied until the host supplies a boundary that allows the Gateway hostname (see `docs/pr-cleanup-2026-09-14.md`).
 - Doctrine: `pnpm doctrine:sync` then pinned `doctrine.pin.json`
 
 Example (real model):

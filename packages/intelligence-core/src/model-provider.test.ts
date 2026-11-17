@@ -67,3 +67,70 @@ test("NODE_ENV=test allows explicit echo but still has no default", () =>
     assert.ok(provider instanceof EchoProvider);
     assert.equal(await provider.complete([{ role: "user", content: "hello" }]), "[echo] hello");
   }));
+
+// --- openai-compatible: everything comes from env, nothing hardcoded ---------
+
+const OC_KEYS = [
+  "MSTRMND_MODEL_BASE_URL",
+  "MSTRMND_MODEL_API_KEY",
+  "OPENAI_API_KEY",
+  "MSTRMND_MODEL_NAME",
+  "MSTRMND_MODEL_ORG",
+  "MSTRMND_MODEL_CALL_BUDGET_USD",
+] as const;
+
+async function withOcEnv(env: Partial<Record<(typeof OC_KEYS)[number], string>>, fn: () => unknown | Promise<unknown>) {
+  const saved = Object.fromEntries(OC_KEYS.map((k) => [k, process.env[k]]));
+  try {
+    for (const k of OC_KEYS) delete process.env[k];
+    Object.assign(process.env, env);
+    await fn();
+  } finally {
+    for (const k of OC_KEYS) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  }
+}
+
+test("openai-compatible reads base URL, key and model id from env (Gateway provider/model id passes through untouched)", () =>
+  withOcEnv(
+    {
+      MSTRMND_MODEL_BASE_URL: "https://gateway.example.test/v1/",
+      MSTRMND_MODEL_API_KEY: "  test-key-123  ",
+      MSTRMND_MODEL_NAME: "anthropic/claude-sonnet-4.5",
+    },
+    async () => {
+      const realFetch = globalThis.fetch;
+      let seen: { url: string; auth: string | null; body: { model: string } } | undefined;
+      globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+        seen = {
+          url: String(url),
+          auth: new Headers(init?.headers).get("authorization"),
+          body: JSON.parse(String(init?.body)),
+        };
+        return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 });
+      }) as typeof fetch;
+      try {
+        const provider = resolveModelProvider("openai-compatible");
+        assert.equal(provider.id, "openai-compatible");
+        assert.deepEqual(provider.policy?.networkDestinations, ["https://gateway.example.test/v1"]);
+        assert.equal(await provider.complete([{ role: "user", content: "hi" }]), "ok");
+        assert.equal(seen?.url, "https://gateway.example.test/v1/chat/completions");
+        assert.equal(seen?.auth, "Bearer test-key-123");
+        assert.equal(seen?.body.model, "anthropic/claude-sonnet-4.5");
+      } finally {
+        globalThis.fetch = realFetch;
+      }
+    }
+  ));
+
+test("openai-compatible fails closed without a base URL (no api.openai.com fallback)", () =>
+  withOcEnv({ MSTRMND_MODEL_API_KEY: "test-key" }, () => {
+    assert.throws(() => resolveModelProvider("openai-compatible"), /requires MSTRMND_MODEL_BASE_URL/);
+  }));
+
+test("openai-compatible fails closed without an API key", () =>
+  withOcEnv({ MSTRMND_MODEL_BASE_URL: "https://gateway.example.test/v1" }, () => {
+    assert.throws(() => resolveModelProvider("openai-compatible"), /requires MSTRMND_MODEL_API_KEY or OPENAI_API_KEY/);
+  }));
