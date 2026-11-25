@@ -88,6 +88,57 @@ test("a property defined differently per branch is advertised as anyOf of every 
   assert.deepEqual(limit, { anyOf: [{ type: "integer", maximum: 50 }, { type: "integer", maximum: 65536 }] });
 });
 
+test("mixed const + plain variants for one key keep the plain variant (no enum overwrite)", () => {
+  const r = normalizeToolInputSchema({
+    oneOf: [
+      { type: "object", properties: { mode: { type: "string", const: "fast" }, q: { type: "string" } }, required: ["mode"] },
+      { type: "object", properties: { mode: { type: "string", description: "any free-form mode" }, q: { type: "string" } }, required: ["mode"] },
+    ],
+  });
+  assert.ok(r.ok);
+  const mode = (r.schema.properties as Json).mode as Json;
+  assert.equal(mode.enum, undefined, "plain variant must not be collapsed into an enum");
+  assert.deepEqual(mode.anyOf, [
+    { type: "string", const: "fast" },
+    { type: "string", description: "any free-form mode" },
+  ]);
+  assert.equal(mode.description, "any free-form mode");
+  // Order of branches must not matter.
+  const flipped = normalizeToolInputSchema({
+    oneOf: [
+      { type: "object", properties: { mode: { type: "string" } } },
+      { type: "object", properties: { mode: { type: "string", const: "fast" } } },
+    ],
+  });
+  assert.ok(flipped.ok);
+  const fm = (flipped.schema.properties as Json).mode as Json;
+  assert.equal(fm.enum, undefined);
+  assert.deepEqual(fm.anyOf, [{ type: "string" }, { type: "string", const: "fast" }]);
+});
+
+test("all-const variants still collapse to an enum (single-value enums count as const)", () => {
+  const r = normalizeToolInputSchema({
+    anyOf: [
+      { type: "object", properties: { op: { const: "a" } } },
+      { type: "object", properties: { op: { type: "string", enum: ["b"] } } },
+      { type: "object", properties: { op: { const: "a" } } },
+    ],
+  });
+  assert.ok(r.ok);
+  assert.deepEqual((r.schema.properties as Json).op, { type: "string", enum: ["a", "b"] });
+});
+
+test("const variants of incompatible types are not collapsed into a typed enum", () => {
+  const r = normalizeToolInputSchema({
+    oneOf: [
+      { type: "object", properties: { v: { const: "a" } } },
+      { type: "object", properties: { v: { const: 1 } } },
+    ],
+  });
+  assert.ok(r.ok);
+  assert.deepEqual((r.schema.properties as Json).v, { anyOf: [{ const: "a" }, { const: 1 }] });
+});
+
 test("unrecoverable roots are rejected", () => {
   for (const input of [
     { type: "string" },
@@ -168,21 +219,39 @@ test("OpenAI request body only carries object-root tool parameters (mocked fetch
 
 /* ---------------- authored tools through eve's real serializer ---------------- */
 
+const TOOL_FILE = /\.(ts|tsx|mts)$/;
+const NOT_A_TOOL = /\.(test\.(ts|tsx|mts)|d\.ts)$/;
+
+/** Every tool source file under any `tools/` dir in agent/ (recursive). Sorted, deterministic. */
 function toolFiles(): string[] {
   const out: string[] = [];
-  const walk = (dir: string) => {
+  const collect = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name === "tools") {
-          for (const f of readdirSync(full)) if (f.endsWith(".ts")) out.push(path.join(full, f));
-        } else walk(full);
-      }
+      if (entry.isDirectory()) collect(full);
+      else if (TOOL_FILE.test(entry.name) && !NOT_A_TOOL.test(entry.name)) out.push(full);
+    }
+  };
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.name === "tools") collect(full);
+      else walk(full);
     }
   };
   walk(path.join(ROOT, "agent"));
   return out.sort();
 }
+
+// Known schema-less stubs: `export default disableTool()` turns off an eve
+// built-in, so there is no inputSchema to serialize. Any OTHER file under a
+// tools/ dir without an inputSchema fails the test below instead of being
+// skipped silently. Note: this is a static scan of authored files only; tools
+// that eve or MCP register at runtime are covered by the provider-boundary guard.
+const SCHEMALESS_STUBS = ["bash.ts", "edit_file.ts", "read_file.ts", "write_file.ts"].map((f) =>
+  path.join("agent", "tools", f),
+);
 
 async function eveSchema(): Promise<{
   serializeModelInputSchema: (s: unknown) => Json | null | undefined;
@@ -198,21 +267,34 @@ async function eveSchema(): Promise<{
 test("every authored tool serializes (via eve) to an object-root schema", async () => {
   const { serializeModelInputSchema, toInputSchema } = await eveSchema();
   const files = toolFiles();
-  assert.ok(files.some((f) => f.endsWith("vgpu_docs.ts")));
-  let checked = 0;
+  const rels = files.map((f) => path.relative(ROOT, f));
+  for (const name of ["vgpu_docs.ts", "vgpu_examples.ts", "execute_code.ts"]) {
+    assert.ok(rels.includes(path.join("agent", "tools", name)), `${name} discovered under agent/tools`);
+  }
+
+  const checked: string[] = [];
+  const stubs: string[] = [];
+  const unexpected: string[] = [];
   for (const file of files) {
+    const rel = path.relative(ROOT, file);
     const mod = await import(pathToFileURL(file).href);
     const def = mod.default as { inputSchema?: unknown } | undefined;
-    if (!def || def.inputSchema === undefined) continue; // disableTool() etc.
+    if (!def || def.inputSchema === undefined) {
+      if (SCHEMALESS_STUBS.includes(rel)) stubs.push(rel);
+      else unexpected.push(rel);
+      continue;
+    }
     const schema = serializeModelInputSchema(toInputSchema(def.inputSchema));
-    const rel = path.relative(ROOT, file);
     assert.ok(schema, `${rel}: serialized schema`);
     assert.equal(schema.type, "object", `${rel}: root type is object`);
     assert.equal(schema.oneOf, undefined, `${rel}: no root oneOf`);
     assert.equal(schema.anyOf, undefined, `${rel}: no root anyOf`);
-    checked++;
+    checked.push(rel);
   }
-  assert.ok(checked >= 7, `checked ${checked} tools`);
+  assert.deepEqual(unexpected, [], `tool files with no inputSchema that are not allowlisted stubs: ${unexpected.join(", ")}`);
+  assert.deepEqual(stubs, [...SCHEMALESS_STUBS].sort(), "every allowlisted stub exists and is still schema-less");
+  assert.equal(checked.length + stubs.length, files.length);
+  assert.ok(checked.length > 0, "no tools were checked");
 });
 
 async function validate(file: string, value: unknown) {
