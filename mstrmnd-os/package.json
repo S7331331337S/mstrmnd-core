@@ -20,13 +20,13 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.106",
-    "@ai-sdk/openai": "^4.0.119",
-    "@ai-sdk/openai-compatible": "^3.0.93",
-    "@ai-sdk/perplexity": "^5.0.36",
-    "@ai-sdk/xai": "^5.0.47",
-    "ai": "^7.0.174",
-    "eve": "^1.0.2",
+    "@ai-sdk/anthropic": "^4.0.108",
+    "@ai-sdk/openai": "^4.0.123",
+    "@ai-sdk/openai-compatible": "^3.0.94",
+    "@ai-sdk/perplexity": "^5.0.37",
+    "@ai-sdk/xai": "^5.0.50",
+    "ai": "^7.0.181",
+    "eve": "^1.5.0",
     "geist": "^1.9.2",
     "jose": "^6.2.17",
     "next": "16.3.8",
@@ -34,7 +34,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "vgpu": "^0.6.0",
-    "workflow": "^5.6.0",
+    "workflow": "^5.8.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
