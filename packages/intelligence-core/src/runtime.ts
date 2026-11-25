@@ -26,6 +26,13 @@ export interface RuntimeConfig {
   modelProvider?: string;
   /** Skip loading vault if missing */
   allowMissingVault?: boolean;
+  /**
+   * Resolve the model provider on first use instead of at construction.
+   * Tools that don't need a model keep working with no provider configured;
+   * `runtime.provider` and `createOrchestrator()` throw the usual fail-closed
+   * error (naming MSTRMND_MODEL_PROVIDER) when first used. Default: eager.
+   */
+  lazyProvider?: boolean;
 }
 
 export interface MstrmndRuntime {
@@ -93,7 +100,9 @@ export async function createRuntime(
   // Prefer assembled identity (includes templates fallback)
   identity = context.identity;
 
-  const provider = resolveModelProvider(config.modelProvider);
+  let resolved: ModelProvider | undefined;
+  const getProvider = (): ModelProvider => (resolved ??= resolveModelProvider(config.modelProvider));
+  if (!config.lazyProvider) getProvider();
 
   return {
     config: { ...config, vaultPath, repoRoot },
@@ -101,13 +110,15 @@ export async function createRuntime(
     workspace,
     context,
     identity,
-    provider,
+    get provider() {
+      return getProvider();
+    },
     createOrchestrator: (opts) =>
       new Orchestrator({
         context,
         memory,
         workspace,
-        provider,
+        provider: getProvider(),
         repoRoot,
         dryRun: opts?.dryRun,
         writeApprover: opts?.writeApprover,
