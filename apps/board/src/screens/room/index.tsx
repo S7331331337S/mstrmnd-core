@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import {
+  AccessibilityInfo,
   Pressable,
   ScrollView,
   type ScrollViewInstance,
@@ -64,6 +65,36 @@ export function Room({ sessionId }: { sessionId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doneCount]);
 
+  // Screen readers: say when a member finishes or fails. Streaming tokens are
+  // deliberately not announced; that would read the transcript out one word at a time.
+  // Only on a change while the room is open: re-opening an adjourned session
+  // must not replay "finished speaking" for turns that completed long ago.
+  const turns = session?.turns;
+  const announcedDone = useRef(doneCount);
+  useEffect(() => {
+    const previous = announcedDone.current;
+    announcedDone.current = doneCount;
+    if (!turns || doneCount <= previous) return;
+    const last = [...turns].reverse().find((t) => t.status === "done");
+    if (last) AccessibilityInfo.announceForAccessibility(`${getAgent(last.agentId).name} finished speaking`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doneCount]);
+
+  const errorCount = turns?.filter((t) => t.status === "error").length ?? 0;
+  const announcedErrors = useRef(errorCount);
+  useEffect(() => {
+    const previous = announcedErrors.current;
+    announcedErrors.current = errorCount;
+    if (!turns || errorCount <= previous) return;
+    const last = [...turns].reverse().find((t) => t.status === "error");
+    if (last) {
+      AccessibilityInfo.announceForAccessibility(
+        `${getAgent(last.agentId).name} could not respond. ${last.error ?? ""}`.trim(),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [errorCount]);
+
   if (!session) {
     return (
       <Screen>
@@ -99,7 +130,7 @@ export function Room({ sessionId }: { sessionId: string }) {
             <Ionicons name="chevron-back" size={24} color={colors.secondaryLabel} />
           </Pressable>
 
-          <ThemedText variant="overline" style={styles.status}>
+          <ThemedText variant="overline" style={styles.status} accessibilityLiveRegion="polite">
             {statusLabel(session, isRunning)}
           </ThemedText>
 
@@ -155,7 +186,7 @@ export function Room({ sessionId }: { sessionId: string }) {
         ))}
 
         {session.turns.length === 0 ? (
-          <Animated.View entering={FadeIn} style={styles.convening}>
+          <Animated.View entering={FadeIn} style={styles.convening} accessibilityLiveRegion="polite">
             <ThemedText variant="subhead" style={{ color: colors.tertiaryLabel }}>
               Convening the board…
             </ThemedText>
