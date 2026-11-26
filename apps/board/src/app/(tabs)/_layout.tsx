@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "@/components/icon";
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, fonts, spacing } from "@/theme";
@@ -33,8 +33,12 @@ export default function TabsLayout() {
         tabBarItemStyle: styles.item,
         tabBarLabelStyle: styles.label,
         // Frosted glass over the page; on web this degrades to the solid fill below.
+        // expo-blur does not blur on Android here, so a 60% white wash lets page text
+        // show through the labels (seen on Settings). Use a near-opaque fill there.
         tabBarBackground: () =>
-          Platform.OS === "web" ? null : (
+          Platform.OS === "web" ? null : Platform.OS === "android" ? (
+            <View style={[StyleSheet.absoluteFill, styles.androidFill]} />
+          ) : (
             <BlurView tint="light" intensity={60} style={StyleSheet.absoluteFill} />
           ),
       }}
@@ -45,9 +49,10 @@ export default function TabsLayout() {
           name={tab.name}
           options={{
             title: tab.title,
+            tabBarAccessibilityLabel: tab.title,
             // RN 0.88 widened ColorValue (null | number); Ionicons takes string | NativeColorValue.
             tabBarIcon: ({ color, size }) => (
-              <Ionicons
+              <Icon
                 name={tab.icon}
                 color={typeof color === "number" ? undefined : (color ?? undefined)}
                 size={size}
@@ -67,6 +72,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.hairline,
     backgroundColor: Platform.OS === "web" ? colors.surface : "transparent",
     elevation: 0,
+  },
+  androidFill: {
+    backgroundColor: "#FFFFFFF5",
   },
   item: {
     paddingTop: spacing.xs,

@@ -56,7 +56,7 @@ function MemberCard({ agent }: { agent: Agent }) {
       }}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <AgentAvatar agent={agent} size="lg" />
+      <AgentAvatar agent={agent} size="lg" decorative />
 
       <View style={styles.body}>
         <ThemedText variant="overline">
